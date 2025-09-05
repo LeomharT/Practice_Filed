@@ -64,6 +64,20 @@ void main() {
         fresnel * dayMix
     );
 
+    // Specular
+    vec3 reflection = reflect(-sunDirection, normal);
+    float specular = -dot(reflection, viewDirection);
+    specular = max(0.0, specular);
+    specular = pow(specular, 20.0);
+    specular *= specularCloudTextureColor.r;
+
+    vec3 specularColor = mix(
+        vec3(1.0),
+        uAtmosphereTwilightColor,
+        fresnel
+    );
+
+    color += specularColor * specular;
 
 
     gl_FragColor = vec4(color, 1.0);
