@@ -1,48 +1,36 @@
-import * as TweakpaneEssentialsPlugin from '@tweakpane/plugin-essentials';
 import {
-	AxesHelper,
+	ACESFilmicToneMapping,
 	Clock,
 	Color,
-	DirectionalLight,
-	EquirectangularReflectionMapping,
-	InstancedBufferAttribute,
-	InstancedMesh,
-	MathUtils,
-	Matrix4,
+	IcosahedronGeometry,
 	Mesh,
-	MeshStandardMaterial,
-	Object3D,
+	MeshBasicMaterial,
 	PCFSoftShadowMap,
 	PerspectiveCamera,
-	PlaneGeometry,
-	ReinhardToneMapping,
 	Scene,
 	ShaderChunk,
 	ShaderMaterial,
-	Texture,
+	SphereGeometry,
+	Spherical,
+	SRGBColorSpace,
 	TextureLoader,
 	Uniform,
 	Vector2,
+	Vector3,
 	WebGLRenderer,
-	WebGLRenderTarget,
 } from 'three';
-import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import {
 	GLTFLoader,
 	OrbitControls,
-	Reflector,
 	RGBELoader,
 	TrackballControls,
 } from 'three/examples/jsm/Addons.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { Pane } from 'tweakpane';
+import earthFragmentShader from './shader/earth/fragment.glsl?raw';
+import earthVertexShader from './shader/earth/vertex.glsl?raw';
 import random2D from './shader/include/random2D.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
-import rainFragmentShader from './shader/rain/fragment.glsl?raw';
-import rainVertexShader from './shader/rain/vertex.glsl?raw';
-import rippleFragmentShader from './shader/ripple/fragment.glsl?raw';
-import rippleVertexShader from './shader/ripple/vertex.glsl?raw';
-
 import './style.css';
 
 type ShaderLab = typeof ShaderChunk & {
@@ -52,8 +40,6 @@ type ShaderLab = typeof ShaderChunk & {
 
 (ShaderChunk as ShaderLab)['random2D'] = random2D;
 (ShaderChunk as ShaderLab)['simplex3DNoise'] = simplex3DNoise;
-
-const RAIN_LAYER = 2;
 
 const el = document.querySelector('#root') as HTMLDivElement;
 
@@ -69,7 +55,7 @@ const sizes = {
  */
 
 const textureLoader = new TextureLoader();
-textureLoader.setPath('/src/assets/textures');
+textureLoader.setPath('/src/assets/textures/');
 
 const gltfLoader = new GLTFLoader();
 gltfLoader.setPath('/src/assets/models/');
@@ -81,18 +67,13 @@ rgbeLoader.setPath('/src/assets/hdr/');
  * Textures
  */
 
-rgbeLoader.load('cobblestone_street_night_1k.hdr', (data) => {
-	data.mapping = EquirectangularReflectionMapping;
+const earthDayMapTexture = textureLoader.load('2k_earth_daymap.jpg');
+earthDayMapTexture.colorSpace = SRGBColorSpace;
 
-	scene.environment = data;
-	scene.background = data;
-});
+const earthNightMapTexture = textureLoader.load('2k_earth_nightmap.jpg');
+earthNightMapTexture.colorSpace = SRGBColorSpace;
 
-const floorNormal = textureLoader.load('/normal.png');
-const floorRoughness = textureLoader.load('/roughness.jpg');
-const floorMask = textureLoader.load('/opacity.jpg');
-
-const rainNormal = textureLoader.load('/rainNormal.png');
+const specularCloudTexutre = textureLoader.load('specularClouds.jpg');
 
 /**
  * Basic
@@ -104,7 +85,7 @@ const renderer = new WebGLRenderer({
 });
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(1.0);
-renderer.toneMapping = ReinhardToneMapping;
+renderer.toneMapping = ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.0;
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = PCFSoftShadowMap;
@@ -116,7 +97,6 @@ scene.background = new Color('#1e1e1e');
 const camera = new PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000);
 camera.position.set(3, 3, 3);
 camera.lookAt(scene.position);
-camera.layers.enable(RAIN_LAYER);
 
 const clock = new Clock();
 
@@ -142,275 +122,108 @@ el.append(stats.dom);
  */
 
 const uniforms = {
-	uResolution: new Uniform(sizes.resolution),
-	uTime: new Uniform(0),
+	uSunDirection: new Uniform(new Vector3()),
 
-	uGroundWetMask: new Uniform(floorMask),
-	uRoughnessMap: new Uniform(floorRoughness),
-	uGroundNormal: new Uniform(floorNormal),
-	uGroundReflection: new Uniform<Texture | null>(null),
-	uTextureMatrix: new Uniform<Matrix4>(new Matrix4()),
+	uEarthDayMapTexture: new Uniform(earthDayMapTexture),
+	uEarthNightMapTexture: new Uniform(earthNightMapTexture),
+	uSpecularCloudTexture: new Uniform(specularCloudTexutre),
 
-	uRippleCircleScale: new Uniform(4.5),
+	uAtmosphereDayColor: new Uniform(new Color('#00aaff')),
+	uAtmosphereTwilightColor: new Uniform(new Color('#ff6600')),
 };
 
 /**
  * World
  */
-const floorGeometry = new PlaneGeometry(5, 5, 128, 128);
+// Sun spherical
+const sunSpherical = new Spherical(1.0, Math.PI / 2, 0.5);
+const sunDirection = new Vector3();
 
-// Reflection
-const reflectionGeometry = floorGeometry.clone();
-const floorMirror = new Reflector(reflectionGeometry, {
-	clipBias: 0.003,
-	textureWidth: 512,
-	textureHeight: 512,
-	color: 0xb5b5b5,
-});
-floorMirror.rotation.x = -Math.PI / 2;
-floorMirror.position.y = -0.001;
-scene.add(floorMirror);
+// Sun
+const sunGeometry = new IcosahedronGeometry(0.1, 3);
+const sunMaterial = new MeshBasicMaterial({ color: 'yellow' });
+const sun = new Mesh(sunGeometry, sunMaterial);
 
-// Floor
-const floorMaterial = new CustomShaderMaterial({
-	baseMaterial: MeshStandardMaterial,
-	uniforms,
-	normalMap: floorNormal,
-	vertexShader: rippleVertexShader,
-	fragmentShader: rippleFragmentShader,
-	color: 0x1e1e1e,
-});
-const floor = new Mesh(floorGeometry, floorMaterial);
-floor.receiveShadow = true;
-floor.castShadow = true;
-floor.rotation.x = -Math.PI / 2;
-scene.add(floor);
+function updateSun() {
+	// Sun direction
+	sunDirection.setFromSpherical(sunSpherical);
 
-uniforms.uGroundReflection.value = floorMirror.getRenderTarget().texture;
-uniforms.uTextureMatrix.value = (
-	floorMirror.material as ShaderMaterial
-).uniforms.textureMatrix.value;
+	// Uniforms
+	uniforms.uSunDirection.value.copy(sunDirection);
 
-// Monkey
-gltfLoader.load('/suzanne.glb', (data) => {
-	const suzanne = data.scene.children[0] as Mesh;
-	suzanne.scale.setScalar(0.25);
-	suzanne.position.y = 0.35;
-
-	suzanne.material = new MeshStandardMaterial({
-		color: 'yellow',
-	});
-
-	scene.add(suzanne);
-});
-
-// Rain
-// Rain refract https://threejs.org/examples/#webgl_effects_stereo
-const frameTexture = new WebGLRenderTarget(
-	sizes.width * 0.1,
-	sizes.height * 0.1,
-	{}
-);
-const frameCamera = camera.clone();
-
-const rainUniforms = {
-	uTime: new Uniform(0.0),
-	uSpeed: new Uniform(10.0),
-	uHeightRange: new Uniform(20),
-	uRefraction: new Uniform(0.1),
-	uBaseBrightness: new Uniform(0.1),
-	uNormalTexture: new Uniform(rainNormal),
-	uBgRT: new Uniform<Texture>(frameTexture.texture),
-};
-
-const rainParams: {
-	count: number;
-	progress: number[];
-	speed: number[];
-} = {
-	count: 5000,
-	progress: [],
-	speed: [],
-};
-
-function updateFrameTexture() {
-	rain.visible = false;
-
-	renderer.setRenderTarget(frameTexture);
-	renderer.render(scene, frameCamera);
-	renderer.setRenderTarget(null);
-
-	rain.visible = true;
+	// Position
+	sun.position.copy(sunDirection.clone()).multiplyScalar(5.0);
 }
+updateSun();
 
-const rainGeometry = new PlaneGeometry();
-const rainMaterial = new ShaderMaterial({
-	vertexShader: rainVertexShader,
-	fragmentShader: rainFragmentShader,
-	uniforms: rainUniforms,
+scene.add(sun);
+
+// Earth
+const earthGeometry = new SphereGeometry(2, 128, 128);
+const earthMaterial = new ShaderMaterial({
+	uniforms,
+	vertexShader: earthVertexShader,
+	fragmentShader: earthFragmentShader,
 	transparent: true,
 });
 
-const objectRef = new Object3D();
-
-const rain = new InstancedMesh(rainGeometry, rainMaterial, rainParams.count);
-scene.add(rain);
-
-const debug = false;
-
-for (let i = 0; i < rainParams.count; i++) {
-	// Rain Matrix
-	objectRef.position.set(
-		MathUtils.randFloat(-5, 5),
-		0,
-		MathUtils.randFloat(-15, 5)
-	);
-	objectRef.scale.set(0.01, MathUtils.randFloat(0.2, 0.4), 0.01);
-
-	if (debug) {
-		objectRef.scale.set(1, 1, 1);
-		rainUniforms.uSpeed.value = 0;
-	}
-
-	objectRef.updateMatrix();
-
-	// Rain Progress
-	rainParams.progress.push(Math.random());
-
-	// Rain Speed
-	rainParams.speed.push(objectRef.scale.y * 1.0);
-
-	rain.setMatrixAt(i, objectRef.matrix);
-}
-
-rain.layers.set(RAIN_LAYER);
-rain.rotation.set(-0.1, 0, 0.1);
-rain.position.set(0, 4, 4);
-rain.geometry.setAttribute(
-	'aProgress',
-	new InstancedBufferAttribute(new Float32Array(rainParams.progress), 1)
-);
-rain.geometry.setAttribute(
-	'aSpeed',
-	new InstancedBufferAttribute(new Float32Array(rainParams.speed), 1)
-);
-
-/**
- * Lights
- */
-
-const directionalLight = new DirectionalLight(0x94d2bd, 1.0);
-directionalLight.position.set(-3, 3, -3);
-directionalLight.castShadow = true;
-scene.add(directionalLight);
-
-/**
- * Helpers
- */
-
-const axesHelper = new AxesHelper();
-axesHelper.visible = false;
-scene.add(axesHelper);
+const earth = new Mesh(earthGeometry, earthMaterial);
+scene.add(earth);
 
 /**
  * Pane
  */
 
-const pane = new Pane({ title: 'Debug Params' });
-pane.registerPlugin(TweakpaneEssentialsPlugin);
+const pane = new Pane({ title: '🚧🚧🚧 Debug Params 🚧🚧🚧' });
 pane.element.parentElement!.style.width = '380px';
 
-const fpsGraph: any = pane.addBlade({
-	view: 'fpsgraph',
-	label: undefined,
-	rows: 3,
-	min: 30,
-	max: 80,
-});
+const sunP = pane.addFolder({ title: 'Sun' });
+sunP
+	.addBinding(sunSpherical, 'phi', {
+		label: 'Phi',
+		min: 0,
+		max: Math.PI,
+		step: 0.001,
+	})
+	.on('change', updateSun);
+sunP
+	.addBinding(sunSpherical, 'theta', {
+		label: 'Theta',
+		min: -Math.PI,
+		max: Math.PI,
+		step: 0.001,
+	})
+	.on('change', updateSun);
 
-// Rain
-{
-	const folder = pane.addFolder({ title: '🌧️ Rain' });
-	folder.addBinding(uniforms.uRippleCircleScale, 'value', {
-		label: 'CircleScale',
-		min: 0.1,
-		max: 5.0,
-		step: 0.001,
-	});
-	folder.addBinding(rainUniforms.uRefraction, 'value', {
-		label: 'Refraction',
-		min: -1.0,
-		max: 1.0,
-		step: 0.001,
-	});
-	folder.addBinding(rain.position, 'x', {
-		label: 'Rain Position X',
-		min: 0,
-		max: 10,
-		step: 0.01,
-	});
-	folder.addBinding(rain.position, 'y', {
-		label: 'Rain Position Y',
-		min: -10,
-		max: 10,
-		step: 0.01,
-	});
-	folder.addBinding(rain.position, 'z', {
-		label: 'Rain Position Z',
-		min: 0,
-		max: 10,
-		step: 0.01,
-	});
-}
-// Light
-{
-	const folder = pane.addFolder({ title: '💡 Light' });
-	folder.addBinding(directionalLight, 'color', {
-		label: 'Light Color',
-		color: {
-			type: 'float',
-		},
-	});
-}
+const earthP = pane.addFolder({ title: 'Earth' });
 
 /**
  * Event
  */
 
 function render() {
-	fpsGraph.begin();
-
 	// Render
-	updateFrameTexture();
 	renderer.render(scene, camera);
 
 	// Time
 	const delta = clock.getDelta();
-	const elapsedTime = clock.getElapsedTime();
 
 	// Update
 	controls.update(delta);
 	controls2.update();
 	stats.update();
 
-	uniforms.uTime.value = elapsedTime;
-	rainUniforms.uTime.value = elapsedTime;
+	earth.rotation.y += delta * 0.1;
 
 	// Animation
 	requestAnimationFrame(render);
-
-	fpsGraph.end();
 }
 render();
 
 function resize() {
 	sizes.width = window.innerWidth;
 	sizes.height = window.innerHeight;
-	sizes.resolution.x = window.innerWidth;
-	sizes.resolution.y = window.innerHeight;
 	sizes.pixelratio = Math.min(2, window.devicePixelRatio);
-
-	uniforms.uResolution.value = sizes.resolution;
 
 	renderer.setSize(sizes.width, sizes.height);
 
