@@ -1,6 +1,5 @@
 import {
 	ACESFilmicToneMapping,
-	BackSide,
 	Clock,
 	Color,
 	IcosahedronGeometry,
@@ -28,13 +27,13 @@ import {
 } from 'three/examples/jsm/Addons.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { Pane } from 'tweakpane';
+import atmoFragmentShader from './shader/atmosphere/fragment.glsl?raw';
+import atmoVertexShader from './shader/atmosphere/vertex.glsl?raw';
 import earthFragmentShader from './shader/earth/fragment.glsl?raw';
 import earthVertexShader from './shader/earth/vertex.glsl?raw';
 import random2D from './shader/include/random2D.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
 import './style.css';
-import atmoFragmentShader from './shader/atmosphere/fragment.glsl?raw';
-import atmoVertexShader from './shader/atmosphere/vertex.glsl?raw';
 
 type ShaderLab = typeof ShaderChunk & {
 	random2D: string;
@@ -179,7 +178,6 @@ const atmosphereMaterial = new ShaderMaterial({
 	vertexShader: atmoVertexShader,
 	fragmentShader: atmoFragmentShader,
 	transparent: true,
-	side: BackSide,
 });
 
 const atmosphere = new Mesh(atmosphereGeometry, atmosphereMaterial);
