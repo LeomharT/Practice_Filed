@@ -1,5 +1,6 @@
 import {
 	ACESFilmicToneMapping,
+	BackSide,
 	Clock,
 	Color,
 	IcosahedronGeometry,
@@ -178,6 +179,7 @@ const atmosphereMaterial = new ShaderMaterial({
 	vertexShader: atmoVertexShader,
 	fragmentShader: atmoFragmentShader,
 	transparent: true,
+	side: BackSide,
 });
 
 const atmosphere = new Mesh(atmosphereGeometry, atmosphereMaterial);
