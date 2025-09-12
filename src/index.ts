@@ -1,21 +1,23 @@
 import {
 	ACESFilmicToneMapping,
-	BackSide,
+	AxesHelper,
+	BoxGeometry,
+	BufferGeometry,
+	CatmullRomCurve3,
 	Clock,
 	Color,
 	IcosahedronGeometry,
+	Line,
+	LineBasicMaterial,
+	MathUtils,
 	Mesh,
 	MeshBasicMaterial,
 	PCFSoftShadowMap,
 	PerspectiveCamera,
 	Scene,
 	ShaderChunk,
-	ShaderMaterial,
-	SphereGeometry,
-	Spherical,
 	SRGBColorSpace,
 	TextureLoader,
-	Uniform,
 	Vector2,
 	Vector3,
 	WebGLRenderer,
@@ -28,10 +30,6 @@ import {
 } from 'three/examples/jsm/Addons.js';
 import Stats from 'three/examples/jsm/libs/stats.module.js';
 import { Pane } from 'tweakpane';
-import atmoFragmentShader from './shader/atmosphere/fragment.glsl?raw';
-import atmoVertexShader from './shader/atmosphere/vertex.glsl?raw';
-import earthFragmentShader from './shader/earth/fragment.glsl?raw';
-import earthVertexShader from './shader/earth/vertex.glsl?raw';
 import random2D from './shader/include/random2D.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
 import './style.css';
@@ -110,12 +108,14 @@ controls.enablePan = false;
 controls.enableZoom = false;
 controls.maxPolarAngle = Math.PI / 2.25;
 controls.minPolarAngle = 0;
+controls.enabled = false;
 
 const controls2 = new TrackballControls(camera, renderer.domElement);
 controls2.noRotate = true;
 controls2.noPan = true;
 controls2.noZoom = false;
 controls2.dynamicDampingFactor = 0.2;
+controls2.enabled = false;
 
 const stats = new Stats();
 el.append(stats.dom);
@@ -124,67 +124,58 @@ el.append(stats.dom);
  * Uniforms
  */
 
-const uniforms = {
-	uSunDirection: new Uniform(new Vector3()),
-
-	uEarthDayMapTexture: new Uniform(earthDayMapTexture),
-	uEarthNightMapTexture: new Uniform(earthNightMapTexture),
-	uSpecularCloudTexture: new Uniform(specularCloudTexutre),
-
-	uAtmosphereDayColor: new Uniform(new Color('#00aaff')),
-	uAtmosphereTwilightColor: new Uniform(new Color('#ff6600')),
-};
+const POINTS = [
+	new Vector3(-3, 0, -3),
+	new Vector3(0, 1, -3),
+	new Vector3(3, 0, -3),
+	new Vector3(3, 0, 0),
+	new Vector3(3, 0, 3),
+	new Vector3(0, 1, 3),
+	new Vector3(-3, 0, 3),
+	new Vector3(-3, 0, 0),
+];
 
 /**
  * World
  */
-// Sun spherical
-const sunSpherical = new Spherical(1.0, Math.PI / 2, 0.5);
-const sunDirection = new Vector3();
+const hanldeGeometry = new IcosahedronGeometry(0.1, 3);
+const hanldeMaterial = new MeshBasicMaterial({});
 
-// Sun
-const sunGeometry = new IcosahedronGeometry(0.1, 3);
-const sunMaterial = new MeshBasicMaterial({ color: 'yellow' });
-const sun = new Mesh(sunGeometry, sunMaterial);
+for (const i of POINTS) {
+	const material = hanldeMaterial.clone();
+	material.color = new Color(
+		MathUtils.randFloat(0, 1),
+		MathUtils.randFloat(0, 1),
+		MathUtils.randFloat(0, 1)
+	);
 
-function updateSun() {
-	// Sun direction
-	sunDirection.setFromSpherical(sunSpherical);
-
-	// Uniforms
-	uniforms.uSunDirection.value.copy(sunDirection);
-
-	// Position
-	sun.position.copy(sunDirection.clone()).multiplyScalar(5.0);
+	const handle = new Mesh(hanldeGeometry, material);
+	handle.position.copy(i);
+	scene.add(handle);
 }
-updateSun();
 
-scene.add(sun);
+const curve = new CatmullRomCurve3(POINTS, true);
+const points = curve.getPoints(50) as Vector3[];
 
-// Earth
-const earthGeometry = new SphereGeometry(2, 128, 128);
-const earthMaterial = new ShaderMaterial({
-	uniforms,
-	vertexShader: earthVertexShader,
-	fragmentShader: earthFragmentShader,
-	transparent: true,
-});
+const lineGeometry = new BufferGeometry().setFromPoints(points);
+const lineMaterial = new LineBasicMaterial({ color: 'red' });
 
-const earth = new Mesh(earthGeometry, earthMaterial);
-scene.add(earth);
+const line = new Line(lineGeometry, lineMaterial);
+scene.add(line);
 
-const atmosphereGeometry = earthGeometry.clone();
-const atmosphereMaterial = new ShaderMaterial({
-	uniforms,
-	vertexShader: atmoVertexShader,
-	fragmentShader: atmoFragmentShader,
-	transparent: true,
-	side: BackSide,
-});
+const cubeGeometry = new BoxGeometry(0.5, 0.5, 0.5);
+const cubeMaterial = new MeshBasicMaterial({ color: 'yellow' });
 
-const atmosphere = new Mesh(atmosphereGeometry, atmosphereMaterial);
-atmosphere.scale.setScalar(1.04);
-scene.add(atmosphere);
+const cube = new Mesh(cubeGeometry, cubeMaterial);
+cube.position.copy(points[0]);
+scene.add(cube);
+
+/**
+ * Helper
+ */
+
+const axesHelper = new AxesHelper();
+scene.add(axesHelper);
 
 /**
  * Pane
@@ -193,29 +184,11 @@ scene.add(atmosphere);
 const pane = new Pane({ title: '🚧🚧🚧 Debug Params 🚧🚧🚧' });
 pane.element.parentElement!.style.width = '380px';
 
-const sunP = pane.addFolder({ title: 'Sun' });
-sunP
-	.addBinding(sunSpherical, 'phi', {
-		label: 'Phi',
-		min: 0,
-		max: Math.PI,
-		step: 0.001,
-	})
-	.on('change', updateSun);
-sunP
-	.addBinding(sunSpherical, 'theta', {
-		label: 'Theta',
-		min: -Math.PI,
-		max: Math.PI,
-		step: 0.001,
-	})
-	.on('change', updateSun);
-
-const earthP = pane.addFolder({ title: 'Earth' });
-
 /**
  * Event
  */
+
+let index = 0;
 
 function render() {
 	// Render
@@ -224,12 +197,21 @@ function render() {
 	// Time
 	const delta = clock.getDelta();
 
-	// Update
-	controls.update(delta);
-	controls2.update();
-	stats.update();
+	const position = curve.getPointAt(index);
+	const tangent = curve.getTangentAt(index).normalize() as Vector3;
 
-	earth.rotation.y += delta * 0.1;
+	cube.position.copy(position);
+
+	camera.position.copy(position);
+	camera.lookAt(position.clone().add(tangent));
+
+	index += 0.001;
+	if (index >= 1) index = 0;
+
+	// Update
+	// controls.update(delta);
+	// controls2.update();
+	stats.update();
 
 	// Animation
 	requestAnimationFrame(render);
