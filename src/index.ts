@@ -250,6 +250,7 @@ bloomPan
 /**
  * Event
  */
+
 function composerRender(delta: number) {
 	scene.traverse((obj) => {
 		if (obj instanceof Mesh) {
