@@ -4,30 +4,4 @@ body {
 
 #root {
 	overflow: hidden;
-	width: 100vw;
-	height: 100vh;
-	background-color: antiquewhite;
-	display: flex;
-	align-items: center;
-	justify-content: center;
-}
-
-.box {
-	width: 200px;
-	height: 150px;
-	border: 1px dashed blue;
-	box-sizing: border-box;
-	pointer-events: none;
-
-	& > img {
-		user-select: none;
-		display: block;
-		width: 148px;
-		margin: 0 auto;
-		pointer-events: none;
-	}
-
-	svg {
-		pointer-events: none;
-	}
 }
