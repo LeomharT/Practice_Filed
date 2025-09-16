@@ -1,5 +1,6 @@
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import {
+	AxesHelper,
 	BoxGeometry,
 	Clock,
 	Color,
@@ -198,6 +199,9 @@ const lightHelper = new RectAreaLightHelper(rectLight);
 lightHelper.visible = false;
 scene.add(lightHelper);
 
+const axesHelper = new AxesHelper();
+scene.add(axesHelper);
+
 /**
  * Pane
  */
@@ -260,13 +264,16 @@ function composerRender(delta: number) {
 	scene.background = null;
 	scene.environment = null;
 	rectLight.intensity = 0;
+	axesHelper.visible = false;
+	// Bloom scene render
 	bloomComposer.render(delta);
+
 	scene.traverse((obj) => {
 		if (obj instanceof Mesh) {
 			restoreMaterial(obj);
 		}
 	});
-
+	axesHelper.visible = true;
 	scene.background = environment;
 	scene.environment = environment;
 	rectLight.intensity = 5.0;
