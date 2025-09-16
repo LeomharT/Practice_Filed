@@ -3,7 +3,7 @@ import {
 	BoxGeometry,
 	Clock,
 	Color,
-	EquirectangularReflectionMapping,
+	EquirectangularRefractionMapping,
 	Layers,
 	Material,
 	MathUtils,
@@ -56,6 +56,7 @@ rgbeLoader.setPath('/src/assets/hdr/');
 const environment = await rgbeLoader.loadAsync(
 	'cobblestone_street_night_1k.hdr'
 );
+environment.mapping = EquirectangularRefractionMapping;
 
 /**
  * Basic
@@ -70,7 +71,8 @@ root.append(renderer.domElement);
 
 const scene = new Scene();
 scene.background = environment;
-scene.background.mapping = EquirectangularReflectionMapping;
+scene.environment = environment;
+scene.environmentIntensity = 0.2;
 
 const camera = new PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000);
 camera.position.set(0, 1, 2);
@@ -193,7 +195,7 @@ rectLight.lookAt(cube.position);
 scene.add(rectLight);
 
 const lightHelper = new RectAreaLightHelper(rectLight);
-lightHelper.visible = true;
+lightHelper.visible = false;
 scene.add(lightHelper);
 
 /**
@@ -255,6 +257,7 @@ function composerRender(delta: number) {
 		}
 	});
 	scene.background = null;
+	scene.environment = null;
 	rectLight.intensity = 0;
 	bloomComposer.render(delta);
 	scene.traverse((obj) => {
@@ -264,6 +267,7 @@ function composerRender(delta: number) {
 	});
 
 	scene.background = environment;
+	scene.environment = environment;
 	rectLight.intensity = 5.0;
 	finalComposer.render(delta);
 }
