@@ -1,89 +1,78 @@
-import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import {
-	AxesHelper,
 	BoxGeometry,
 	Clock,
 	Color,
-	CubeCamera,
-	CubeRefractionMapping,
-	EquirectangularRefractionMapping,
 	Layers,
-	Material,
 	MathUtils,
 	Mesh,
-	MeshBasicMaterial,
 	MeshStandardMaterial,
 	PerspectiveCamera,
-	RectAreaLight,
 	Scene,
 	ShaderMaterial,
 	SphereGeometry,
-	Uniform,
 	Vector2,
-	WebGLCubeRenderTarget,
 	WebGLRenderer,
 } from 'three';
 import {
 	EffectComposer,
+	GLTFLoader,
 	OrbitControls,
 	OutputPass,
-	RectAreaLightHelper,
 	RenderPass,
-	RGBELoader,
 	ShaderPass,
 	TrackballControls,
 	UnrealBloomPass,
 } from 'three/examples/jsm/Addons.js';
-import { Pane } from 'tweakpane';
-import bloomFragmentShader from './shader/bloom/fragment.glsl?raw';
-import bloomVertexShader from './shader/bloom/vertex.glsl?raw';
 import './style.css';
 
-const root = document.querySelector('#root') as HTMLDivElement;
-
-const sizes = {
+/**
+ * Variables
+ */
+const el = document.querySelector('#root') as HTMLDivElement;
+const size = {
 	width: window.innerWidth,
 	height: window.innerHeight,
-	pixelratio: Math.max(2.0, window.devicePixelRatio),
 };
+const BLOOM_LAYER = 1;
+
+const layer = new Layers();
+layer.set(BLOOM_LAYER);
 
 /**
- * Loaders
+ * Loader
  */
 
-const rgbeLoader = new RGBELoader();
-rgbeLoader.setPath('/src/assets/hdr/');
+const gltfLoader = new GLTFLoader();
+gltfLoader.setPath('/src/assets/models/');
 
 /**
- * Texture
+ * Models
  */
-const environment = await rgbeLoader.loadAsync(
-	'cobblestone_street_night_1k.hdr'
-);
-environment.mapping = EquirectangularRefractionMapping;
 
 /**
  * Basic
  */
+
 const renderer = new WebGLRenderer({
 	alpha: true,
 	antialias: true,
 });
-renderer.setSize(sizes.width, sizes.height);
-renderer.setPixelRatio(sizes.pixelratio);
-root.append(renderer.domElement);
+renderer.setSize(size.width, size.height);
+renderer.setPixelRatio(window.devicePixelRatio);
+el.append(renderer.domElement);
 
 const scene = new Scene();
+scene.background = new Color('#1e1e1e');
 
-const camera = new PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000);
-camera.position.set(0, 1, 2);
+const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
+camera.position.set(3, 3, 3);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.enablePan = false;
-controls.enableZoom = false;
 controls.enableRotate = true;
+controls.enableZoom = false;
 
 const controls2 = new TrackballControls(camera, renderer.domElement);
 controls2.noPan = true;
@@ -92,24 +81,9 @@ controls2.noZoom = false;
 
 const clock = new Clock();
 
-const BOLOM_LAYER = 1;
-
-const layers = new Layers();
-layers.set(BOLOM_LAYER);
-
-const darkMaterial = new MeshBasicMaterial({ color: 0x000000 });
-const materials: Record<string, Material | Material[]> = {};
-
-const cuebRenderTarget = new WebGLCubeRenderTarget(128, {
-	generateMipmaps: true,
-	mapping: CubeRefractionMapping,
-});
-const cubeCamera = new CubeCamera(0.001, 1000, cuebRenderTarget);
-
 /**
  * Post processing
  */
-
 const params = {
 	threshold: 0,
 	strength: 1,
@@ -117,56 +91,45 @@ const params = {
 	exposure: 1,
 };
 
+// Pass
 const renderScene = new RenderPass(scene, camera);
 
 const bloomPass = new UnrealBloomPass(
-	new Vector2(window.innerWidth, window.innerHeight),
+	new Vector2(size.width, size.height),
 	params.strength,
 	params.radius,
 	params.threshold
 );
-bloomPass.threshold = params.threshold;
-bloomPass.strength = params.strength;
-bloomPass.radius = params.radius;
-
 function updateBloom() {
-	bloomPass.threshold = params.threshold;
 	bloomPass.strength = params.strength;
 	bloomPass.radius = params.radius;
+	bloomPass.threshold = params.threshold;
 }
+const mixPass = new ShaderPass(new ShaderMaterial({}));
+const outputPass = new OutputPass();
 
 const bloomComposer = new EffectComposer(renderer);
 bloomComposer.renderToScreen = false;
 bloomComposer.addPass(renderScene);
 bloomComposer.addPass(bloomPass);
 
-const mixUniforms = {
-	baseTexture: new Uniform(null),
-	bloomTexture: new Uniform(bloomComposer.renderTarget2.texture),
-};
-
-// Mix bloom scene and normal scene
-const mixPass = new ShaderPass(
-	new ShaderMaterial({
-		uniforms: mixUniforms,
-		vertexShader: bloomVertexShader,
-		fragmentShader: bloomFragmentShader,
-	}),
-	'baseTexture'
-);
-mixPass.needsSwap = true;
-
-const outputPass = new OutputPass();
-
-const finalComposer = new EffectComposer(renderer);
-finalComposer.renderToScreen = true;
-finalComposer.addPass(renderScene);
-finalComposer.addPass(mixPass);
-finalComposer.addPass(outputPass);
+const composer = new EffectComposer(renderer);
+composer.addPass(renderScene);
+composer.addPass(mixPass);
+composer.addPass(outputPass);
 
 /**
  * World
  */
+
+const sphereGeometry = new SphereGeometry(0.5, 32, 32);
+const sphereMaterial = new MeshStandardMaterial({
+	color: '#B6CEB4',
+});
+
+const sphere = new Mesh(sphereGeometry, sphereMaterial);
+sphere.position.x = 1.0;
+scene.add(sphere);
 
 const lightColor = new Color(
 	MathUtils.randFloat(0, 1),
@@ -174,168 +137,44 @@ const lightColor = new Color(
 	MathUtils.randFloat(0, 1)
 );
 
-const cubeGeometry = new BoxGeometry(1, 1, 1, 32, 32, 32);
-
-const illuminatedMaterial = new MeshStandardMaterial({
+const cubeGeometry = new BoxGeometry(1, 1, 1);
+const cubeMaterial = new MeshStandardMaterial({
 	emissive: lightColor,
-	emissiveIntensity: 0.5,
-});
-const cubeIlluminated = new Mesh(cubeGeometry, illuminatedMaterial);
-cubeIlluminated.position.x = -0.8;
-cubeIlluminated.layers.enable(BOLOM_LAYER);
-cubeIlluminated.scale.setScalar(0.215);
-scene.add(cubeIlluminated);
-
-const cubeMaterial = new MeshBasicMaterial({
-	envMap: cuebRenderTarget.texture,
-});
-const cube = new Mesh(new SphereGeometry(0.5, 128, 128), cubeMaterial);
-cube.position.x = 0.8;
-scene.add(cube);
-
-/**
- * Lights
- */
-
-const rectLight = new RectAreaLight(lightColor, 1, 1, 1);
-const lightPosition = cubeIlluminated.position.clone();
-lightPosition.x += 0.51;
-rectLight.position.copy(lightPosition);
-rectLight.lookAt(cube.position);
-scene.add(rectLight);
-
-const lightHelper = new RectAreaLightHelper(rectLight);
-lightHelper.visible = false;
-scene.add(lightHelper);
-
-const axesHelper = new AxesHelper();
-scene.add(axesHelper);
-
-/**
- * Pane
- */
-
-const pane = new Pane({ title: 'Debug Params' });
-pane.registerPlugin(EssentialsPlugin);
-pane.element.parentElement!.style.width = '380px';
-
-const fpsGraph: any = pane.addBlade({
-	view: 'fpsgraph',
-	label: undefined,
-	rows: 4,
 });
 
-const bloomPan = pane.addFolder({ title: '🌟 Bloom' });
-bloomPan
-	.addBinding(params, 'strength', {
-		max: 2,
-		min: 0,
-		step: 0.001,
-	})
-	.on('change', updateBloom);
-bloomPan
-	.addBinding(params, 'radius', {
-		max: 1,
-		min: 0,
-		step: 0.001,
-	})
-	.on('change', updateBloom);
-bloomPan
-	.addBinding(params, 'threshold', {
-		max: 1,
-		min: 0,
-		step: 0.001,
-	})
-	.on('change', updateBloom);
-bloomPan
-	.addButton({
-		title: 'Toogle Bloom',
-	})
-	.on('click', () => {
-		cubeIlluminated.layers.toggle(BOLOM_LAYER);
-		if (cubeIlluminated.layers.test(layers)) {
-			scene.add(rectLight);
-		} else {
-			scene.remove(rectLight);
-		}
-	});
+const glowCube = new Mesh(cubeGeometry, cubeMaterial);
+glowCube.position.x = -1.0;
+scene.add(glowCube);
 
 /**
  * Event
  */
 
-function composerRender(delta: number) {
-	scene.traverse((obj) => {
-		if (obj instanceof Mesh) {
-			darkenNonBloomed(obj);
-		}
-	});
-	scene.background = null;
-	rectLight.intensity = 0;
-	axesHelper.visible = false;
-	// Bloom scene render
-	bloomComposer.render(delta);
-
-	scene.traverse((obj) => {
-		if (obj instanceof Mesh) {
-			restoreMaterial(obj);
-		}
-	});
-	scene.background = environment;
-	axesHelper.visible = true;
-	rectLight.intensity = 5.0;
-	finalComposer.render(delta);
-}
-
 function render() {
-	fpsGraph.begin();
-
 	// Time
 	const delta = clock.getDelta();
 
 	// Render
-	composerRender(delta);
-
-	cube.visible = false;
-	cubeCamera.position.copy(cube.position);
-	cubeCamera.update(renderer, scene);
-	cube.visible = true;
+	composer.render();
 
 	// Update
 	controls.update(delta);
 	controls2.update();
 
-	// Animation loop
+	// Animation
 	requestAnimationFrame(render);
-
-	fpsGraph.end();
 }
 render();
 
 function resize() {
-	sizes.width = window.innerWidth;
-	sizes.height = window.innerHeight;
-	sizes.pixelratio = Math.min(2.0, window.devicePixelRatio);
+	size.width = window.innerWidth;
+	size.height = window.innerHeight;
 
-	renderer.setSize(sizes.width, sizes.height);
-	bloomComposer.setSize(sizes.width, sizes.height);
-	finalComposer.setSize(sizes.width, sizes.height);
+	renderer.setSize(size.width, size.height);
+	composer.setSize(size.width, size.height);
+	bloomComposer.setSize(size.width, size.height);
 
-	camera.aspect = sizes.width / sizes.height;
+	camera.aspect = size.width / size.height;
 	camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize);
-
-function darkenNonBloomed(obj: Mesh) {
-	if (obj.isMesh && layers.test(obj.layers) === false) {
-		materials[obj.uuid] = obj.material;
-		obj.material = darkMaterial;
-	}
-}
-
-function restoreMaterial(obj: Mesh) {
-	if (materials[obj.uuid]) {
-		obj.material = materials[obj.uuid];
-		delete materials[obj.uuid];
-	}
-}
