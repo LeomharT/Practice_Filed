@@ -3,6 +3,7 @@ import {
 	BoxGeometry,
 	Clock,
 	Color,
+	EquirectangularReflectionMapping,
 	Layers,
 	Material,
 	MathUtils,
@@ -26,6 +27,7 @@ import {
 	OutputPass,
 	RectAreaLightHelper,
 	RenderPass,
+	RGBELoader,
 	ShaderPass,
 	TrackballControls,
 	UnrealBloomPass,
@@ -55,9 +57,14 @@ layer.set(BLOOM_LAYER);
 const gltfLoader = new GLTFLoader();
 gltfLoader.setPath('/src/assets/models/');
 
+const rgbeLoader = new RGBELoader();
+rgbeLoader.setPath('/src/assets/hdr/');
+
 /**
  * Models
  */
+const hdrTexture = await rgbeLoader.loadAsync('rural_evening_road_1k.hdr');
+hdrTexture.mapping = EquirectangularReflectionMapping;
 
 /**
  * Basic
@@ -72,7 +79,8 @@ renderer.setPixelRatio(window.devicePixelRatio);
 el.append(renderer.domElement);
 
 const scene = new Scene();
-scene.background = new Color('#1e1e1e');
+scene.backgroundIntensity = 0.3;
+scene.environmentIntensity = 0.3;
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
 camera.position.set(3, 3, 3);
@@ -182,6 +190,7 @@ rectLight.position.x += 0.5001;
 scene.add(rectLight);
 
 const rectLightHelper = new RectAreaLightHelper(rectLight);
+rectLightHelper.visible = false;
 scene.add(rectLightHelper);
 
 /**
@@ -222,8 +231,14 @@ bloomP
 
 		if (layer.test(glowCube.layers)) {
 			rectLight.visible = true;
+
+			cubeMaterial.color = new Color(0x000000);
+			cubeMaterial.emissive = lightColor;
 		} else {
 			rectLight.visible = false;
+
+			cubeMaterial.color = lightColor;
+			cubeMaterial.emissive = new Color(0x000000);
 		}
 	});
 
@@ -234,13 +249,15 @@ bloomP
 function renderComposer() {
 	// Bloom composer
 	scene.traverse(darkenMaterial);
-	scene.background = new Color('#000000');
+	scene.background = null;
+	scene.environment = null;
 	rectLight.intensity = 0.0;
 
 	bloomComposer.render();
 
 	scene.traverse(restoreMaterial);
-	scene.background = new Color('#1e1e1e');
+	scene.background = hdrTexture;
+	scene.environment = hdrTexture;
 	rectLight.intensity = 5.0;
 
 	// Final composer
