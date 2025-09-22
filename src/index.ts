@@ -213,6 +213,20 @@ bloomP
 	})
 	.on('change', updateBloom);
 
+bloomP
+	.addButton({
+		title: 'Toggle',
+	})
+	.on('click', () => {
+		glowCube.layers.toggle(BLOOM_LAYER);
+
+		if (layer.test(glowCube.layers)) {
+			rectLight.visible = true;
+		} else {
+			rectLight.visible = false;
+		}
+	});
+
 /**
  * Event
  */
