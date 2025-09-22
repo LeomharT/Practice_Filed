@@ -1,4 +1,5 @@
 import {
+	AmbientLight,
 	BoxGeometry,
 	Clock,
 	Color,
@@ -10,6 +11,7 @@ import {
 	MeshStandardMaterial,
 	Object3D,
 	PerspectiveCamera,
+	RectAreaLight,
 	Scene,
 	ShaderMaterial,
 	SphereGeometry,
@@ -22,6 +24,7 @@ import {
 	GLTFLoader,
 	OrbitControls,
 	OutputPass,
+	RectAreaLightHelper,
 	RenderPass,
 	ShaderPass,
 	TrackballControls,
@@ -105,7 +108,7 @@ const materials: Record<string, Material> = {};
 const renderScene = new RenderPass(scene, camera);
 
 const bloomPass = new UnrealBloomPass(
-	new Vector2(size.width, size.height),
+	new Vector2(size.width / 2, size.height / 2),
 	params.strength,
 	params.radius,
 	params.threshold
@@ -168,6 +171,19 @@ glowCube.position.x = -1.0;
 glowCube.layers.enable(BLOOM_LAYER);
 scene.add(glowCube);
 
+// Light
+const ambientLight = new AmbientLight(0xffffff);
+scene.add(ambientLight);
+
+const rectLight = new RectAreaLight(lightColor, 0.0, 1, 1);
+rectLight.rotation.y = -Math.PI / 2;
+rectLight.position.copy(glowCube.position);
+rectLight.position.x += 0.5001;
+scene.add(rectLight);
+
+const rectLightHelper = new RectAreaLightHelper(rectLight);
+scene.add(rectLightHelper);
+
 /**
  * Pane
  */
@@ -205,11 +221,13 @@ function renderComposer() {
 	// Bloom composer
 	scene.traverse(darkenMaterial);
 	scene.background = new Color('#000000');
+	rectLight.intensity = 0.0;
 
 	bloomComposer.render();
 
 	scene.traverse(restoreMaterial);
 	scene.background = new Color('#1e1e1e');
+	rectLight.intensity = 5.0;
 
 	// Final composer
 	composer.render();
