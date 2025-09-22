@@ -3,13 +3,17 @@ import {
 	Clock,
 	Color,
 	Layers,
+	Material,
 	MathUtils,
 	Mesh,
+	MeshBasicMaterial,
 	MeshStandardMaterial,
+	Object3D,
 	PerspectiveCamera,
 	Scene,
 	ShaderMaterial,
 	SphereGeometry,
+	Uniform,
 	Vector2,
 	WebGLRenderer,
 } from 'three';
@@ -23,6 +27,9 @@ import {
 	TrackballControls,
 	UnrealBloomPass,
 } from 'three/examples/jsm/Addons.js';
+import { Pane } from 'tweakpane';
+import bloomFragmentShader from './shader/bloom/fragment.glsl?raw';
+import bloomVertexShader from './shader/bloom/vertex.glsl?raw';
 import './style.css';
 
 /**
@@ -86,10 +93,13 @@ const clock = new Clock();
  */
 const params = {
 	threshold: 0,
-	strength: 1,
+	strength: 0.5,
 	radius: 0.5,
 	exposure: 1,
 };
+
+const darkMaterial = new MeshBasicMaterial({ color: 'black' });
+const materials: Record<string, Material> = {};
 
 // Pass
 const renderScene = new RenderPass(scene, camera);
@@ -105,13 +115,24 @@ function updateBloom() {
 	bloomPass.radius = params.radius;
 	bloomPass.threshold = params.threshold;
 }
-const mixPass = new ShaderPass(new ShaderMaterial({}));
-const outputPass = new OutputPass();
 
 const bloomComposer = new EffectComposer(renderer);
 bloomComposer.renderToScreen = false;
 bloomComposer.addPass(renderScene);
 bloomComposer.addPass(bloomPass);
+
+const mixPass = new ShaderPass(
+	new ShaderMaterial({
+		vertexShader: bloomVertexShader,
+		fragmentShader: bloomFragmentShader,
+		uniforms: {
+			uBaseTexture: new Uniform(null),
+			uBloomTexture: new Uniform(bloomComposer.renderTarget2.texture),
+		},
+	}),
+	'uBaseTexture'
+);
+const outputPass = new OutputPass();
 
 const composer = new EffectComposer(renderer);
 composer.addPass(renderScene);
@@ -144,18 +165,62 @@ const cubeMaterial = new MeshStandardMaterial({
 
 const glowCube = new Mesh(cubeGeometry, cubeMaterial);
 glowCube.position.x = -1.0;
+glowCube.layers.enable(BLOOM_LAYER);
 scene.add(glowCube);
+
+/**
+ * Pane
+ */
+const pane = new Pane({ title: 'Debug Params' });
+pane.element.parentElement!.style.width = '380px';
+
+const bloomP = pane.addFolder({ title: '✨ Bloom' });
+bloomP
+	.addBinding(params, 'strength', {
+		min: 0,
+		max: 3,
+		step: 0.001,
+	})
+	.on('change', updateBloom);
+bloomP
+	.addBinding(params, 'radius', {
+		min: 0,
+		max: 1,
+		step: 0.001,
+	})
+	.on('change', updateBloom);
+bloomP
+	.addBinding(params, 'threshold', {
+		min: 0,
+		max: 1,
+		step: 0.001,
+	})
+	.on('change', updateBloom);
 
 /**
  * Event
  */
+
+function renderComposer() {
+	// Bloom composer
+	scene.traverse(darkenMaterial);
+	scene.background = new Color('#000000');
+
+	bloomComposer.render();
+
+	scene.traverse(restoreMaterial);
+	scene.background = new Color('#1e1e1e');
+
+	// Final composer
+	composer.render();
+}
 
 function render() {
 	// Time
 	const delta = clock.getDelta();
 
 	// Render
-	composer.render();
+	renderComposer();
 
 	// Update
 	controls.update(delta);
@@ -178,3 +243,19 @@ function resize() {
 	camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize);
+
+function darkenMaterial(obj: Object3D) {
+	if (obj instanceof Mesh && layer.test(obj.layers) === false) {
+		materials[obj.uuid] = obj.material;
+		obj.material = darkMaterial;
+	}
+}
+
+function restoreMaterial(obj: Object3D) {
+	if (obj instanceof Mesh) {
+		if (materials[obj.uuid]) {
+			obj.material = materials[obj.uuid];
+			delete materials[obj.uuid];
+		}
+	}
+}
