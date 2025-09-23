@@ -39,9 +39,12 @@ import bloomVertexShader from './shader/bloom/vertex.glsl?raw';
 import disslutionFragmentShader from './shader/disslution/fragment.glsl?raw';
 import disslutionVertexShader from './shader/disslution/vertex.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
+import simplex4DNoise from './shader/include/simplex4DNoise.glsl?raw';
+
 import './style.css';
 
 (ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
+(ShaderChunk as any)['simplex4DNoise'] = simplex4DNoise;
 
 /**
  * Variables
@@ -178,6 +181,7 @@ const uniforms = {
 	uColor: new Uniform(lightColor),
 	uFrequency: new Uniform(0.85),
 	uProgress: new Uniform(-1.0),
+	uTime: new Uniform(0.0),
 };
 
 const cubeGeometry = new BoxGeometry(1, 1, 1);
@@ -187,7 +191,7 @@ const cubeMaterial = new ShaderMaterial({
 	uniforms,
 });
 
-const glowCube = new Mesh(cubeGeometry, cubeMaterial);
+const glowCube = new Mesh(sphereGeometry, cubeMaterial);
 glowCube.layers.enable(BLOOM_LAYER);
 scene.add(glowCube);
 
@@ -297,6 +301,7 @@ function render() {
 	// Update
 	controls.update(delta);
 	controls2.update();
+	uniforms.uTime.value += 0.001;
 
 	// Animation
 	requestAnimationFrame(render);
