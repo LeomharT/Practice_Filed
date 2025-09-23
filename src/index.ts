@@ -14,6 +14,7 @@ import {
 	PerspectiveCamera,
 	RectAreaLight,
 	Scene,
+	ShaderChunk,
 	ShaderMaterial,
 	SphereGeometry,
 	Uniform,
@@ -35,7 +36,12 @@ import {
 import { Pane } from 'tweakpane';
 import bloomFragmentShader from './shader/bloom/fragment.glsl?raw';
 import bloomVertexShader from './shader/bloom/vertex.glsl?raw';
+import disslutionFragmentShader from './shader/disslution/fragment.glsl?raw';
+import disslutionVertexShader from './shader/disslution/vertex.glsl?raw';
+import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
 import './style.css';
+
+(ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
 
 /**
  * Variables
@@ -79,8 +85,8 @@ renderer.setPixelRatio(window.devicePixelRatio);
 el.append(renderer.domElement);
 
 const scene = new Scene();
-scene.backgroundIntensity = 0.3;
-scene.environmentIntensity = 0.3;
+scene.backgroundIntensity = 0.125;
+scene.environmentIntensity = 0.125;
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
 camera.position.set(3, 3, 3);
@@ -103,7 +109,7 @@ const clock = new Clock();
  * Post processing
  */
 const params = {
-	threshold: 0,
+	threshold: 0.9,
 	strength: 0.5,
 	radius: 0.5,
 	exposure: 1,
@@ -154,28 +160,34 @@ composer.addPass(outputPass);
  * World
  */
 
-const sphereGeometry = new SphereGeometry(0.5, 32, 32);
+const sphereGeometry = new SphereGeometry(2, 32, 32);
 const sphereMaterial = new MeshStandardMaterial({
 	color: '#B6CEB4',
 });
 
 const sphere = new Mesh(sphereGeometry, sphereMaterial);
 sphere.position.x = 1.0;
-scene.add(sphere);
 
 const lightColor = new Color(
-	MathUtils.randFloat(0, 1),
-	MathUtils.randFloat(0, 1),
-	MathUtils.randFloat(0, 1)
+	MathUtils.randFloat(0.0, 0.89),
+	MathUtils.randFloat(0.0, 0.89),
+	MathUtils.randFloat(0.0, 0.89)
 );
 
+const uniforms = {
+	uColor: new Uniform(lightColor),
+	uFrequency: new Uniform(0.85),
+	uProgress: new Uniform(-1.0),
+};
+
 const cubeGeometry = new BoxGeometry(1, 1, 1);
-const cubeMaterial = new MeshStandardMaterial({
-	emissive: lightColor,
+const cubeMaterial = new ShaderMaterial({
+	vertexShader: disslutionVertexShader,
+	fragmentShader: disslutionFragmentShader,
+	uniforms,
 });
 
-const glowCube = new Mesh(cubeGeometry, cubeMaterial);
-glowCube.position.x = -1.0;
+const glowCube = new Mesh(sphereGeometry, cubeMaterial);
 glowCube.layers.enable(BLOOM_LAYER);
 scene.add(glowCube);
 
@@ -221,7 +233,6 @@ bloomP
 		step: 0.001,
 	})
 	.on('change', updateBloom);
-
 bloomP
 	.addButton({
 		title: 'Toggle',
@@ -232,16 +243,27 @@ bloomP
 		if (layer.test(glowCube.layers)) {
 			rectLight.visible = true;
 
-			cubeMaterial.color = new Color(0x000000);
-			cubeMaterial.emissive = lightColor;
+			// cubeMaterial.color = new Color(0x000000);
+			// cubeMaterial.emissive = lightColor;
 		} else {
 			rectLight.visible = false;
 
-			cubeMaterial.color = lightColor;
-			cubeMaterial.emissive = new Color(0x000000);
+			// cubeMaterial.color = lightColor;
+			// cubeMaterial.emissive = new Color(0x000000);
 		}
 	});
-
+pane.addBinding(uniforms.uFrequency, 'value', {
+	label: 'Frequency',
+	min: 0,
+	max: 1,
+	step: 0.001,
+});
+pane.addBinding(uniforms.uProgress, 'value', {
+	label: 'Progress',
+	min: -1,
+	max: 1,
+	step: 0.001,
+});
 /**
  * Event
  */
