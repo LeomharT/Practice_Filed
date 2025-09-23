@@ -187,7 +187,7 @@ const cubeMaterial = new ShaderMaterial({
 	uniforms,
 });
 
-const glowCube = new Mesh(sphereGeometry, cubeMaterial);
+const glowCube = new Mesh(cubeGeometry, cubeMaterial);
 glowCube.layers.enable(BLOOM_LAYER);
 scene.add(glowCube);
 
@@ -264,6 +264,7 @@ pane.addBinding(uniforms.uProgress, 'value', {
 	max: 1,
 	step: 0.001,
 });
+
 /**
  * Event
  */
@@ -330,3 +331,21 @@ function restoreMaterial(obj: Object3D) {
 		}
 	}
 }
+
+const ENUMS = {
+	CAR: 'car_xxx_001_123456',
+	EVENT_NAME_MOUSE_CLICK: '',
+} as const;
+
+const Labels = [ENUMS.CAR, 'phone', 'house', 'money'] as const;
+
+type TpyeObj = {
+	label: (typeof Labels)[number];
+	value: string;
+};
+
+const obj: TpyeObj[] = [
+	{ label: ENUMS.CAR, value: 'xiaomi' },
+	{ label: 'phone', value: 'iphone' },
+	{ label: 'money', value: '$12' },
+];

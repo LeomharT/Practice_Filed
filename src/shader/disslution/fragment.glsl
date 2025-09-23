@@ -10,10 +10,11 @@ uniform vec3 uColor;
 
 void main() {
 
-    vec3  color           = uColor;
-    vec3  dsiilutionColor = vec3(1.0, 0.05, 0.0);
+    vec3  color     = uColor;
+    float edgeWidth = 0.08;
+    
+    vec3 dsiilutionColor = vec3(1.0, 0.05, 0.0);
     dsiilutionColor *= 4.0;
-    float edgeWidth       = 0.08;
 
     float noise = snoise(vPosition * uFrequency);
 
