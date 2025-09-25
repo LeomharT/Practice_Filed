@@ -1,4 +1,3 @@
-
 uniform sampler2D uBaseTexture;
 uniform sampler2D uBloomTexture;
 
