@@ -1,35 +1,25 @@
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import {
-	AxesHelper,
 	Clock,
-	EquirectangularReflectionMapping,
-	Layers,
-	Material,
+	Color,
+	IcosahedronGeometry,
 	Mesh,
 	MeshBasicMaterial,
-	MeshStandardMaterial,
-	Object3D,
 	PerspectiveCamera,
 	Scene,
 	ShaderMaterial,
+	SphereGeometry,
+	Spherical,
+	SRGBColorSpace,
+	TextureLoader,
 	Uniform,
-	Vector2,
+	Vector3,
 	WebGLRenderer,
 } from 'three';
-import {
-	EffectComposer,
-	GLTFLoader,
-	OrbitControls,
-	OutputPass,
-	RenderPass,
-	RGBELoader,
-	ShaderPass,
-	TrackballControls,
-	UnrealBloomPass,
-} from 'three/examples/jsm/Addons.js';
+import { OrbitControls, TrackballControls } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
-import bloomFragmentShader from './shader/bloom/fragment.glsl?raw';
-import bloomVertexShader from './shader/bloom/vertex.glsl?raw';
+import earthFragmentShader from './shader/earth/fragment.glsl?raw';
+import earthVertexShader from './shader/earth/vertex.glsl?raw';
 import './style.css';
 
 /**
@@ -43,37 +33,26 @@ const size = {
 	pixelRatio: Math.min(2.0, window.devicePixelRatio),
 };
 
-const BLOOM_LAYER = 1;
-const layer = new Layers();
-layer.set(BLOOM_LAYER);
-
-const darkMaterial = new MeshBasicMaterial({ color: 0x000000 });
-const materials: Record<string, Material> = {};
-
-const params = {
-	strength: 0.5,
-	radius: 0.5,
-	threshold: 0.0,
-};
-
 /**
  * Loader
  */
 
-const rgbeLoader = new RGBELoader();
-rgbeLoader.setPath('/src/assets/hdr/');
-
-const gltfLoader = new GLTFLoader();
-gltfLoader.setPath('/src/assets/models/');
+const textureLoader = new TextureLoader();
+textureLoader.setPath('/src/assets/textures/');
 
 /**
  * Textures
  */
 
-const environment = await rgbeLoader.loadAsync(
-	'cobblestone_street_night_1k.hdr'
-);
-environment.mapping = EquirectangularReflectionMapping;
+const earthDayMapTexture = textureLoader.load('2k_earth_daymap.jpg');
+earthDayMapTexture.colorSpace = SRGBColorSpace;
+earthDayMapTexture.anisotropy = 8;
+
+const earthNightMapTexture = textureLoader.load('2k_earth_nightmap.jpg');
+earthNightMapTexture.colorSpace = SRGBColorSpace;
+earthNightMapTexture.anisotropy = 8;
+
+const specularCloudTexture = textureLoader.load('specularClouds.jpg');
 
 /**
  * Basic
@@ -88,9 +67,7 @@ renderer.setPixelRatio(size.pixelRatio);
 el.append(renderer.domElement);
 
 const scene = new Scene();
-scene.background = environment;
-scene.environment = environment;
-scene.environmentIntensity = 0.5;
+scene.background = new Color('#1e1e1e');
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
 camera.position.set(3, 3, 3);
@@ -110,77 +87,48 @@ controls2.noZoom = false;
 const clock = new Clock();
 
 /**
- * Post progressing
- */
-
-const renderScene = new RenderPass(scene, camera);
-
-const bloomPass = new UnrealBloomPass(
-	new Vector2(size.width / 2, size.height / 2),
-	params.strength,
-	params.radius,
-	params.threshold
-);
-function updateBloom() {
-	bloomPass.strength = params.strength;
-	bloomPass.radius = params.radius;
-	bloomPass.threshold = params.threshold;
-}
-
-const bloomComposer = new EffectComposer(renderer);
-bloomComposer.renderToScreen = false;
-bloomComposer.setSize(size.width, size.height);
-
-bloomComposer.addPass(renderScene);
-bloomComposer.addPass(bloomPass);
-
-const mixPass = new ShaderPass(
-	new ShaderMaterial({
-		vertexShader: bloomVertexShader,
-		fragmentShader: bloomFragmentShader,
-		uniforms: {
-			uBaseTexture: new Uniform(null),
-			uBloomTexture: new Uniform(bloomComposer.renderTarget2.texture),
-		},
-	}),
-	'uBaseTexture'
-);
-
-const outputPass = new OutputPass();
-
-const composer = new EffectComposer(renderer);
-composer.setSize(size.width, size.height);
-composer.setPixelRatio(size.pixelRatio);
-composer.addPass(renderScene);
-composer.addPass(mixPass);
-composer.addPass(outputPass);
-
-/**
  * World
  */
 
-const ROSCarModel = await gltfLoader.loadAsync('/ROS_CAR.glb');
-const ROS_CAR = ROSCarModel.scene;
+const uniforms = {
+	uSunDirection: new Uniform(new Vector3()),
+	uEarthDayMapTexture: new Uniform(earthDayMapTexture),
+	uEarthNightMapTexture: new Uniform(earthNightMapTexture),
+	uSpecularCloudTexture: new Uniform(specularCloudTexture),
+	uAtmosphereDayColor: new Uniform(new Color('#00aaff')),
+	uAtmosphereTwilightColor: new Uniform(new Color('#ff6600')),
+};
 
-const lightMaterial = new MeshStandardMaterial({
-	color: 'red',
+const sunSpherical = new Spherical(1, Math.PI / 2, 0.5);
+const sunDirection = new Vector3();
+
+const sunGeometry = new IcosahedronGeometry(0.1, 3);
+const sunMaterial = new MeshBasicMaterial({ color: 'yellow' });
+
+const sun = new Mesh(sunGeometry, sunMaterial);
+scene.add(sun);
+
+function updateSun() {
+	// Direction
+	sunDirection.setFromSpherical(sunSpherical);
+
+	// Uniform
+	uniforms.uSunDirection.value.copy(sunDirection);
+
+	// Sun position
+	sun.position.copy(sunDirection.clone().multiplyScalar(5.0));
+}
+updateSun();
+
+const earthGeometry = new SphereGeometry(2, 64, 64);
+const earthMaterial = new ShaderMaterial({
+	uniforms,
+	vertexShader: earthVertexShader,
+	fragmentShader: earthFragmentShader,
 });
 
-const leftLight = ROS_CAR.getObjectByName('左灯');
-const rightLight = ROS_CAR.getObjectByName('右灯');
-
-if (leftLight instanceof Mesh && rightLight instanceof Mesh) {
-	leftLight.layers.enable(BLOOM_LAYER);
-	rightLight.layers.enable(BLOOM_LAYER);
-
-	leftLight.material = lightMaterial;
-	rightLight.material = lightMaterial;
-}
-
-scene.add(ROS_CAR);
-
-const axesHelper = new AxesHelper();
-scene.add(axesHelper);
+const earth = new Mesh(earthGeometry, earthMaterial);
+scene.add(earth);
 
 /**
  * Pane
@@ -197,45 +145,23 @@ const fpsGraph: any = pane.addBlade({
 	rows: 3,
 });
 
-const bP = pane.addFolder({ title: 'Bloom' });
-bP.addBinding(params, 'strength', {
-	max: 2,
-	min: 0,
-	step: 0.001,
-}).on('change', updateBloom);
-bP.addBinding(params, 'radius', {
-	max: 1,
-	min: 0,
-	step: 0.001,
-}).on('change', updateBloom);
-bP.addBinding(params, 'threshold', {
-	max: 1,
-	min: 0,
-	step: 0.001,
-}).on('change', updateBloom);
-bP.addBinding(lightMaterial, 'color', {
-	color: {
-		type: 'float',
-	},
-});
-
-bP.addButton({ title: 'Toggle' });
-
+pane
+	.addBinding(sunSpherical, 'theta', {
+		min: -Math.PI,
+		max: Math.PI,
+		step: 0.001,
+	})
+	.on('change', updateSun);
+pane
+	.addBinding(sunSpherical, 'phi', {
+		min: 0,
+		max: Math.PI,
+		step: 0.001,
+	})
+	.on('change', updateSun);
 /**
  * Event
  */
-
-function composerRender() {
-	scene.traverse(darkenMaterials);
-	scene.background = null;
-	axesHelper.visible = false;
-	bloomComposer.render();
-
-	scene.traverse(restoreMaterials);
-	scene.background = environment;
-	axesHelper.visible = true;
-	composer.render();
-}
 
 function render() {
 	fpsGraph.begin();
@@ -244,11 +170,12 @@ function render() {
 	const delta = clock.getDelta();
 
 	// Render
-	composerRender();
+	renderer.render(scene, camera);
 
 	// Update
 	controls.update(delta);
 	controls2.update();
+	earth.rotation.y += 0.001;
 
 	// Animation
 	requestAnimationFrame(render);
@@ -262,23 +189,8 @@ function resize() {
 	size.height = window.innerHeight;
 
 	renderer.setSize(size.width, size.height);
-	composer.setSize(size.width, size.height);
 
 	camera.aspect = size.width / size.height;
 	camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize);
-
-function darkenMaterials(obj: Object3D) {
-	if (obj instanceof Mesh && layer.test(obj.layers) === false) {
-		materials[obj.uuid] = obj.material;
-		obj.material = darkMaterial;
-	}
-}
-
-function restoreMaterials(obj: Object3D) {
-	if (obj instanceof Mesh && materials[obj.uuid]) {
-		obj.material = materials[obj.uuid];
-		delete materials[obj.uuid];
-	}
-}
