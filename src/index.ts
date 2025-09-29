@@ -1,5 +1,6 @@
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import {
+	BackSide,
 	Clock,
 	Color,
 	IcosahedronGeometry,
@@ -21,7 +22,8 @@ import { Pane } from 'tweakpane';
 import earthFragmentShader from './shader/earth/fragment.glsl?raw';
 import earthVertexShader from './shader/earth/vertex.glsl?raw';
 import './style.css';
-
+import atmosphereFragmentShader from './shader/atmosphere/fragment.glsl?raw';
+import atmosphereVertexShader from './shader/atmosphere/vertex.glsl?raw';
 /**
  * Variables
  */
@@ -129,6 +131,19 @@ const earthMaterial = new ShaderMaterial({
 
 const earth = new Mesh(earthGeometry, earthMaterial);
 scene.add(earth);
+
+const atmosphereGeometry = earthGeometry.clone();
+const atmosphereMaterial = new ShaderMaterial({
+	uniforms,
+	vertexShader: atmosphereVertexShader,
+	fragmentShader: atmosphereFragmentShader,
+	transparent: true,
+	side: BackSide,
+});
+
+const atmosphere = new Mesh(atmosphereGeometry, atmosphereMaterial);
+atmosphere.scale.setScalar(1.04);
+scene.add(atmosphere);
 
 /**
  * Pane
