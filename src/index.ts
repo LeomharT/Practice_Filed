@@ -13,13 +13,17 @@ import {
 	ShaderMaterial,
 	SpotLight,
 	TextureLoader,
+	TorusGeometry,
 	WebGLRenderer,
 } from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import {
+	EffectComposer,
 	GLTFLoader,
 	OrbitControls,
+	OutputPass,
 	Reflector,
+	RenderPass,
 } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
 import floorFragmentShader from './shader/floor/fragment.glsl?raw';
@@ -89,6 +93,18 @@ controls.enableDamping = true;
 const clock = new Clock();
 
 /**
+ * Post processing
+ */
+
+const renderScene = new RenderPass(scene, camera);
+
+const outputPass = new OutputPass();
+
+const composer = new EffectComposer(renderer);
+composer.addPass(renderScene);
+composer.addPass(outputPass);
+
+/**
  * World
  */
 
@@ -105,7 +121,10 @@ scene.add(corvette);
 
 // Floor
 const floorGeometry = new PlaneGeometry(30, 30, 128, 128);
-const floorReflection = new Reflector(floorGeometry, {});
+const floorReflection = new Reflector(floorGeometry, {
+	textureWidth: sizes.width / 2,
+	textureHeight: sizes.height / 2,
+});
 floorReflection.rotation.x = -Math.PI / 2;
 floorReflection.position.y = -0.01;
 scene.add(floorReflection);
@@ -131,6 +150,24 @@ const floor = new Mesh(floorGeometry, floorMaterial);
 floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
 scene.add(floor);
+
+// Ring
+const ringCount = 14;
+const ringGap = 3.5;
+
+const ringGeometry = new TorusGeometry(3.35, 0.05, 10, 100);
+const ringMaterial = new MeshStandardMaterial({
+	color: '0x000000',
+});
+
+for (let i = 0; i < ringCount; i++) {
+	const ring = new Mesh(ringGeometry, ringMaterial.clone());
+
+	ring.castShadow = true;
+	ring.receiveShadow = true;
+
+	scene.add(ring);
+}
 
 /**
  * Lights
@@ -179,6 +216,10 @@ lightPane.addBinding(light1, 'color', {
  * Events
  */
 
+function composerRender() {
+	composer.render();
+}
+
 function render() {
 	fpsGraph.begin();
 
@@ -186,7 +227,7 @@ function render() {
 	const delta = clock.getDelta();
 
 	// Redner
-	renderer.render(scene, camera);
+	composerRender();
 
 	// Update
 	controls.update(delta);
