@@ -119,7 +119,7 @@ const scene = new Scene();
 scene.background = new Color('#000000');
 
 const camera = new PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000);
-camera.position.set(6, 6, 6);
+camera.position.set(3, 3, 3);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -188,13 +188,17 @@ composer.addPass(outputPass);
 
 // Corvette
 const corvette = corvetteModel.scene;
-corvette.scale.setScalar(0.008);
+corvette.scale.setScalar(0.005);
 corvette.traverse((obj) => {
 	if (obj instanceof Mesh && obj.material instanceof MeshStandardMaterial) {
 		obj.castShadow = true;
 		obj.receiveShadow = true;
+
+		obj.material.envMap = cubeRenderTarget.texture;
+		obj.material.envMapIntensity = 10.0;
 	}
 });
+scene.add(corvette);
 
 const sphere = new Mesh(
 	new SphereGeometry(1, 32, 32),
@@ -202,6 +206,7 @@ const sphere = new Mesh(
 		color: 0x000000,
 		roughness: 0.0,
 		envMap: cubeRenderTarget.texture,
+		envMapIntensity: 10.0,
 	})
 );
 sphere.position.y = 1.0;
