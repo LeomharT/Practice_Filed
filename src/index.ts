@@ -218,7 +218,7 @@ const uniforms = {
 		.textureMatrix,
 	uNormalMapCustom: new Uniform(normalMap),
 	uRoughnessMapCustom: new Uniform(roughnessMap),
-	uNormalBias: new Uniform(0.06),
+	uNormalBias: new Uniform(0.02),
 };
 
 const floorMaterial = new CustomShaderMaterial({
