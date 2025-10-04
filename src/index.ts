@@ -17,7 +17,6 @@ import {
 	RepeatWrapping,
 	Scene,
 	ShaderMaterial,
-	SphereGeometry,
 	SpotLight,
 	TextureLoader,
 	TorusGeometry,
@@ -187,6 +186,8 @@ composer.addPass(outputPass);
  */
 
 // Corvette
+const corvetteWheels = [];
+
 const corvette = corvetteModel.scene;
 corvette.scale.setScalar(0.005);
 corvette.traverse((obj) => {
@@ -199,18 +200,6 @@ corvette.traverse((obj) => {
 	}
 });
 scene.add(corvette);
-
-const sphere = new Mesh(
-	new SphereGeometry(1, 32, 32),
-	new MeshStandardMaterial({
-		color: 0x000000,
-		roughness: 0.0,
-		envMap: cubeRenderTarget.texture,
-		envMapIntensity: 10.0,
-	})
-);
-sphere.position.y = 1.0;
-scene.add(sphere);
 
 // Floor
 const floorGeometry = new PlaneGeometry(30, 30, 128, 128);
@@ -229,6 +218,7 @@ const uniforms = {
 		.textureMatrix,
 	uNormalMapCustom: new Uniform(normalMap),
 	uRoughnessMapCustom: new Uniform(roughnessMap),
+	uNormalBias: new Uniform(0.06),
 };
 
 const floorMaterial = new CustomShaderMaterial({
@@ -336,6 +326,14 @@ bloomPane
 		step: 0.001,
 	})
 	.on('change', updateBloom);
+
+const floorPan = pane.addFolder({ title: 'Floor' });
+floorPan.addBinding(uniforms.uNormalBias, 'value', {
+	label: 'Normal Bias',
+	min: 0.0,
+	max: 0.3,
+	step: 0.0001,
+});
 
 /**
  * Events

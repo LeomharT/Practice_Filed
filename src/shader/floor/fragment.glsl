@@ -2,6 +2,8 @@ uniform sampler2D uReflectionTexture;
 uniform sampler2D uNormalMapCustom;
 uniform sampler2D uRoughnessMapCustom;
 
+uniform float uNormalBias;
+
 varying vec4 vReflectionUv;
 varying vec2 vUv;
 
@@ -13,7 +15,7 @@ void main() {
     vec3 _mapN = texture2D(uNormalMapCustom, uv).xyz * 2.0 - 1.0;
     vec4 _mapR = texture2D(uRoughnessMapCustom, uv);
     
-    vec2  uvOffset  = _mapN.xy * 0.02;
+    vec2  uvOffset  = _mapN.xy * uNormalBias;
     vec2  reflectUv = vReflectionUv.xy / vReflectionUv.w + uvOffset;
     float roughness = _mapR.r;
 
