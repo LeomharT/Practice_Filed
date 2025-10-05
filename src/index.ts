@@ -1,6 +1,7 @@
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import {
 	ACESFilmicToneMapping,
+	BoxGeometry,
 	Clock,
 	Color,
 	CubeCamera,
@@ -212,6 +213,7 @@ floorReflection.position.y = -0.01;
 scene.add(floorReflection);
 
 const uniforms = {
+	uTime: new Uniform(0),
 	uReflectionTexture: (floorReflection.material as ShaderMaterial).uniforms
 		.tDiffuse,
 	uTextureMatrix: (floorReflection.material as ShaderMaterial).uniforms
@@ -260,6 +262,9 @@ for (let i = 0; i < ringCount; i++) {
 }
 
 scene.add(rings);
+
+// Box
+const boxGeometry = new BoxGeometry();
 
 /**
  * Lights
@@ -396,6 +401,7 @@ function render(time: number = 0) {
 	controls.update(delta);
 	controls2.update();
 	cubeCamera.update(renderer, scene);
+	uniforms.uTime.value = time;
 	updateRings(time);
 
 	// Animation

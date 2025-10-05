@@ -3,6 +3,7 @@ uniform sampler2D uNormalMapCustom;
 uniform sampler2D uRoughnessMapCustom;
 
 uniform float uNormalBias;
+uniform float uTime;
 
 varying vec4 vReflectionUv;
 varying vec2 vUv;
@@ -12,6 +13,7 @@ void main() {
     uv *= 5.0;
     uv = fract(uv);
 
+    // Texture map
     vec3 _mapN = texture2D(uNormalMapCustom, uv).xyz * 2.0 - 1.0;
     vec4 _mapR = texture2D(uRoughnessMapCustom, uv);
     
@@ -26,6 +28,25 @@ void main() {
         reflectionTextureColor.rgb,
         roughness
     );
+
+    // Grid
+    vec2 girdUV = vUv;
+    girdUV.y -= uTime * 0.00003;
+    girdUV *= 15.0;
+    girdUV = fract(girdUV);
+
+    vec3  color     = vec3(0.0);
+    float lineWidth = 0.01;
+
+    if(girdUV.x < lineWidth || girdUV.x > 1.0 - lineWidth) {
+        color = vec3(1.0);
+    }
+    if(girdUV.y < lineWidth || girdUV.y > 1.0 - lineWidth) {
+        color = vec3(1.0);
+    }
+    
+
+    csm_DiffuseColor.rgb += color;
 
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
