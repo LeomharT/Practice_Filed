@@ -187,9 +187,18 @@ composer.addPass(outputPass);
  */
 
 // Corvette
-const corvetteWheels = [];
-
 const corvette = corvetteModel.scene;
+const corvetteWheels = [
+	corvette.getObjectByName('Rim_FL_Rim_0'),
+	corvette.getObjectByName('Rim_FR_Rim_0'),
+	corvette.getObjectByName('Rim_RL_Rim_0'),
+	corvette.getObjectByName('Rim_RR_Rim_0'),
+
+	corvette.getObjectByName('Tire_FL_TireMaterial_0'),
+	corvette.getObjectByName('Tire_FR_TireMaterial_0'),
+	corvette.getObjectByName('Tire_RL_TireMaterial_0'),
+	corvette.getObjectByName('Tire_RR_TireMaterial_0'),
+];
 corvette.scale.setScalar(0.005);
 corvette.traverse((obj) => {
 	if (obj instanceof Mesh && obj.material instanceof MeshStandardMaterial) {
@@ -378,6 +387,19 @@ function updateRings(time: number) {
 	}
 }
 
+function updateWhells(time: number) {
+	time *= 0.001;
+
+	const car = scene.getObjectByName('Sketchfab_Scene');
+	if (!car) return;
+
+	const group = car.children[0].children[0].children[0];
+	group.children[0].rotation.x = time;
+	group.children[2].rotation.x = time;
+	group.children[4].rotation.x = time;
+	group.children[6].rotation.x = time;
+}
+
 function composerRender() {
 	scene.traverse(darkenMaterial);
 
@@ -403,6 +425,7 @@ function render(time: number = 0) {
 	cubeCamera.update(renderer, scene);
 	uniforms.uTime.value = time;
 	updateRings(time);
+	updateWhells(time);
 
 	// Animation
 	requestAnimationFrame(render);

@@ -36,7 +36,7 @@ void main() {
     girdUV = fract(girdUV);
 
     vec3  color     = vec3(0.0);
-    float lineWidth = 0.01;
+    float lineWidth = 0.003;
 
     if(girdUV.x < lineWidth || girdUV.x > 1.0 - lineWidth) {
         color = vec3(1.0);
