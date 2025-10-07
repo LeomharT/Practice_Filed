@@ -274,6 +274,7 @@ scene.add(rings);
 
 // Box
 const boxGeometry = new BoxGeometry();
+const boxMaterial = new MeshStandardMaterial({});
 
 /**
  * Lights
