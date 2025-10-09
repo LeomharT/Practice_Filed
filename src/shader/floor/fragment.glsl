@@ -1,12 +1,20 @@
+varying vec2 vUv;
 
-uniform sampler2D uReflectionTexture;
-
-varying vec4 vReflectionUV;
 
 void main() {
-    vec2 reflectionUv           = vReflectionUV.xy / vReflectionUV.w;
-    vec4 reflectionTextureColor = texture2D(uReflectionTexture, reflectionUv);
+    vec2  uv               = vUv;
+    vec3  color            = vec3(1.0, 0.25, 0.752);
+    vec2  center           = vec2(0.5);
+    float distanceToCenter = distance(uv, center);
+    float edgeWidth        = 0.01;
 
+    if(distanceToCenter > 0.5) {
+        discard;
+    }
 
-    gl_FragColor = reflectionTextureColor;
+    if(distanceToCenter < 0.5 && distanceToCenter > 0.5 - edgeWidth) {
+        color = vec3(1.0);
+    }
+
+    gl_FragColor = vec4(color, 1.0);
 }
