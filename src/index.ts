@@ -1,4 +1,18 @@
-import { PerspectiveCamera, Scene, WebGLRenderer } from 'three';
+import {
+	Color,
+	IcosahedronGeometry,
+	Mesh,
+	MeshBasicMaterial,
+	PerspectiveCamera,
+	PlaneGeometry,
+	Scene,
+	ShaderMaterial,
+	WebGLRenderer,
+} from 'three';
+import { OrbitControls, Reflector } from 'three/examples/jsm/Addons.js';
+import floorFragmentShader from './shader/floor/fragment.glsl?raw';
+import floorVertexShader from './shader/floor/vertex.glsl?raw';
+import './style.css';
 
 const el = document.querySelector('#root') as HTMLDivElement;
 const size = {
@@ -20,14 +34,61 @@ renderer.setPixelRatio(size.pixelRatio);
 el.append(renderer.domElement);
 
 const scene = new Scene();
+scene.background = new Color('#1e1e1e');
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
 camera.position.set(2, 2, 2);
 camera.lookAt(scene.position);
 
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+
+/**
+ * World
+ */
+
+const floorGeometry = new PlaneGeometry(5, 5, 64, 64);
+
+const reflector = new Reflector(floorGeometry, {
+	textureWidth: size.width / 2,
+	textureHeight: size.height / 2,
+});
+reflector.rotation.x = -Math.PI / 2;
+scene.add(reflector);
+
+console.log(reflector);
+
+const uniforms = {
+	uReflectionTexture: (reflector.material as ShaderMaterial).uniforms.tDiffuse,
+	uTextureMatrix: (reflector.material as ShaderMaterial).uniforms.textureMatrix,
+};
+
+const floorMaterial = new ShaderMaterial({
+	uniforms,
+	vertexShader: floorVertexShader,
+	fragmentShader: floorFragmentShader,
+});
+
+const floor = new Mesh(floorGeometry, floorMaterial);
+floor.rotation.x = -Math.PI / 2;
+floor.position.y = 0.001;
+scene.add(floor);
+
+const testGeometry = new IcosahedronGeometry(0.1, 3);
+const testMaterial = new MeshBasicMaterial({
+	color: 'yellow',
+});
+
+const test = new Mesh(testGeometry, testMaterial);
+test.position.y = 0.5;
+scene.add(test);
+
 function render() {
 	// Render
 	renderer.render(scene, camera);
+
+	// Update
+	controls.update();
 
 	// Animation
 	requestAnimationFrame(render);
