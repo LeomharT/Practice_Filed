@@ -1,17 +1,22 @@
 import {
 	Color,
 	IcosahedronGeometry,
+	MathUtils,
 	Mesh,
 	MeshBasicMaterial,
 	PerspectiveCamera,
 	PlaneGeometry,
 	Scene,
 	ShaderMaterial,
+	Uniform,
 	WebGLRenderer,
+	WebGLRenderTarget,
 } from 'three';
 import { OrbitControls, Reflector } from 'three/examples/jsm/Addons.js';
 import floorFragmentShader from './shader/floor/fragment.glsl?raw';
 import floorVertexShader from './shader/floor/vertex.glsl?raw';
+import rainFragmentShader from './shader/rain/fragment.glsl?raw';
+import rainVertexShader from './shader/rain/vertex.glsl?raw';
 import './style.css';
 
 const el = document.querySelector('#root') as HTMLDivElement;
@@ -42,6 +47,10 @@ camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+
+const sceneRenderTarget = new WebGLRenderTarget(size.width, size.height, {
+	generateMipmaps: true,
+});
 
 /**
  * World
@@ -83,8 +92,42 @@ const test = new Mesh(testGeometry, testMaterial);
 test.position.y = 0.5;
 scene.add(test);
 
+const rainGeometry = new PlaneGeometry(1, 1);
+const rainMaterial = new ShaderMaterial({
+	uniforms: {
+		uScreenTexture: new Uniform(sceneRenderTarget.texture),
+	},
+	vertexShader: rainVertexShader,
+	fragmentShader: rainFragmentShader,
+});
+
+const rain = new Mesh(rainGeometry, rainMaterial);
+rain.position.set(
+	MathUtils.randFloat(0, 3),
+	MathUtils.randFloat(0, 3),
+	MathUtils.randFloat(0, 3)
+);
+scene.add(rain);
+
+function updateFrameTexture() {
+	floor.visible = false;
+	reflector.visible = false;
+	rain.visible = false;
+
+	renderer.setRenderTarget(sceneRenderTarget);
+
+	renderer.render(scene, camera);
+
+	renderer.setRenderTarget(null);
+
+	floor.visible = true;
+	reflector.visible = true;
+	rain.visible = true;
+}
+
 function render() {
 	// Render
+	updateFrameTexture();
 	renderer.render(scene, camera);
 
 	// Update
