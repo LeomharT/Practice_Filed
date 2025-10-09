@@ -1,14 +1,16 @@
 import {
 	Color,
-	DoubleSide,
 	Mesh,
+	MeshBasicMaterial,
 	PerspectiveCamera,
 	PlaneGeometry,
 	Scene,
 	ShaderMaterial,
+	Uniform,
 	WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import { Pane } from 'tweakpane';
 import floorFragmentShader from './shader/floor/fragment.glsl?raw';
 import floorVertexShader from './shader/floor/vertex.glsl?raw';
 import './style.css';
@@ -49,15 +51,29 @@ controls.enableDamping = true;
 const floorGeometry = new PlaneGeometry(5, 5, 256, 256);
 
 const floorMaterial = new ShaderMaterial({
+	uniforms: {
+		uColor: new Uniform(new Color('#22efe8')),
+		uEdgeColor: new Uniform(new Color('#25ffff')),
+	},
 	vertexShader: floorVertexShader,
 	fragmentShader: floorFragmentShader,
-	transparent: false,
-	side: DoubleSide,
+	transparent: true,
 });
 
 const floor = new Mesh(floorGeometry, floorMaterial);
 floor.rotation.x = -Math.PI / 2;
 scene.add(floor);
+
+const plane2 = new Mesh(
+	new PlaneGeometry(20.0, 20.0, 64, 64),
+	new MeshBasicMaterial()
+);
+plane2.position.y = -0.1;
+plane2.rotation.x = -Math.PI / 2.0;
+
+scene.add(plane2);
+
+const pane = new Pane({ title: 'Debug Params' });
 
 /**
  * Events

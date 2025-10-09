@@ -1,9 +1,12 @@
 varying vec2 vUv;
 
+uniform vec3 uColor;
+uniform vec3 uEdgeColor;
 
 void main() {
     vec2  uv               = vUv;
-    vec3  color            = vec3(1.0, 0.25, 0.752);
+    float alpha            = 0.0;
+    vec3  color            = vec3(0.0);
     vec2  center           = vec2(0.5);
     float distanceToCenter = distance(uv, center);
     float edgeWidth        = 0.01;
@@ -13,8 +16,28 @@ void main() {
     }
 
     if(distanceToCenter < 0.5 && distanceToCenter > 0.5 - edgeWidth) {
-        color = vec3(1.0);
+        color = uEdgeColor;
+        alpha = 1.0;
     }
 
-    gl_FragColor = vec4(color, 1.0);
+    // Gird
+    float girdWidth = 0.05;
+
+    vec2 girdUv = vUv;
+    girdUv *= 20.0;
+    girdUv = fract(girdUv);
+
+    if(girdUv.x < girdWidth) {
+        color = uColor;
+        alpha = 1.0;
+    }
+    if(girdUv.y < girdWidth) {
+        color = uColor;
+        alpha = 1.0;
+    }
+
+    gl_FragColor = vec4(color, alpha);
+
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
 }

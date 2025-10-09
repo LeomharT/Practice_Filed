@@ -4,18 +4,18 @@ void main() {
     float gravity          = 2.0;
     vec2  center           = vec2(0.5);
     float distanceToCenter = distance(uv, center);
-    float edgeWidth        = 0.01;
+    float edgeWidth        = 0.05;
     float edge             = 0.5 - edgeWidth;
 
-    vec3 displacementPosition = position;
+    vec3 displacement = position;
 
     if(distanceToCenter < edge) {
-        displacementPosition.z += pow(distanceToCenter * 2.0, 2.0);
+        displacement.z += pow(distanceToCenter * gravity, 2.0);
     }else{
-        displacementPosition.z += pow(edge * 2.0, 2.0);
+        displacement.z += pow(edge * gravity, 2.0);
     }
  
-    gl_Position = projectionMatrix * modelViewMatrix * vec4(displacementPosition, 1.0);
+    gl_Position = projectionMatrix * modelViewMatrix * vec4(displacement, 1.0);
 
     // Varying
     vUv = uv;
