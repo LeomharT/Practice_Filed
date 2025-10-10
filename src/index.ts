@@ -1,18 +1,23 @@
 import {
+	Clock,
 	Color,
+	IcosahedronGeometry,
 	Mesh,
 	MeshBasicMaterial,
 	PerspectiveCamera,
-	PlaneGeometry,
 	Scene,
 	ShaderMaterial,
+	SphereGeometry,
+	Spherical,
+	TextureLoader,
 	Uniform,
+	Vector3,
 	WebGLRenderer,
 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import { OrbitControls, TrackballControls } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
-import floorFragmentShader from './shader/floor/fragment.glsl?raw';
-import floorVertexShader from './shader/floor/vertex.glsl?raw';
+import earthFragmentShader from './shader/earth/fragment.glsl?raw';
+import earthVertexShader from './shader/earth/vertex.glsl?raw';
 import './style.css';
 
 const el = document.querySelector('#root') as HTMLDivElement;
@@ -21,6 +26,23 @@ const size = {
 	height: window.innerHeight,
 	pixelRatio: Math.min(2.0, window.devicePixelRatio),
 };
+
+/**
+ * Loader
+ */
+
+const textureLoader = new TextureLoader();
+textureLoader.setPath('/src/assets/textures');
+
+/**
+ * Textures
+ */
+
+const dayMapTexture = textureLoader.load('2k_earth_daymap.jpg');
+
+const nightMapTexture = textureLoader.load('2k_earth_nightmap.jpg');
+
+const specularCloudTexture = textureLoader.load('specularClouds.jpg');
 
 /**
  * Basic
@@ -38,53 +60,100 @@ const scene = new Scene();
 scene.background = new Color('#1e1e1e');
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(2, 2, 2);
+camera.position.set(3, 3, 3);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+controls.enablePan = false;
+
+const controls2 = new TrackballControls(camera, renderer.domElement);
+controls2.noPan = true;
+controls2.noRotate = true;
+controls2.noZoom = false;
+
+const clock = new Clock();
 
 /**
  * World
  */
+const uniforms = {
+	uSunDirection: new Uniform(new Vector3()),
 
-const floorGeometry = new PlaneGeometry(5, 5, 256, 256);
+	uDayMapTexture: new Uniform(dayMapTexture),
+	uNightMapTexture: new Uniform(nightMapTexture),
+	uSpecularCloudTexture: new Uniform(specularCloudTexture),
 
-const floorMaterial = new ShaderMaterial({
-	uniforms: {
-		uColor: new Uniform(new Color('#22efe8')),
-		uEdgeColor: new Uniform(new Color('#25ffff')),
-	},
-	vertexShader: floorVertexShader,
-	fragmentShader: floorFragmentShader,
-	transparent: true,
+	uAtmosphereDayColor: new Uniform(new Color('#00aaff')),
+	uAtmosphereTwilightColor: new Uniform(new Color('#ff6600')),
+};
+
+const sunDirection = new Vector3();
+const sunSpherical = new Spherical(1.0, Math.PI / 2, 0.5);
+
+const sunGeometry = new IcosahedronGeometry(0.1, 3);
+const sunMaterial = new MeshBasicMaterial({
+	color: 'yellow',
 });
 
-const floor = new Mesh(floorGeometry, floorMaterial);
-floor.rotation.x = -Math.PI / 2;
-scene.add(floor);
+const sun = new Mesh(sunGeometry, sunMaterial);
+scene.add(sun);
 
-const plane2 = new Mesh(
-	new PlaneGeometry(20.0, 20.0, 64, 64),
-	new MeshBasicMaterial()
-);
-plane2.position.y = -0.1;
-plane2.rotation.x = -Math.PI / 2.0;
+function updateSun() {
+	// Vertex
+	sunDirection.setFromSpherical(sunSpherical);
 
-scene.add(plane2);
+	// Uniform
+	uniforms.uSunDirection.value.copy(sunDirection);
+
+	// Position
+	sun.position.copy(sunDirection.clone().multiplyScalar(5.0));
+}
+updateSun();
+
+const earthGeometry = new SphereGeometry(2, 64, 64);
+const earthMaterial = new ShaderMaterial({
+	uniforms,
+	vertexShader: earthVertexShader,
+	fragmentShader: earthFragmentShader,
+});
+
+const earth = new Mesh(earthGeometry, earthMaterial);
+scene.add(earth);
 
 const pane = new Pane({ title: 'Debug Params' });
+pane.element.parentElement!.style.width = '380px';
+
+const sunP = pane.addFolder({ title: 'Sun' });
+sunP
+	.addBinding(sunSpherical, 'phi', {
+		min: 0,
+		max: Math.PI,
+		step: 0.001,
+	})
+	.on('change', updateSun);
+sunP
+	.addBinding(sunSpherical, 'theta', {
+		min: -Math.PI,
+		max: Math.PI,
+		step: 0.001,
+	})
+	.on('change', updateSun);
 
 /**
  * Events
  */
 
 function render() {
+	// Time
+	const delta = clock.getDelta();
+
 	// Render
 	renderer.render(scene, camera);
 
 	// Update
-	controls.update();
+	controls.update(delta);
+	controls2.update();
 
 	// Animation
 	requestAnimationFrame(render);
