@@ -9,6 +9,7 @@ import {
 	ShaderMaterial,
 	SphereGeometry,
 	Spherical,
+	SRGBColorSpace,
 	TextureLoader,
 	Uniform,
 	Vector3,
@@ -32,15 +33,19 @@ const size = {
  */
 
 const textureLoader = new TextureLoader();
-textureLoader.setPath('/src/assets/textures');
+textureLoader.setPath('/src/assets/textures/');
 
 /**
  * Textures
  */
 
 const dayMapTexture = textureLoader.load('2k_earth_daymap.jpg');
+dayMapTexture.colorSpace = SRGBColorSpace;
+dayMapTexture.anisotropy = 8;
 
 const nightMapTexture = textureLoader.load('2k_earth_nightmap.jpg');
+nightMapTexture.colorSpace = SRGBColorSpace;
+nightMapTexture.anisotropy = 8;
 
 const specularCloudTexture = textureLoader.load('specularClouds.jpg');
 
@@ -154,6 +159,7 @@ function render() {
 	// Update
 	controls.update(delta);
 	controls2.update();
+	earth.rotation.y += 0.001;
 
 	// Animation
 	requestAnimationFrame(render);
