@@ -1,4 +1,5 @@
 import {
+	BackSide,
 	Clock,
 	Color,
 	IcosahedronGeometry,
@@ -17,10 +18,11 @@ import {
 } from 'three';
 import { OrbitControls, TrackballControls } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
+import atmosphereFragmentShader from './shader/atmosphere/fragment.glsl?raw';
+import atmosphereVertexShader from './shader/atmosphere/vertex.glsl?raw';
 import earthFragmentShader from './shader/earth/fragment.glsl?raw';
 import earthVertexShader from './shader/earth/vertex.glsl?raw';
 import './style.css';
-
 const el = document.querySelector('#root') as HTMLDivElement;
 const size = {
 	width: window.innerWidth,
@@ -126,10 +128,22 @@ const earthMaterial = new ShaderMaterial({
 const earth = new Mesh(earthGeometry, earthMaterial);
 scene.add(earth);
 
+const atmosphereGeometry = earthGeometry.clone();
+const atmosphereMaterial = new ShaderMaterial({
+	uniforms,
+	vertexShader: atmosphereVertexShader,
+	fragmentShader: atmosphereFragmentShader,
+	transparent: true,
+	side: BackSide,
+});
+const atmosphere = new Mesh(atmosphereGeometry, atmosphereMaterial);
+atmosphere.scale.setScalar(1.05);
+scene.add(atmosphere);
+
 const pane = new Pane({ title: 'Debug Params' });
 pane.element.parentElement!.style.width = '380px';
 
-const sunP = pane.addFolder({ title: 'Sun' });
+const sunP = pane.addFolder({ title: '🌅Sun' });
 sunP
 	.addBinding(sunSpherical, 'phi', {
 		min: 0,
@@ -145,6 +159,19 @@ sunP
 	})
 	.on('change', updateSun);
 
+const earthP = pane.addFolder({ title: '🌍Earth' });
+earthP.addBinding(uniforms.uAtmosphereDayColor, 'value', {
+	label: 'AtmosphereDayColor',
+	color: {
+		type: 'float',
+	},
+});
+earthP.addBinding(uniforms.uAtmosphereTwilightColor, 'value', {
+	label: 'AtmosphereTwilightColor',
+	color: {
+		type: 'float',
+	},
+});
 /**
  * Events
  */
