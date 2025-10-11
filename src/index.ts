@@ -9,7 +9,6 @@ import {
 	ShaderMaterial,
 	SphereGeometry,
 	Spherical,
-	SRGBColorSpace,
 	TextureLoader,
 	Uniform,
 	Vector3,
@@ -39,12 +38,8 @@ textureLoader.setPath('/src/assets/textures/');
  */
 
 const dayMapTexture = textureLoader.load('2k_earth_daymap.jpg');
-dayMapTexture.colorSpace = SRGBColorSpace;
-dayMapTexture.anisotropy = 8;
 
 const nightMapTexture = textureLoader.load('2k_earth_nightmap.jpg');
-nightMapTexture.colorSpace = SRGBColorSpace;
-nightMapTexture.anisotropy = 8;
 
 const specularCloudTexture = textureLoader.load('specularClouds.jpg');
 
