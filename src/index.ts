@@ -1,4 +1,5 @@
 import {
+	BackSide,
 	Clock,
 	Color,
 	IcosahedronGeometry,
@@ -9,6 +10,7 @@ import {
 	ShaderMaterial,
 	SphereGeometry,
 	Spherical,
+	SRGBColorSpace,
 	TextureLoader,
 	Uniform,
 	Vector3,
@@ -16,6 +18,8 @@ import {
 } from 'three';
 import { OrbitControls, TrackballControls } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
+import atmosphereFragmentShader from './shader/atmosphere/fragment.glsl?raw';
+import atmosphereVertexShader from './shader/atmosphere/vetex.glsl?raw';
 import earthFragmentShader from './shader/earth/fragment.glsl?raw';
 import earthVertexShader from './shader/earth/vertex.glsl?raw';
 import './style.css';
@@ -38,8 +42,12 @@ textureLoader.setPath('/src/assets/textures/');
  */
 
 const dayMapTexture = textureLoader.load('2k_earth_daymap.jpg');
+dayMapTexture.colorSpace = SRGBColorSpace;
+dayMapTexture.anisotropy = 8;
 
 const nightMapTexture = textureLoader.load('2k_earth_nightmap.jpg');
+nightMapTexture.colorSpace = SRGBColorSpace;
+nightMapTexture.anisotropy = 8;
 
 const specularCloudTexture = textureLoader.load('specularClouds.jpg');
 
@@ -120,6 +128,19 @@ const earthMaterial = new ShaderMaterial({
 const earth = new Mesh(earthGeometry, earthMaterial);
 scene.add(earth);
 
+const atmosphereGeomtry = earthGeometry.clone();
+const atmosphereMaterial = new ShaderMaterial({
+	uniforms,
+	vertexShader: atmosphereVertexShader,
+	fragmentShader: atmosphereFragmentShader,
+	side: BackSide,
+	transparent: true,
+});
+
+const atmosphere = new Mesh(atmosphereGeomtry, atmosphereMaterial);
+atmosphere.scale.setScalar(1.04);
+scene.add(atmosphere);
+
 const pane = new Pane({ title: 'Debug Params' });
 pane.element.parentElement!.style.width = '380px';
 
@@ -166,6 +187,7 @@ function render() {
 	// Update
 	controls.update(delta);
 	controls2.update();
+	earth.rotation.y += 0.001;
 
 	// Animation
 	requestAnimationFrame(render);
