@@ -128,7 +128,7 @@ scene.add(earth);
 const pane = new Pane({ title: 'Debug Params' });
 pane.element.parentElement!.style.width = '380px';
 
-const sunP = pane.addFolder({ title: '🌅Sun' });
+const sunP = pane.addFolder({ title: '🌅 Sun' });
 sunP
 	.addBinding(sunSpherical, 'phi', {
 		min: 0,
@@ -144,7 +144,7 @@ sunP
 	})
 	.on('change', updateSun);
 
-const earthP = pane.addFolder({ title: '🌍Earth' });
+const earthP = pane.addFolder({ title: '🌍 Earth' });
 earthP.addBinding(uniforms.uAtmosphereDayColor, 'value', {
 	label: 'AtmosphereDayColor',
 	color: {
@@ -171,7 +171,6 @@ function render() {
 	// Update
 	controls.update(delta);
 	controls2.update();
-	earth.rotation.y += 0.001;
 
 	// Animation
 	requestAnimationFrame(render);
