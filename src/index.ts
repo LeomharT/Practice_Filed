@@ -2,25 +2,24 @@ import {
 	AmbientLight,
 	Clock,
 	Color,
+	IcosahedronGeometry,
 	Mesh,
-	MeshStandardMaterial,
+	MeshBasicMaterial,
 	PerspectiveCamera,
 	PlaneGeometry,
+	Raycaster,
 	Scene,
-	ShaderMaterial,
 	TextureLoader,
+	Vector2,
+	Vector3,
 	WebGLRenderer,
-	type IUniform,
 } from 'three';
 import {
 	GLTFLoader,
 	OrbitControls,
-	Reflector,
 	TrackballControls,
 } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
-import floorFragmentShader from './shader/floor/fragment.glsl?raw';
-import floorVertexShader from './shader/floor/vertex.glsl?raw';
 import './style.css';
 
 const el = document.querySelector('#root') as HTMLDivElement;
@@ -62,7 +61,7 @@ const scene = new Scene();
 scene.background = new Color('#1e1e1e');
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(3, 3, 3);
+camera.position.set(0, 0, 3);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -76,47 +75,28 @@ controls2.noZoom = false;
 
 const clock = new Clock();
 
+const raycaster = new Raycaster();
+
 /**
  * World
  */
 
-const spaceship = spaceshipModel.scene;
-spaceship.traverse((obj) => {
-	if (obj instanceof Mesh && obj.material instanceof MeshStandardMaterial) {
-		obj.material.depthWrite = true;
-		obj.material.depthTest = true;
-	}
-});
-spaceship.scale.setScalar(0.2);
-spaceship.position.set(-1.5, 1, -1);
-scene.add(spaceship);
+const point = new Vector3();
 
-const floorGeometry = new PlaneGeometry(5, 5, 32, 32);
-
-const floorReflector = new Reflector(floorGeometry, {
-	textureWidth: size.width / 2,
-	textureHeight: size.height / 2,
-});
-floorReflector.rotation.x = -Math.PI / 2;
-floorReflector.position.y = -0.001;
-scene.add(floorReflector);
-
-const uniforms: Record<string, IUniform<any>> = {};
-
-if (floorReflector.material instanceof ShaderMaterial) {
-	uniforms['uTextureMatrix'] = floorReflector.material.uniforms.textureMatrix;
-	uniforms['uDiffuse'] = floorReflector.material.uniforms.tDiffuse;
-}
-
-const floorMaterial = new ShaderMaterial({
-	uniforms,
-	vertexShader: floorVertexShader,
-	fragmentShader: floorFragmentShader,
+const planeGeometry = new PlaneGeometry(3, 3, 16, 16);
+const palneMaterial = new MeshBasicMaterial({
+	color: 'yellow',
+	wireframe: true,
 });
 
-const floor = new Mesh(floorGeometry, floorMaterial);
-floor.quaternion.copy(floorReflector.quaternion);
-scene.add(floor);
+const plane = new Mesh(planeGeometry, palneMaterial);
+scene.add(plane);
+
+const identifier = new Mesh(
+	new IcosahedronGeometry(0.1, 3),
+	new MeshBasicMaterial({ color: 'blue' })
+);
+scene.add(identifier);
 
 const pane = new Pane({ title: 'Debug Params' });
 pane.element.parentElement!.style.width = '380px';
@@ -159,3 +139,23 @@ function resize() {
 }
 
 window.addEventListener('resize', resize);
+
+const coord = new Vector2();
+
+function onPointerMove(e: PointerEvent) {
+	const x = (e.clientX / size.width) * 2 - 1;
+	const y = -(e.clientY / size.height) * 2 + 1;
+	coord.set(x, y);
+
+	raycaster.setFromCamera(coord, camera);
+
+	const intersects = raycaster.intersectObjects([plane]);
+
+	if (intersects.length) {
+		point.copy(intersects[0].point);
+	}
+
+	identifier.position.copy(point);
+}
+
+window.addEventListener('pointermove', onPointerMove);
