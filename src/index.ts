@@ -1,28 +1,28 @@
 import {
-	BackSide,
+	AmbientLight,
 	Clock,
 	Color,
-	IcosahedronGeometry,
 	Mesh,
-	MeshBasicMaterial,
+	MeshStandardMaterial,
 	PerspectiveCamera,
+	PlaneGeometry,
 	Scene,
 	ShaderMaterial,
-	SphereGeometry,
-	Spherical,
-	SRGBColorSpace,
 	TextureLoader,
-	Uniform,
-	Vector3,
 	WebGLRenderer,
+	type IUniform,
 } from 'three';
-import { OrbitControls, TrackballControls } from 'three/examples/jsm/Addons.js';
+import {
+	GLTFLoader,
+	OrbitControls,
+	Reflector,
+	TrackballControls,
+} from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
-import atmosphereFragmentShader from './shader/atmosphere/fragment.glsl?raw';
-import atmosphereVertexShader from './shader/atmosphere/vetex.glsl?raw';
-import earthFragmentShader from './shader/earth/fragment.glsl?raw';
-import earthVertexShader from './shader/earth/vertex.glsl?raw';
+import floorFragmentShader from './shader/floor/fragment.glsl?raw';
+import floorVertexShader from './shader/floor/vertex.glsl?raw';
 import './style.css';
+
 const el = document.querySelector('#root') as HTMLDivElement;
 const size = {
 	width: window.innerWidth,
@@ -37,19 +37,14 @@ const size = {
 const textureLoader = new TextureLoader();
 textureLoader.setPath('/src/assets/textures/');
 
+const gltfLoader = new GLTFLoader();
+gltfLoader.setPath('/src/assets/models/');
+
 /**
- * Textures
+ * Models
  */
 
-const dayMapTexture = textureLoader.load('2k_earth_daymap.jpg');
-dayMapTexture.colorSpace = SRGBColorSpace;
-dayMapTexture.anisotropy = 8;
-
-const nightMapTexture = textureLoader.load('2k_earth_nightmap.jpg');
-nightMapTexture.colorSpace = SRGBColorSpace;
-nightMapTexture.anisotropy = 8;
-
-const specularCloudTexture = textureLoader.load('specularClouds.jpg');
+const spaceshipModel = await gltfLoader.loadAsync('sapceship.glb');
 
 /**
  * Basic
@@ -84,95 +79,55 @@ const clock = new Clock();
 /**
  * World
  */
-const uniforms = {
-	uSunDirection: new Uniform(new Vector3()),
 
-	uDayMapTexture: new Uniform(dayMapTexture),
-	uNightMapTexture: new Uniform(nightMapTexture),
-	uSpecularCloudTexture: new Uniform(specularCloudTexture),
-
-	uAtmosphereDayColor: new Uniform(new Color('#00aaff')),
-	uAtmosphereTwilightColor: new Uniform(new Color('#ff6600')),
-};
-
-const sunDirection = new Vector3();
-const sunSpherical = new Spherical(1.0, Math.PI / 2, 0.5);
-
-const sunGeometry = new IcosahedronGeometry(0.1, 3);
-const sunMaterial = new MeshBasicMaterial({
-	color: 'yellow',
+const spaceship = spaceshipModel.scene;
+spaceship.traverse((obj) => {
+	if (obj instanceof Mesh && obj.material instanceof MeshStandardMaterial) {
+		obj.material.depthWrite = true;
+		obj.material.depthTest = true;
+	}
 });
+spaceship.scale.setScalar(0.2);
+spaceship.position.set(-1.5, 1, -1);
+scene.add(spaceship);
 
-const sun = new Mesh(sunGeometry, sunMaterial);
-scene.add(sun);
+const floorGeometry = new PlaneGeometry(5, 5, 32, 32);
 
-function updateSun() {
-	// Vertex
-	sunDirection.setFromSpherical(sunSpherical);
+const floorReflector = new Reflector(floorGeometry, {
+	textureWidth: size.width / 2,
+	textureHeight: size.height / 2,
+});
+floorReflector.rotation.x = -Math.PI / 2;
+floorReflector.position.y = -0.001;
+scene.add(floorReflector);
 
-	// Uniform
-	uniforms.uSunDirection.value.copy(sunDirection);
+const uniforms: Record<string, IUniform<any>> = {};
 
-	// Position
-	sun.position.copy(sunDirection.clone().multiplyScalar(5.0));
+if (floorReflector.material instanceof ShaderMaterial) {
+	uniforms['uTextureMatrix'] = floorReflector.material.uniforms.textureMatrix;
+	uniforms['uDiffuse'] = floorReflector.material.uniforms.tDiffuse;
 }
-updateSun();
 
-const earthGeometry = new SphereGeometry(2, 64, 64);
-const earthMaterial = new ShaderMaterial({
+const floorMaterial = new ShaderMaterial({
 	uniforms,
-	vertexShader: earthVertexShader,
-	fragmentShader: earthFragmentShader,
+	vertexShader: floorVertexShader,
+	fragmentShader: floorFragmentShader,
 });
 
-const earth = new Mesh(earthGeometry, earthMaterial);
-scene.add(earth);
-
-const atmosphereGeomtry = earthGeometry.clone();
-const atmosphereMaterial = new ShaderMaterial({
-	uniforms,
-	vertexShader: atmosphereVertexShader,
-	fragmentShader: atmosphereFragmentShader,
-	side: BackSide,
-	transparent: true,
-});
-
-const atmosphere = new Mesh(atmosphereGeomtry, atmosphereMaterial);
-atmosphere.scale.setScalar(1.04);
-scene.add(atmosphere);
+const floor = new Mesh(floorGeometry, floorMaterial);
+floor.quaternion.copy(floorReflector.quaternion);
+scene.add(floor);
 
 const pane = new Pane({ title: 'Debug Params' });
 pane.element.parentElement!.style.width = '380px';
 
-const sunP = pane.addFolder({ title: '🌅 Sun' });
-sunP
-	.addBinding(sunSpherical, 'phi', {
-		min: 0,
-		max: Math.PI,
-		step: 0.001,
-	})
-	.on('change', updateSun);
-sunP
-	.addBinding(sunSpherical, 'theta', {
-		min: -Math.PI,
-		max: Math.PI,
-		step: 0.001,
-	})
-	.on('change', updateSun);
+/**
+ * Light
+ */
 
-const earthP = pane.addFolder({ title: '🌍 Earth' });
-earthP.addBinding(uniforms.uAtmosphereDayColor, 'value', {
-	label: 'AtmosphereDayColor',
-	color: {
-		type: 'float',
-	},
-});
-earthP.addBinding(uniforms.uAtmosphereTwilightColor, 'value', {
-	label: 'AtmosphereTwilightColor',
-	color: {
-		type: 'float',
-	},
-});
+const ambientLight = new AmbientLight(0xffffff, 2.0);
+scene.add(ambientLight);
+
 /**
  * Events
  */
@@ -187,7 +142,6 @@ function render() {
 	// Update
 	controls.update(delta);
 	controls2.update();
-	earth.rotation.y += 0.001;
 
 	// Animation
 	requestAnimationFrame(render);
