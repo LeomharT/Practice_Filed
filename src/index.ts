@@ -150,6 +150,9 @@ const pointsGeometry = new BufferGeometry();
 pointsGeometry.setAttribute('position', attrPosition);
 
 const pointsMaterial = new ShaderMaterial({
+	uniforms: {
+		uFrame: new Uniform(frameRenderTarget.texture),
+	},
 	vertexShader: pointsVertexShader,
 	fragmentShader: pointsFragmentShader,
 });
@@ -189,12 +192,14 @@ const radius = 1.0;
 
 function updateFrame() {
 	rain.visible = false;
+	points.visible = false;
 
 	renderer.setRenderTarget(frameRenderTarget);
 	renderer.render(scene, camera);
 	renderer.setRenderTarget(null);
 
 	rain.visible = true;
+	points.visible = true;
 }
 
 function render() {
