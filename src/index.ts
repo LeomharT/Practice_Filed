@@ -1,16 +1,12 @@
 import {
 	AmbientLight,
-	BufferAttribute,
-	BufferGeometry,
 	Clock,
 	Color,
 	IcosahedronGeometry,
-	MathUtils,
 	Mesh,
 	MeshBasicMaterial,
 	PerspectiveCamera,
 	PlaneGeometry,
-	Points,
 	Scene,
 	ShaderMaterial,
 	TextureLoader,
@@ -28,8 +24,6 @@ import {
 import { Pane } from 'tweakpane';
 import floorFragmentShader from './shader/floor/fragment.glsl?raw';
 import floorVertexShader from './shader/floor/vertex.glsl?raw';
-import pointsFragmentShader from './shader/points/fragment.glsl?raw';
-import pointsVertexShader from './shader/points/vertex.glsl?raw';
 import rainFragmentShader from './shader/rain/fragment.glsl?raw';
 import rainVertexShader from './shader/rain/vertex.glsl?raw';
 import './style.css';
@@ -134,33 +128,6 @@ const identifier = new Mesh(
 identifier.position.y = 1.0;
 scene.add(identifier);
 
-const params = {
-	count: 300,
-};
-
-const positionArry = new Float32Array(params.count);
-for (let i = 0; i < params.count; i += 3) {
-	positionArry[i + 0] = MathUtils.randFloat(-3, 3);
-	positionArry[i + 1] = MathUtils.randFloat(-3, 3);
-	positionArry[i + 2] = MathUtils.randFloat(-3, 3);
-}
-const attrPosition = new BufferAttribute(positionArry, 3);
-
-const pointsGeometry = new BufferGeometry();
-pointsGeometry.setAttribute('position', attrPosition);
-
-const pointsMaterial = new ShaderMaterial({
-	uniforms: {
-		uFrame: new Uniform(frameRenderTarget.texture),
-	},
-	vertexShader: pointsVertexShader,
-	fragmentShader: pointsFragmentShader,
-});
-
-const points = new Points(pointsGeometry, pointsMaterial);
-points.layers.set(LAYER.RAIN);
-scene.add(points);
-
 const rainGeometry = new PlaneGeometry(0.5, 0.5, 16, 16);
 const rainMaterial = new ShaderMaterial({
 	uniforms: {
@@ -173,6 +140,7 @@ const rainMaterial = new ShaderMaterial({
 const rain = new Mesh(rainGeometry, rainMaterial);
 rain.layers.set(LAYER.RAIN);
 rain.position.set(1, 1, 1);
+scene.add(rain);
 
 const pane = new Pane({ title: 'Debug Params' });
 pane.element.parentElement!.style.width = '380px';
@@ -192,14 +160,12 @@ const radius = 1.0;
 
 function updateFrame() {
 	rain.visible = false;
-	points.visible = false;
 
 	renderer.setRenderTarget(frameRenderTarget);
 	renderer.render(scene, camera);
 	renderer.setRenderTarget(null);
 
 	rain.visible = true;
-	points.visible = true;
 }
 
 function render() {
