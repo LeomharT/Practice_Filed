@@ -8,15 +8,20 @@ import {
 	PerspectiveCamera,
 	PlaneGeometry,
 	Scene,
+	ShaderMaterial,
 	TextureLoader,
 	WebGLRenderer,
+	type IUniform,
 } from 'three';
 import {
 	GLTFLoader,
 	OrbitControls,
+	Reflector,
 	TrackballControls,
 } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
+import floorFragmentShader from './shader/floor/fragment.glsl?raw';
+import floorVertexShader from './shader/floor/vertex.glsl?raw';
 import './style.css';
 
 const el = document.querySelector('#root') as HTMLDivElement;
@@ -77,9 +82,23 @@ const clock = new Clock();
  */
 
 const planeGeometry = new PlaneGeometry(3, 3, 16, 16);
-const palneMaterial = new MeshBasicMaterial({
-	color: 'yellow',
-	wireframe: true,
+
+const floorReflector = new Reflector(planeGeometry);
+floorReflector.rotation.x = -Math.PI / 2;
+floorReflector.position.y = -0.001;
+scene.add(floorReflector);
+
+const uniforms: Record<string, IUniform<any>> = {};
+
+if (floorReflector.material instanceof ShaderMaterial) {
+	uniforms['uTextureMatrix'] = floorReflector.material.uniforms.textureMatrix;
+	uniforms['uDiffuse'] = floorReflector.material.uniforms.tDiffuse;
+}
+
+const palneMaterial = new ShaderMaterial({
+	uniforms,
+	vertexShader: floorVertexShader,
+	fragmentShader: floorFragmentShader,
 });
 
 const plane = new Mesh(planeGeometry, palneMaterial);
