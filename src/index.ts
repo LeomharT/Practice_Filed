@@ -10,7 +10,9 @@ import {
 	Scene,
 	ShaderMaterial,
 	TextureLoader,
+	Uniform,
 	WebGLRenderer,
+	WebGLRenderTarget,
 	type IUniform,
 } from 'three';
 import {
@@ -22,13 +24,19 @@ import {
 import { Pane } from 'tweakpane';
 import floorFragmentShader from './shader/floor/fragment.glsl?raw';
 import floorVertexShader from './shader/floor/vertex.glsl?raw';
-import './style.css';
+import rainFragmentShader from './shader/rain/fragment.glsl?raw';
+import rainVertexShader from './shader/rain/vertex.glsl?raw';
 
+import './style.css';
 const el = document.querySelector('#root') as HTMLDivElement;
 const size = {
 	width: window.innerWidth,
 	height: window.innerHeight,
 	pixelRatio: Math.min(2.0, window.devicePixelRatio),
+};
+
+const LAYER = {
+	RAIN: 1,
 };
 
 /**
@@ -65,6 +73,7 @@ scene.background = new Color('#1e1e1e');
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
 camera.position.set(3, 3, 3);
 camera.lookAt(scene.position);
+camera.layers.enable(LAYER.RAIN);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -76,6 +85,14 @@ controls2.noRotate = true;
 controls2.noZoom = false;
 
 const clock = new Clock();
+
+const frameRenderTarget = new WebGLRenderTarget(
+	size.width / 2,
+	size.height / 2,
+	{
+		generateMipmaps: true,
+	}
+);
 
 /**
  * World
@@ -112,6 +129,20 @@ const identifier = new Mesh(
 identifier.position.y = 1.0;
 scene.add(identifier);
 
+const rainGeometry = new PlaneGeometry(0.5, 0.5, 16, 16);
+const rainMaterial = new ShaderMaterial({
+	uniforms: {
+		uFrame: new Uniform(frameRenderTarget.texture),
+	},
+	vertexShader: rainVertexShader,
+	fragmentShader: rainFragmentShader,
+});
+
+const rain = new Mesh(rainGeometry, rainMaterial);
+rain.layers.set(LAYER.RAIN);
+rain.position.set(1, 1, 1);
+scene.add(rain);
+
 const pane = new Pane({ title: 'Debug Params' });
 pane.element.parentElement!.style.width = '380px';
 
@@ -128,12 +159,23 @@ scene.add(ambientLight);
 
 const radius = 1.0;
 
+function updateFrame() {
+	rain.visible = false;
+
+	renderer.setRenderTarget(frameRenderTarget);
+	renderer.render(scene, camera);
+	renderer.setRenderTarget(null);
+
+	rain.visible = true;
+}
+
 function render() {
 	// Time
 	const delta = clock.getDelta();
 	const elapsedTime = clock.getElapsedTime();
 
 	// Render
+	updateFrame();
 	renderer.render(scene, camera);
 
 	// Update
