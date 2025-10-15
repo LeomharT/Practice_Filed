@@ -86,8 +86,8 @@ controls2.noZoom = false;
 const clock = new Clock();
 
 const frameRenderTarget = new WebGLRenderTarget(
-	size.width / 2,
-	size.height / 2,
+	size.width / 2.0,
+	size.height / 2.0,
 	{
 		generateMipmaps: true,
 	}
@@ -122,7 +122,7 @@ plane.rotation.x = -Math.PI / 2;
 scene.add(plane);
 
 const identifier = new Mesh(
-	new IcosahedronGeometry(0.1, 3),
+	new IcosahedronGeometry(0.1, 1),
 	new MeshBasicMaterial({ color: 'blue' })
 );
 identifier.position.y = 1.0;
