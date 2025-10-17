@@ -55,6 +55,12 @@ gltfLoader.setPath('/src/assets/models/');
 const spaceshipModel = await gltfLoader.loadAsync('sapceship.glb');
 
 /**
+ * Textures
+ */
+
+const normalTexture = textureLoader.load('rainNormal.png');
+
+/**
  * Basic
  */
 
@@ -132,9 +138,11 @@ const rainGeometry = new PlaneGeometry(0.5, 0.5, 16, 16);
 const rainMaterial = new ShaderMaterial({
 	uniforms: {
 		uFrame: new Uniform(frameRenderTarget.texture),
+		uNormalMapRain: new Uniform(normalTexture),
 	},
 	vertexShader: rainVertexShader,
 	fragmentShader: rainFragmentShader,
+	transparent: true,
 });
 
 const rain = new Mesh(rainGeometry, rainMaterial);
