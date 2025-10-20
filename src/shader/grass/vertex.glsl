@@ -24,7 +24,7 @@ void main() {
     vec4  worldPosition = instanceMatrix * vec4(position, 1.0);
     vec2  direction     = normalize(vec2(-1.0, 1.0));
     direction += 0.2;
-    
+
     float time          = uTime * 1.0;
 
     vec2  noiseUv1 = worldPosition.xy * 0.06 + direction * time * 0.1;
@@ -37,7 +37,7 @@ void main() {
 
     float instance = noise1 * noise2;
 
-    gl_Position.x += (direction * instance).x * uv.y;
+    gl_Position.x += (direction * instance).x * uv.y * 0.5;
  
     vUv = uv;
 }

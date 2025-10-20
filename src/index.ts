@@ -9,6 +9,7 @@ import {
 	Matrix4,
 	Object3D,
 	PerspectiveCamera,
+	ReinhardToneMapping,
 	Scene,
 	ShaderChunk,
 	ShaderMaterial,
@@ -71,6 +72,8 @@ const renderer = new WebGLRenderer({
 });
 renderer.setSize(size.width, size.height);
 renderer.setPixelRatio(size.pixelRatio);
+renderer.toneMapping = ReinhardToneMapping;
+renderer.toneMappingExposure = 1.05;
 el.append(renderer.domElement);
 
 const scene = new Scene();
@@ -97,7 +100,7 @@ const clock = new Clock();
  */
 
 const params = {
-	count: 5500,
+	count: 2500,
 	radius: 5.5,
 };
 
