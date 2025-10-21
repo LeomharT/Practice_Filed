@@ -38,8 +38,8 @@ void main() {
 
     float instance = noise1 * noise2;
 
-    float distanceToBottom = uv.y;    
-
+    float distanceToBottom = distance(0.0, uv.y);
+  
     gl_Position.x += (direction * instance).x * distanceToBottom;
  
     vUv = uv;

@@ -7,10 +7,12 @@ void main(){
     vec2 uv    = vUv;
     vec3 color = vec3(0.0);
 
+    float colorMix = smoothstep(0.1, 1.0, uv.y);
+
     color = mix(
         uRootColor,
         uGrassColor,
-        uv.y
+        colorMix
     );
 
     gl_FragColor = vec4(color, 1.0);
