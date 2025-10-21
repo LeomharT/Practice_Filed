@@ -13,6 +13,8 @@ vec3 billboard(vec3 v,mat4 view){
     return pos;
 }
 
+ 
+
 void main() {
     #include <begin_vertex>
 
@@ -21,9 +23,8 @@ void main() {
 
     #include <project_vertex>
 
-    vec4  worldPosition = instanceMatrix * vec4(position, 1.0);
-    vec2  direction     = normalize(vec2(-1.0, 1.0));
-    direction += 0.2;
+    vec4 worldPosition = instanceMatrix * vec4(position, 1.0);
+    vec2 direction     = normalize(vec2(-1.0, 1.0));
 
     float time = uTime * 1.0;
 
