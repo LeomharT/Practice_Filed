@@ -100,7 +100,7 @@ const clock = new Clock();
  */
 
 const params = {
-	count: 2500,
+	count: 5500,
 	radius: 5.5,
 };
 
