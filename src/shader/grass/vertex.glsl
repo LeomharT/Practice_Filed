@@ -1,5 +1,5 @@
 varying vec2 vUv;
- 
+varying vec3 vPosition;
 
 uniform float uTime;
 uniform sampler2D uNoiseTexture;
@@ -12,8 +12,6 @@ vec3 billboard(vec3 v,mat4 view){
     vec3 pos=right*v.x+up*v.y;
     return pos;
 }
-
- 
 
 void main() {
     #include <begin_vertex>
@@ -42,5 +40,6 @@ void main() {
   
     gl_Position.x += (direction * instance).x * distanceToBottom;
  
-    vUv = uv;
+    vUv       = uv;
+    vPosition = worldPosition.xyz;
 }

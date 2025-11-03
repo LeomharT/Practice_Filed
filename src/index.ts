@@ -60,7 +60,7 @@ const spaceshipModel = await gltfLoader.loadAsync('sapceship.glb');
  * Textures
  */
 
-const noiseTexture = textureLoader.load('perlin.png');
+const noiseTexture = textureLoader.load('noiseTexture.png');
 
 /**
  * Basic
@@ -109,6 +109,7 @@ const uniforms = {
 	uInstanceMatrix: new Uniform(new Matrix4()),
 	uRootColor: new Uniform(new Color('#135200')),
 	uGrassColor: new Uniform(new Color('#95de64')),
+	uGrassColor2: new Uniform(new Color('#52c41a')),
 	uNoiseTexture: new Uniform(noiseTexture),
 };
 
