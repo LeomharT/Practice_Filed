@@ -7,6 +7,7 @@ import {
 	InstancedMesh,
 	MathUtils,
 	Matrix4,
+	MirroredRepeatWrapping,
 	Object3D,
 	PerspectiveCamera,
 	ReinhardToneMapping,
@@ -61,6 +62,7 @@ const spaceshipModel = await gltfLoader.loadAsync('sapceship.glb');
  */
 
 const noiseTexture = textureLoader.load('noiseTexture.png');
+noiseTexture.wrapT = noiseTexture.wrapS = MirroredRepeatWrapping;
 
 /**
  * Basic

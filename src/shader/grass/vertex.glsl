@@ -13,6 +13,26 @@ vec3 billboard(vec3 v,mat4 view){
     return pos;
 }
 
+vec2 getWind(sampler2D noiseTexture, vec3 worldPosition) {
+    float time = uTime;
+
+    vec2 direction = vec2(
+        -1.0,
+        1.0
+    );
+    direction = normalize(direction);
+
+    vec2  noiseUv1 = worldPosition.xy * 0.06 + direction * time * 0.1;
+    float noise1   = texture2D(noiseTexture, noiseUv1).r - 0.5;
+
+    vec2  noiseUv2 = worldPosition.xy * 0.043 + direction * time * 0.03;
+    float noise2   = texture2D(noiseTexture, noiseUv2).r;
+
+    float intensity = noise1 * noise2;
+
+    return direction * intensity;
+}
+
 void main() {
     #include <begin_vertex>
 
@@ -22,23 +42,11 @@ void main() {
     #include <project_vertex>
 
     vec4 worldPosition = instanceMatrix * vec4(position, 1.0);
-    vec2 direction     = normalize(vec2(-1.0, 1.0));
-
-    float time = uTime * 1.0;
-
-    vec2  noiseUv1 = worldPosition.xy * 0.06 + direction * time * 0.1;
-    noiseUv1 = fract(noiseUv1);
-    float noise1   = texture2D(uNoiseTexture, noiseUv1).r - 0.5;
- 
-    vec2  noiseUv2 = worldPosition.xy * 0.043 + direction * time * 0.03;
-    noiseUv2 = fract(noiseUv2);
-    float noise2   = texture2D(uNoiseTexture, noiseUv1).r;
-
-    float instance = noise1 * noise2;
 
     float distanceToBottom = distance(0.0, uv.y);
+    vec2  wind             = getWind(uNoiseTexture, worldPosition.xyz);
   
-    gl_Position.x += (direction * instance).x * distanceToBottom;
+    gl_Position.x = gl_Position.x + distanceToBottom * wind.x;
  
     vUv       = uv;
     vPosition = worldPosition.xyz;
