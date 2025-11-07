@@ -5,6 +5,7 @@ uniform vec3 uRootColor;
 uniform vec3 uGrassColor;
 uniform sampler2D uNoiseTexture;
 uniform vec3 uGrassColor2;
+uniform float uTime;
 
 void main(){
     float radius = 5.5;
@@ -22,7 +23,7 @@ void main(){
     float colorMix = smoothstep(0.1, 1.0, uv.y);
 
     vec3 grassColor = uGrassColor;
-    if(noiseColor.r >= 0.5) grassColor = uGrassColor2;
+    if(noiseColor.r >= 0.45) grassColor = uGrassColor2;
 
     color = mix(
         uRootColor,
