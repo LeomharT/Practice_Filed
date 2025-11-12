@@ -1,21 +1,21 @@
 import {
-	BufferAttribute,
-	BufferGeometry,
+	AmbientLight,
+	AxesHelper,
 	Clock,
 	Color,
-	DoubleSide,
-	InstancedMesh,
-	MathUtils,
-	Matrix4,
+	IcosahedronGeometry,
+	Mesh,
+	MeshBasicMaterial,
+	MeshStandardMaterial,
 	MirroredRepeatWrapping,
-	Object3D,
 	PerspectiveCamera,
+	PlaneGeometry,
+	Raycaster,
 	ReinhardToneMapping,
 	Scene,
-	ShaderChunk,
-	ShaderMaterial,
 	TextureLoader,
-	Uniform,
+	Vector2,
+	Vector3,
 	WebGLRenderer,
 } from 'three';
 import {
@@ -23,12 +23,7 @@ import {
 	OrbitControls,
 	TrackballControls,
 } from 'three/examples/jsm/Addons.js';
-import grassFragmentShader from './shader/grass/fragment.glsl?raw';
-import grassVertexShader from './shader/grass/vertex.glsl?raw';
 import './style.css';
-
-console.log(ShaderChunk['begin_vertex']);
-console.log(ShaderChunk['project_vertex']);
 
 const el = document.querySelector('#root') as HTMLDivElement;
 const size = {
@@ -82,88 +77,73 @@ const scene = new Scene();
 scene.background = new Color('#1e1e1e');
 
 const camera = new PerspectiveCamera(50, size.width / size.height, 0.1, 1000);
-camera.position.set(3, 3, 3);
+camera.position.set(5, 0, 0);
 camera.lookAt(scene.position);
 camera.layers.enable(LAYER.RAIN);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.enablePan = false;
+controls.enabled = false;
 
 const controls2 = new TrackballControls(camera, renderer.domElement);
 controls2.noPan = true;
 controls2.noRotate = true;
 controls2.noZoom = false;
+controls2.enabled = false;
 
 const clock = new Clock();
+
+const raycaster = new Raycaster();
 
 /**
  * World
  */
 
-const params = {
-	count: 8500,
-	radius: 5.5,
-};
+const point = new Vector3();
+const mouse = new Vector2();
 
-const uniforms = {
-	uTime: new Uniform(0.0),
-	uInstanceMatrix: new Uniform(new Matrix4()),
-	uRootColor: new Uniform(new Color('#135200')),
-	uGrassColor: new Uniform(new Color('#95de64')),
-	uGrassColor2: new Uniform(new Color('#52c41a')),
-	uNoiseTexture: new Uniform(noiseTexture),
-};
+const spaceship = spaceshipModel.scene;
+spaceship.scale.setScalar(0.1);
+spaceship.position.x = -0.8;
 
-const positionArr = new Float32Array([
-	-0.5, 0.0, 0.0, 0.0, 2.0, 0.0, 0.5, 0.0, 0.0,
-]);
-const attrPosition = new BufferAttribute(positionArr, 3);
+spaceship.traverse((obj) => {
+	if (obj instanceof Mesh && obj.material instanceof MeshStandardMaterial) {
+		obj.material.depthTest = true;
+		obj.material.depthWrite = true;
+	}
+});
+scene.add(spaceship);
 
-const uvArr = new Float32Array([
-	0.0,
-	0.0, // 左下角
-	0.5,
-	1.0, // 顶点
-	1.0,
-	0.0, // 右下角
-]);
-const attrUv = new BufferAttribute(uvArr, 2);
-
-const grassGeometry = new BufferGeometry();
-grassGeometry.computeVertexNormals();
-grassGeometry.setAttribute('position', attrPosition);
-grassGeometry.setAttribute('uv', attrUv);
-
-const grassMaterial = new ShaderMaterial({
-	side: DoubleSide,
-	vertexShader: grassVertexShader,
-	fragmentShader: grassFragmentShader,
-	uniforms,
+const planeGeometry = new PlaneGeometry(5, 5, 64, 64);
+const planeMaterial = new MeshBasicMaterial({
+	color: 'yellow',
+	wireframe: true,
 });
 
-const grass = new InstancedMesh(grassGeometry, grassMaterial, params.count);
-grass.scale.setScalar(0.3);
+const plane = new Mesh(planeGeometry, planeMaterial);
+plane.rotation.y = Math.PI / 2;
+scene.add(plane);
 
-const objGrass = new Object3D();
-for (let i = 0; i < params.count; i++) {
-	objGrass.position.set(
-		MathUtils.randFloat(-params.radius, params.radius),
-		0,
-		MathUtils.randFloat(-params.radius, params.radius)
-	);
+const pointer = new Mesh(
+	new IcosahedronGeometry(0.1, 3),
+	new MeshBasicMaterial({ color: 'blue' })
+);
 
-	objGrass.scale.setY(MathUtils.randFloat(0.6, 1.0));
+scene.add(pointer);
 
-	objGrass.updateMatrix();
-	objGrass.updateMatrixWorld();
+/**
+ * Light
+ */
+const ambientLight = new AmbientLight(0xffffff, 1.0);
+scene.add(ambientLight);
 
-	uniforms.uInstanceMatrix.value.copy(objGrass.matrix);
+/**
+ * Helpers
+ */
 
-	grass.setMatrixAt(i, objGrass.matrix);
-}
-
-scene.add(grass);
+const axesHelper = new AxesHelper();
+scene.add(axesHelper);
 
 /**
  * Events
@@ -180,7 +160,6 @@ function render() {
 	// Update
 	controls.update(delta);
 	controls2.update();
-	uniforms.uTime.value = elapsed;
 
 	// Animation
 	requestAnimationFrame(render);
@@ -198,3 +177,23 @@ function resize() {
 }
 
 window.addEventListener('resize', resize);
+
+function onMouseMove(e: MouseEvent) {
+	// NDC
+	const x = (e.clientX / window.innerWidth) * 2.0 - 1.0;
+	const y = -(e.clientY / window.innerHeight) * 2.0 + 1.0;
+
+	mouse.set(x, y);
+
+	raycaster.setFromCamera(mouse, camera);
+
+	const intersects = raycaster.intersectObject(plane);
+
+	if (intersects.length) {
+		point.copy(intersects[0].point);
+	}
+
+	pointer.position.copy(point);
+}
+
+window.addEventListener('mousemove', onMouseMove);
