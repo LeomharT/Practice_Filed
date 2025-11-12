@@ -3,7 +3,6 @@ import {
 	AxesHelper,
 	Clock,
 	Color,
-	IcosahedronGeometry,
 	Mesh,
 	MeshBasicMaterial,
 	MeshStandardMaterial,
@@ -77,7 +76,7 @@ const scene = new Scene();
 scene.background = new Color('#1e1e1e');
 
 const camera = new PerspectiveCamera(50, size.width / size.height, 0.1, 1000);
-camera.position.set(5, 0, 0);
+camera.position.set(4, 0, 0);
 camera.lookAt(scene.position);
 camera.layers.enable(LAYER.RAIN);
 
@@ -119,18 +118,12 @@ const planeGeometry = new PlaneGeometry(5, 5, 64, 64);
 const planeMaterial = new MeshBasicMaterial({
 	color: 'yellow',
 	wireframe: true,
+	visible: false,
 });
 
 const plane = new Mesh(planeGeometry, planeMaterial);
 plane.rotation.y = Math.PI / 2;
 scene.add(plane);
-
-const pointer = new Mesh(
-	new IcosahedronGeometry(0.1, 3),
-	new MeshBasicMaterial({ color: 'blue' })
-);
-
-scene.add(pointer);
 
 /**
  * Light
@@ -149,6 +142,12 @@ scene.add(axesHelper);
  * Events
  */
 
+let translY = 0;
+let translAcceleration = 0;
+
+let angleZ = 0;
+let angleZAcceleration = 0;
+
 function render() {
 	// Time
 	const delta = clock.getDelta();
@@ -160,6 +159,27 @@ function render() {
 	// Update
 	controls.update(delta);
 	controls2.update();
+
+	// Update spaceship
+	const targetY = point.y;
+	translAcceleration += (targetY - translY) * 0.002;
+	translAcceleration *= 0.95;
+	translY += translAcceleration;
+
+	spaceship.position.y = translY;
+
+	// Update spaceship rotation
+
+	// Get B to A
+	const dir = point.clone().sub(new Vector3(0, translY, 0)).normalize();
+	const dirCos = dir.dot(new Vector3(0, 1, 0));
+	const angle = Math.acos(dirCos) - Math.PI / 2;
+
+	angleZAcceleration += (angle - angleZ) * 0.06;
+	angleZAcceleration *= 0.85;
+	angleZ = angleZAcceleration;
+
+	spaceship.rotation.setFromVector3(new Vector3(angleZ, 0, angleZ));
 
 	// Animation
 	requestAnimationFrame(render);
@@ -190,10 +210,10 @@ function onMouseMove(e: MouseEvent) {
 	const intersects = raycaster.intersectObject(plane);
 
 	if (intersects.length) {
-		point.copy(intersects[0].point);
+		const interSectPoint = intersects[0].point.clone();
+		interSectPoint.x = -3.0;
+		point.copy(interSectPoint);
 	}
-
-	pointer.position.copy(point);
 }
 
 window.addEventListener('mousemove', onMouseMove);
