@@ -1,9 +1,10 @@
 import {
 	AmbientLight,
-	AxesHelper,
 	Clock,
 	Color,
 	InstancedMesh,
+	Layers,
+	Material,
 	MathUtils,
 	Mesh,
 	MeshBasicMaterial,
@@ -15,16 +16,25 @@ import {
 	Raycaster,
 	ReinhardToneMapping,
 	Scene,
+	ShaderMaterial,
 	TextureLoader,
+	Uniform,
 	Vector2,
 	Vector3,
 	WebGLRenderer,
 } from 'three';
 import {
+	EffectComposer,
 	GLTFLoader,
 	OrbitControls,
+	OutputPass,
+	RenderPass,
+	ShaderPass,
 	TrackballControls,
+	UnrealBloomPass,
 } from 'three/examples/jsm/Addons.js';
+import bloomFragmentShader from './shader/bloom/fragment.glsl?raw';
+import bloomVertexShader from './shader/bloom/vertex.glsl?raw';
 import './style.css';
 
 const el = document.querySelector('#root') as HTMLDivElement;
@@ -35,8 +45,11 @@ const size = {
 };
 
 const LAYER = {
-	RAIN: 1,
+	BLOOM: 1,
 };
+
+const layer = new Layers();
+layer.set(LAYER.BLOOM);
 
 /**
  * Loader
@@ -83,7 +96,7 @@ scene.background = new Color('#1e1e1e');
 const camera = new PerspectiveCamera(50, size.width / size.height, 0.1, 1000);
 camera.position.set(4, 0, 0);
 camera.lookAt(scene.position);
-camera.layers.enable(LAYER.RAIN);
+camera.layers.enable(LAYER.BLOOM);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -101,6 +114,46 @@ const clock = new Clock();
 const raycaster = new Raycaster();
 
 /**
+ * Post processing
+ */
+
+const renderScene = new RenderPass(scene, camera);
+
+const outputPass = new OutputPass();
+
+const bloomPass = new UnrealBloomPass(
+	new Vector2(size.width, size.height),
+	0.85,
+	0.1,
+	0.0
+);
+
+const bloomComposer = new EffectComposer(renderer);
+bloomComposer.renderToScreen = false;
+bloomComposer.addPass(renderScene);
+bloomComposer.addPass(bloomPass);
+
+const mixPass = new ShaderPass(
+	new ShaderMaterial({
+		vertexShader: bloomVertexShader,
+		fragmentShader: bloomFragmentShader,
+		uniforms: {
+			uDiffuseColor: new Uniform(null),
+			uBloomTexture: new Uniform(bloomComposer.renderTarget2.texture),
+		},
+	}),
+	'uDiffuseColor'
+);
+
+const composer = new EffectComposer(renderer);
+composer.addPass(renderScene);
+composer.addPass(mixPass);
+composer.addPass(outputPass);
+
+const darkMaterial = new MeshBasicMaterial({ color: 0x000000 });
+const materials: Record<string, Material> = {};
+
+/**
  * World
  */
 
@@ -110,7 +163,8 @@ const mouse = new Vector2();
 const planeGeometry = new PlaneGeometry(5, 5, 64, 64);
 const planeMaterial = new MeshBasicMaterial({
 	color: 'yellow',
-	wireframe: true,
+	transparent: true,
+	opacity: 0.0,
 	visible: false,
 });
 
@@ -170,7 +224,7 @@ function resetStar() {
 	};
 }
 
-const starGeometry = new PlaneGeometry(1, 0.05);
+const starGeometry = new PlaneGeometry(1, 0.1);
 const starMaterial = new MeshBasicMaterial({
 	transparent: true,
 	alphaMap: alphaMap,
@@ -178,6 +232,7 @@ const starMaterial = new MeshBasicMaterial({
 });
 const stars = new InstancedMesh(starGeometry, starMaterial, STAR.count);
 stars.rotation.y = Math.PI / 2;
+stars.layers.set(LAYER.BLOOM);
 scene.add(stars);
 
 for (let i = 0; i < STAR.count; i++) {
@@ -203,9 +258,6 @@ scene.add(ambientLight);
 /**
  * Helpers
  */
-
-const axesHelper = new AxesHelper();
-scene.add(axesHelper);
 
 /**
  * Events
@@ -235,13 +287,25 @@ function updateStars(delta: number) {
 	}
 }
 
+function renderBloom(delta: number) {
+	scene.background = null;
+	scene.traverse(darkenMaterial);
+	plane.visible = false;
+
+	bloomComposer.render(delta);
+
+	plane.visible = true;
+	scene.background = new Color('#1e1e1e');
+	scene.traverse(restoreMaterial);
+}
+
 function render() {
 	// Time
 	const delta = clock.getDelta();
-	const elapsed = clock.getElapsedTime();
 
 	// Render
-	renderer.render(scene, camera);
+	renderBloom(delta);
+	composer.render(delta);
 
 	// Update
 	controls.update(delta);
@@ -280,6 +344,8 @@ function resize() {
 	size.height = window.innerHeight;
 
 	renderer.setSize(size.width, size.height);
+	bloomComposer.setSize(size.width, size.height);
+	composer.setSize(size.width, size.height);
 
 	camera.aspect = size.width / size.height;
 	camera.updateProjectionMatrix();
@@ -306,3 +372,17 @@ function onMouseMove(e: MouseEvent) {
 }
 
 window.addEventListener('mousemove', onMouseMove);
+
+function darkenMaterial(obj: Object3D) {
+	if (obj instanceof Mesh && obj.layers.test(layer) === false) {
+		materials[obj.uuid] = obj.material;
+		obj.material = darkMaterial;
+	}
+}
+
+function restoreMaterial(obj: Object3D) {
+	if (materials[obj.uuid] && obj instanceof Mesh) {
+		obj.material = materials[obj.uuid];
+		delete materials[obj.uuid];
+	}
+}
