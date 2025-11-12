@@ -3,10 +3,13 @@ import {
 	AxesHelper,
 	Clock,
 	Color,
+	InstancedMesh,
+	MathUtils,
 	Mesh,
 	MeshBasicMaterial,
 	MeshStandardMaterial,
 	MirroredRepeatWrapping,
+	Object3D,
 	PerspectiveCamera,
 	PlaneGeometry,
 	Raycaster,
@@ -58,6 +61,8 @@ const spaceshipModel = await gltfLoader.loadAsync('sapceship.glb');
 const noiseTexture = textureLoader.load('noiseTexture.png');
 noiseTexture.wrapT = noiseTexture.wrapS = MirroredRepeatWrapping;
 
+const alphaMap = textureLoader.load('starAlpha.png');
+
 /**
  * Basic
  */
@@ -102,6 +107,17 @@ const raycaster = new Raycaster();
 const point = new Vector3();
 const mouse = new Vector2();
 
+const planeGeometry = new PlaneGeometry(5, 5, 64, 64);
+const planeMaterial = new MeshBasicMaterial({
+	color: 'yellow',
+	wireframe: true,
+	visible: false,
+});
+
+const plane = new Mesh(planeGeometry, planeMaterial);
+plane.rotation.y = Math.PI / 2;
+scene.add(plane);
+
 const spaceship = spaceshipModel.scene;
 spaceship.scale.setScalar(0.1);
 spaceship.position.x = -0.8;
@@ -114,16 +130,69 @@ spaceship.traverse((obj) => {
 });
 scene.add(spaceship);
 
-const planeGeometry = new PlaneGeometry(5, 5, 64, 64);
-const planeMaterial = new MeshBasicMaterial({
-	color: 'yellow',
-	wireframe: true,
-	visible: false,
-});
+const STAR = {
+	count: 300,
+	colors: ['#fcaa67', '#c75d59', '#ffffc7', '#8cc5c6', '#a5898c'],
+};
+const STARS: {
+	len: number;
+	pos: Vector3;
+	color: Color;
+	speed: number;
+}[] = [];
 
-const plane = new Mesh(planeGeometry, planeMaterial);
-plane.rotation.y = Math.PI / 2;
-scene.add(plane);
+const r = MathUtils.randFloat;
+
+function resetStar() {
+	let len = 0;
+	let pos;
+
+	if (Math.random() > 0.8) {
+		len = r(1.5, 15);
+		pos = new Vector3(r(-15, 15), r(-15, 15), r(-15, 15));
+	} else {
+		len = r(2.5, 20);
+		pos = new Vector3(r(-45, 15), r(-15, 15), r(-15, 15));
+	}
+
+	const color = new Color(
+		STAR.colors[Math.floor(Math.random() * STAR.colors.length)]
+	)
+		.convertSRGBToLinear()
+		.multiplyScalar(1.3);
+	const speed = r(19.5, 42);
+
+	return {
+		len,
+		pos,
+		color,
+		speed,
+	};
+}
+
+const starGeometry = new PlaneGeometry(1, 0.05);
+const starMaterial = new MeshBasicMaterial({
+	transparent: true,
+	alphaMap: alphaMap,
+	alphaTest: 0.2,
+});
+const stars = new InstancedMesh(starGeometry, starMaterial, STAR.count);
+stars.rotation.y = Math.PI / 2;
+scene.add(stars);
+
+for (let i = 0; i < STAR.count; i++) {
+	STARS.push(resetStar());
+}
+
+const object3D = new Object3D();
+for (let i = 0; i < STARS.length; i++) {
+	object3D.position.copy(STARS[i].pos);
+	object3D.scale.x = STARS[i].len;
+	object3D.updateMatrix();
+
+	stars.setMatrixAt(i, object3D.matrix);
+	stars.setColorAt(i, STARS[i].color);
+}
 
 /**
  * Light
@@ -147,6 +216,24 @@ let translAcceleration = 0;
 
 let angleZ = 0;
 let angleZAcceleration = 0;
+
+function updateStars(delta: number) {
+	stars.instanceMatrix.needsUpdate = true;
+
+	for (let i = 0; i < STARS.length; i++) {
+		if (STARS[i].pos.x >= 40) {
+			STARS[i] = resetStar();
+		}
+		STARS[i].pos.x += STARS[i].speed * delta;
+		object3D.position.copy(STARS[i].pos);
+		object3D.scale.x = STARS[i].len;
+
+		object3D.updateMatrix();
+
+		stars.setMatrixAt(i, object3D.matrix);
+		stars.setColorAt(i, STARS[i].color);
+	}
+}
 
 function render() {
 	// Time
@@ -180,6 +267,8 @@ function render() {
 	angleZ = angleZAcceleration;
 
 	spaceship.rotation.setFromVector3(new Vector3(angleZ, 0, angleZ));
+
+	updateStars(delta);
 
 	// Animation
 	requestAnimationFrame(render);
