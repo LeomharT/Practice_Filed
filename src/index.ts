@@ -13,15 +13,19 @@ import {
 	Object3D,
 	PerspectiveCamera,
 	PlaneGeometry,
+	PMREMGenerator,
 	Raycaster,
 	ReinhardToneMapping,
 	Scene,
 	ShaderMaterial,
+	SRGBColorSpace,
+	Texture,
 	TextureLoader,
 	Uniform,
 	Vector2,
 	Vector3,
 	WebGLRenderer,
+	WebGLRenderTarget,
 } from 'three';
 import {
 	EffectComposer,
@@ -113,6 +117,10 @@ const clock = new Clock();
 
 const raycaster = new Raycaster();
 
+const pmremGenerator = new PMREMGenerator(renderer);
+// For environment map
+let envMap: WebGLRenderTarget | null = null;
+
 /**
  * Post processing
  */
@@ -123,7 +131,7 @@ const outputPass = new OutputPass();
 
 const bloomPass = new UnrealBloomPass(
 	new Vector2(size.width, size.height),
-	0.85,
+	0.6,
 	0.1,
 	0.0
 );
@@ -178,8 +186,16 @@ spaceship.position.x = -0.8;
 
 spaceship.traverse((obj) => {
 	if (obj instanceof Mesh && obj.material instanceof MeshStandardMaterial) {
+		obj.castShadow = true;
+		obj.receiveShadow = true;
 		obj.material.depthTest = true;
 		obj.material.depthWrite = true;
+		obj.material.alphaToCoverage = true;
+		obj.material.transparent = false;
+
+		if (obj.material.map instanceof Texture) {
+			obj.material.map.colorSpace = SRGBColorSpace;
+		}
 	}
 });
 scene.add(spaceship);
@@ -299,6 +315,20 @@ function renderBloom(delta: number) {
 	scene.traverse(restoreMaterial);
 }
 
+function renderEnvMap() {
+	if (envMap) envMap.dispose;
+
+	spaceship.visible = false;
+	scene.background = null;
+	stars.layers.set(0);
+
+	envMap = pmremGenerator.fromScene(scene, 0, 0.1, 1000);
+
+	spaceship.visible = true;
+	scene.background = new Color('#1e1e1e');
+	stars.layers.set(LAYER.BLOOM);
+}
+
 function render() {
 	// Time
 	const delta = clock.getDelta();
@@ -310,6 +340,18 @@ function render() {
 	// Update
 	controls.update(delta);
 	controls2.update();
+
+	renderEnvMap();
+
+	spaceship.traverse((obj) => {
+		if (obj instanceof Mesh && obj.material instanceof MeshStandardMaterial) {
+			if (envMap) {
+				obj.material.envMap = envMap.texture;
+				obj.material.envMapIntensity = 80.0;
+				obj.material.normalScale.setScalar(0.1);
+			}
+		}
+	});
 
 	// Update spaceship
 	const targetY = point.y;
