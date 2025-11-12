@@ -316,13 +316,14 @@ function renderBloom(delta: number) {
 }
 
 function renderEnvMap() {
-	if (envMap) envMap.dispose;
+	if (envMap) envMap.dispose();
 
 	spaceship.visible = false;
 	scene.background = null;
 	stars.layers.set(0);
 
-	envMap = pmremGenerator.fromScene(scene, 0, 0.1, 1000);
+	pmremGenerator.compileEquirectangularShader();
+	envMap = pmremGenerator.fromScene(scene);
 
 	spaceship.visible = true;
 	scene.background = new Color('#1e1e1e');
