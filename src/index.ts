@@ -174,7 +174,7 @@ const uniforms = {
 	uFrequency: new Uniform(2.0),
 	uNoiseTexture: new Uniform(noiseTexture),
 	uBasicColor: new Uniform(new Color('#87e8de')),
-	uDisslutionColor: new Uniform(new Color('#d4380d')),
+	uDisslutionColor: new Uniform(new Color('#ff7875')),
 };
 
 const sphereGeometry = new SphereGeometry(1, 64, 64);
