@@ -1,35 +1,32 @@
+import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import {
 	AmbientLight,
 	Clock,
 	Color,
-	InstancedMesh,
+	EquirectangularReflectionMapping,
 	Layers,
 	Material,
-	MathUtils,
 	Mesh,
 	MeshBasicMaterial,
 	MeshStandardMaterial,
 	MirroredRepeatWrapping,
 	Object3D,
 	PerspectiveCamera,
-	PlaneGeometry,
-	PMREMGenerator,
-	Raycaster,
 	ReinhardToneMapping,
 	Scene,
+	ShaderChunk,
 	ShaderMaterial,
-	SRGBColorSpace,
-	Texture,
+	SphereGeometry,
 	TextureLoader,
 	Uniform,
 	Vector2,
-	Vector3,
 	WebGLRenderer,
-	WebGLRenderTarget,
 } from 'three';
+import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import {
 	EffectComposer,
 	GLTFLoader,
+	HDRLoader,
 	OrbitControls,
 	OutputPass,
 	RenderPass,
@@ -37,9 +34,15 @@ import {
 	TrackballControls,
 	UnrealBloomPass,
 } from 'three/examples/jsm/Addons.js';
+import { Pane } from 'tweakpane';
 import bloomFragmentShader from './shader/bloom/fragment.glsl?raw';
 import bloomVertexShader from './shader/bloom/vertex.glsl?raw';
+import disslutionFragmentShader from './shader/disslution/fragment.glsl?raw';
+import disslutionVertexShader from './shader/disslution/vertex.glsl?raw';
+import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
 import './style.css';
+
+(ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
 
 const el = document.querySelector('#root') as HTMLDivElement;
 const size = {
@@ -58,6 +61,9 @@ layer.set(LAYER.BLOOM);
 /**
  * Loader
  */
+
+const hdrLoader = new HDRLoader();
+hdrLoader.setPath('/src/assets/hdr/');
 
 const textureLoader = new TextureLoader();
 textureLoader.setPath('/src/assets/textures/');
@@ -78,7 +84,12 @@ const spaceshipModel = await gltfLoader.loadAsync('sapceship.glb');
 const noiseTexture = textureLoader.load('noiseTexture.png');
 noiseTexture.wrapT = noiseTexture.wrapS = MirroredRepeatWrapping;
 
-const alphaMap = textureLoader.load('starAlpha.png');
+hdrLoader.load('rural_evening_road_1k.hdr', (data) => {
+	data.mapping = EquirectangularReflectionMapping;
+
+	scene.background = data;
+	// scene.backgroundBlurriness = 0.95;
+});
 
 /**
  * Basic
@@ -91,7 +102,7 @@ const renderer = new WebGLRenderer({
 renderer.setSize(size.width, size.height);
 renderer.setPixelRatio(size.pixelRatio);
 renderer.toneMapping = ReinhardToneMapping;
-renderer.toneMappingExposure = 1.05;
+renderer.toneMappingExposure = 1.0;
 el.append(renderer.domElement);
 
 const scene = new Scene();
@@ -105,21 +116,17 @@ camera.layers.enable(LAYER.BLOOM);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.enablePan = false;
-controls.enabled = false;
+controls.enabled = true;
 
 const controls2 = new TrackballControls(camera, renderer.domElement);
 controls2.noPan = true;
 controls2.noRotate = true;
 controls2.noZoom = false;
-controls2.enabled = false;
 
 const clock = new Clock();
 
-const raycaster = new Raycaster();
-
-const pmremGenerator = new PMREMGenerator(renderer);
-// For environment map
-let envMap: WebGLRenderTarget | null = null;
+const darkMaterial = new MeshBasicMaterial({ color: 0x000000 });
+const materials: Record<string, Material> = {};
 
 /**
  * Post processing
@@ -127,14 +134,14 @@ let envMap: WebGLRenderTarget | null = null;
 
 const renderScene = new RenderPass(scene, camera);
 
-const outputPass = new OutputPass();
-
 const bloomPass = new UnrealBloomPass(
 	new Vector2(size.width, size.height),
-	0.6,
+	0.8,
 	0.1,
-	0.0
+	1.5
 );
+
+const outputPass = new OutputPass();
 
 const bloomComposer = new EffectComposer(renderer);
 bloomComposer.renderToScreen = false;
@@ -158,179 +165,73 @@ composer.addPass(renderScene);
 composer.addPass(mixPass);
 composer.addPass(outputPass);
 
-const darkMaterial = new MeshBasicMaterial({ color: 0x000000 });
-const materials: Record<string, Material> = {};
-
 /**
  * World
  */
 
-const point = new Vector3();
-const mouse = new Vector2();
-
-const planeGeometry = new PlaneGeometry(5, 5, 64, 64);
-const planeMaterial = new MeshBasicMaterial({
-	color: 'yellow',
-	transparent: true,
-	opacity: 0.0,
-	visible: false,
-});
-
-const plane = new Mesh(planeGeometry, planeMaterial);
-plane.rotation.y = Math.PI / 2;
-scene.add(plane);
-
-const spaceship = spaceshipModel.scene;
-spaceship.scale.setScalar(0.1);
-spaceship.position.x = -0.8;
-
-spaceship.traverse((obj) => {
-	if (obj instanceof Mesh && obj.material instanceof MeshStandardMaterial) {
-		obj.castShadow = true;
-		obj.receiveShadow = true;
-		obj.material.depthTest = true;
-		obj.material.depthWrite = true;
-		obj.material.alphaToCoverage = true;
-		obj.material.transparent = false;
-
-		if (obj.material.map instanceof Texture) {
-			obj.material.map.colorSpace = SRGBColorSpace;
-		}
-	}
-});
-scene.add(spaceship);
-
-const STAR = {
-	count: 300,
-	colors: ['#fcaa67', '#c75d59', '#ffffc7', '#8cc5c6', '#a5898c'],
+const uniforms = {
+	uProgress: new Uniform(-1.0),
+	uFrequency: new Uniform(2.0),
+	uNoiseTexture: new Uniform(noiseTexture),
+	uBasicColor: new Uniform(new Color('#87e8de')),
+	uDisslutionColor: new Uniform(new Color('#d4380d')),
 };
-const STARS: {
-	len: number;
-	pos: Vector3;
-	color: Color;
-	speed: number;
-}[] = [];
 
-const r = MathUtils.randFloat;
-
-function resetStar() {
-	let len = 0;
-	let pos;
-
-	if (Math.random() > 0.8) {
-		len = r(1.5, 15);
-		pos = new Vector3(r(-15, 15), r(-15, 15), r(-15, 15));
-	} else {
-		len = r(2.5, 20);
-		pos = new Vector3(r(-45, 15), r(-15, 15), r(-15, 15));
-	}
-
-	const color = new Color(
-		STAR.colors[Math.floor(Math.random() * STAR.colors.length)]
-	)
-		.convertSRGBToLinear()
-		.multiplyScalar(1.3);
-	const speed = r(19.5, 42);
-
-	return {
-		len,
-		pos,
-		color,
-		speed,
-	};
-}
-
-const starGeometry = new PlaneGeometry(1, 0.1);
-const starMaterial = new MeshBasicMaterial({
-	transparent: true,
-	alphaMap: alphaMap,
-	alphaTest: 0.2,
+const sphereGeometry = new SphereGeometry(1, 64, 64);
+const sphereMaterial = new CustomShaderMaterial({
+	baseMaterial: MeshStandardMaterial,
+	uniforms,
+	vertexShader: disslutionVertexShader,
+	fragmentShader: disslutionFragmentShader,
+	metalness: 0.98,
+	roughness: 0.1,
 });
-const stars = new InstancedMesh(starGeometry, starMaterial, STAR.count);
-stars.rotation.y = Math.PI / 2;
-stars.layers.set(LAYER.BLOOM);
-scene.add(stars);
 
-for (let i = 0; i < STAR.count; i++) {
-	STARS.push(resetStar());
-}
+const sphere = new Mesh(sphereGeometry, sphereMaterial);
+sphere.layers.set(LAYER.BLOOM);
 
-const object3D = new Object3D();
-for (let i = 0; i < STARS.length; i++) {
-	object3D.position.copy(STARS[i].pos);
-	object3D.scale.x = STARS[i].len;
-	object3D.updateMatrix();
+scene.add(sphere);
 
-	stars.setMatrixAt(i, object3D.matrix);
-	stars.setColorAt(i, STARS[i].color);
-}
-
-/**
- * Light
- */
-const ambientLight = new AmbientLight(0xffffff, 1.0);
+const ambientLight = new AmbientLight(0xffffff, 10.0);
 scene.add(ambientLight);
 
 /**
- * Helpers
+ * Pane
  */
+const pane = new Pane({ title: 'Debug Params' });
+pane.element.parentElement!.style.width = '380px';
+pane.registerPlugin(EssentialsPlugin);
+const fpsGraph: any = pane.addBlade({
+	view: 'fpsgraph',
+	label: undefined,
+	rows: 4,
+});
+
+pane.addBinding(uniforms.uProgress, 'value', {
+	step: 0.01,
+	min: -1.0,
+	max: 1.0,
+});
 
 /**
  * Events
  */
 
-let translY = 0;
-let translAcceleration = 0;
-
-let angleZ = 0;
-let angleZAcceleration = 0;
-
-function updateStars(delta: number) {
-	stars.instanceMatrix.needsUpdate = true;
-
-	for (let i = 0; i < STARS.length; i++) {
-		if (STARS[i].pos.x >= 40) {
-			STARS[i] = resetStar();
-		}
-		STARS[i].pos.x += STARS[i].speed * delta;
-		object3D.position.copy(STARS[i].pos);
-		object3D.scale.x = STARS[i].len;
-
-		object3D.updateMatrix();
-
-		stars.setMatrixAt(i, object3D.matrix);
-		stars.setColorAt(i, STARS[i].color);
-	}
-}
+let env: Scene['background'];
 
 function renderBloom(delta: number) {
-	scene.background = null;
 	scene.traverse(darkenMaterial);
-	plane.visible = false;
+	env = scene.background;
+	scene.background = null;
 
 	bloomComposer.render(delta);
 
-	plane.visible = true;
-	scene.background = new Color('#1e1e1e');
+	scene.background = env;
 	scene.traverse(restoreMaterial);
 }
 
-function renderEnvMap() {
-	if (envMap) envMap.dispose();
-
-	spaceship.visible = false;
-	scene.background = null;
-	stars.layers.set(0);
-
-	pmremGenerator.compileEquirectangularShader();
-	envMap = pmremGenerator.fromScene(scene);
-
-	spaceship.visible = true;
-	scene.background = new Color('#1e1e1e');
-	stars.layers.set(LAYER.BLOOM);
-}
-
 function render() {
+	fpsGraph.begin();
 	// Time
 	const delta = clock.getDelta();
 
@@ -342,43 +243,9 @@ function render() {
 	controls.update(delta);
 	controls2.update();
 
-	renderEnvMap();
-
-	spaceship.traverse((obj) => {
-		if (obj instanceof Mesh && obj.material instanceof MeshStandardMaterial) {
-			if (envMap) {
-				obj.material.envMap = envMap.texture;
-				obj.material.envMapIntensity = 80.0;
-				obj.material.normalScale.setScalar(0.1);
-			}
-		}
-	});
-
-	// Update spaceship
-	const targetY = point.y;
-	translAcceleration += (targetY - translY) * 0.002;
-	translAcceleration *= 0.95;
-	translY += translAcceleration;
-
-	spaceship.position.y = translY;
-
-	// Update spaceship rotation
-
-	// Get B to A
-	const dir = point.clone().sub(new Vector3(0, translY, 0)).normalize();
-	const dirCos = dir.dot(new Vector3(0, 1, 0));
-	const angle = Math.acos(dirCos) - Math.PI / 2;
-
-	angleZAcceleration += (angle - angleZ) * 0.06;
-	angleZAcceleration *= 0.85;
-	angleZ = angleZAcceleration;
-
-	spaceship.rotation.setFromVector3(new Vector3(angleZ, 0, angleZ));
-
-	updateStars(delta);
-
 	// Animation
 	requestAnimationFrame(render);
+	fpsGraph.end();
 }
 render();
 
@@ -387,34 +254,12 @@ function resize() {
 	size.height = window.innerHeight;
 
 	renderer.setSize(size.width, size.height);
-	bloomComposer.setSize(size.width, size.height);
-	composer.setSize(size.width, size.height);
 
 	camera.aspect = size.width / size.height;
 	camera.updateProjectionMatrix();
 }
 
 window.addEventListener('resize', resize);
-
-function onMouseMove(e: MouseEvent) {
-	// NDC
-	const x = (e.clientX / window.innerWidth) * 2.0 - 1.0;
-	const y = -(e.clientY / window.innerHeight) * 2.0 + 1.0;
-
-	mouse.set(x, y);
-
-	raycaster.setFromCamera(mouse, camera);
-
-	const intersects = raycaster.intersectObject(plane);
-
-	if (intersects.length) {
-		const interSectPoint = intersects[0].point.clone();
-		interSectPoint.x = -3.0;
-		point.copy(interSectPoint);
-	}
-}
-
-window.addEventListener('mousemove', onMouseMove);
 
 function darkenMaterial(obj: Object3D) {
 	if (obj instanceof Mesh && obj.layers.test(layer) === false) {
