@@ -138,7 +138,7 @@ const bloomPass = new UnrealBloomPass(
 	new Vector2(size.width, size.height),
 	0.8,
 	0.1,
-	1.5
+	1.0
 );
 
 const outputPass = new OutputPass();
@@ -172,6 +172,7 @@ composer.addPass(outputPass);
 const uniforms = {
 	uProgress: new Uniform(-1.0),
 	uFrequency: new Uniform(2.0),
+	uIntensity: new Uniform(2.5),
 	uNoiseTexture: new Uniform(noiseTexture),
 	uBasicColor: new Uniform(new Color('#87e8de')),
 	uDisslutionColor: new Uniform(new Color('#ff7875')),
@@ -213,6 +214,11 @@ pane.addBinding(uniforms.uProgress, 'value', {
 	max: 1.0,
 });
 
+pane.addBinding(uniforms.uIntensity, 'value', {
+	step: 0.01,
+	min: 1.0,
+	max: 10.0,
+});
 /**
  * Events
  */
