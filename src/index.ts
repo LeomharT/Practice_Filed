@@ -1,24 +1,33 @@
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import {
+	ACESFilmicToneMapping,
 	Clock,
 	Color,
 	EquirectangularReflectionMapping,
+	IcosahedronGeometry,
 	Layers,
+	Mesh,
+	MeshBasicMaterial,
 	MirroredRepeatWrapping,
 	PerspectiveCamera,
-	ReinhardToneMapping,
+	PlaneGeometry,
 	Scene,
 	ShaderChunk,
+	ShaderMaterial,
 	TextureLoader,
 	WebGLRenderer,
+	type IUniform,
 } from 'three';
 import {
 	GLTFLoader,
 	HDRLoader,
 	OrbitControls,
+	Reflector,
 	TrackballControls,
 } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
+import floorFragmentShader from './shader/floor/fragment.glsl?raw';
+import floorVertexShader from './shader/floor/vertex.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
 import './style.css';
 
@@ -78,7 +87,7 @@ const renderer = new WebGLRenderer({
 });
 renderer.setSize(size.width, size.height);
 renderer.setPixelRatio(size.pixelRatio);
-renderer.toneMapping = ReinhardToneMapping;
+renderer.toneMapping = ACESFilmicToneMapping;
 renderer.toneMappingExposure = 1.0;
 el.append(renderer.domElement);
 
@@ -86,7 +95,7 @@ const scene = new Scene();
 scene.background = new Color('#1e1e1e');
 
 const camera = new PerspectiveCamera(50, size.width / size.height, 0.1, 1000);
-camera.position.set(4, 0, 0);
+camera.position.set(4, 4, 4);
 camera.lookAt(scene.position);
 camera.layers.enable(LAYER.BLOOM);
 
@@ -105,6 +114,41 @@ const clock = new Clock();
 /**
  * World
  */
+
+const sphereGeometry = new IcosahedronGeometry(0.1, 3);
+const sphereMaterial = new MeshBasicMaterial({
+	color: 'yellow',
+});
+const sphere = new Mesh(sphereGeometry, sphereMaterial);
+sphere.position.y = 0.5;
+scene.add(sphere);
+
+const floorGeometry = new PlaneGeometry(3, 3, 64, 64);
+
+const floorReflector = new Reflector(floorGeometry, {
+	textureWidth: size.width,
+	textureHeight: size.height,
+});
+floorReflector.rotation.x = -Math.PI / 2;
+floorReflector.position.y = -0.001;
+scene.add(floorReflector);
+
+const uniforms: Record<string, IUniform<any>> = {};
+
+if (floorReflector.material instanceof ShaderMaterial) {
+	uniforms['uReflectorColor'] = floorReflector.material.uniforms.tDiffuse;
+	uniforms['uTextureMatrix'] = floorReflector.material.uniforms.textureMatrix;
+}
+
+const floorMaterial = new ShaderMaterial({
+	vertexShader: floorVertexShader,
+	fragmentShader: floorFragmentShader,
+	uniforms,
+});
+
+const floor = new Mesh(floorGeometry, floorMaterial);
+floor.rotation.x = -Math.PI / 2;
+scene.add(floor);
 
 /**
  * Pane
