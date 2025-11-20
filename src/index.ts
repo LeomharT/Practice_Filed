@@ -1,44 +1,24 @@
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import {
-	AmbientLight,
 	Clock,
 	Color,
 	EquirectangularReflectionMapping,
 	Layers,
-	Material,
-	Mesh,
-	MeshBasicMaterial,
-	MeshStandardMaterial,
 	MirroredRepeatWrapping,
-	Object3D,
 	PerspectiveCamera,
 	ReinhardToneMapping,
 	Scene,
 	ShaderChunk,
-	ShaderMaterial,
-	SphereGeometry,
 	TextureLoader,
-	Uniform,
-	Vector2,
 	WebGLRenderer,
 } from 'three';
-import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import {
-	EffectComposer,
 	GLTFLoader,
 	HDRLoader,
 	OrbitControls,
-	OutputPass,
-	RenderPass,
-	ShaderPass,
 	TrackballControls,
-	UnrealBloomPass,
 } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
-import bloomFragmentShader from './shader/bloom/fragment.glsl?raw';
-import bloomVertexShader from './shader/bloom/vertex.glsl?raw';
-import disslutionFragmentShader from './shader/disslution/fragment.glsl?raw';
-import disslutionVertexShader from './shader/disslution/vertex.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
 import './style.css';
 
@@ -75,8 +55,6 @@ gltfLoader.setPath('/src/assets/models/');
  * Models
  */
 
-const spaceshipModel = await gltfLoader.loadAsync('sapceship.glb');
-
 /**
  * Textures
  */
@@ -88,7 +66,6 @@ hdrLoader.load('rural_evening_road_1k.hdr', (data) => {
 	data.mapping = EquirectangularReflectionMapping;
 
 	scene.background = data;
-	// scene.backgroundBlurriness = 0.95;
 });
 
 /**
@@ -125,76 +102,9 @@ controls2.noZoom = false;
 
 const clock = new Clock();
 
-const darkMaterial = new MeshBasicMaterial({ color: 0x000000 });
-const materials: Record<string, Material> = {};
-
-/**
- * Post processing
- */
-
-const renderScene = new RenderPass(scene, camera);
-
-const bloomPass = new UnrealBloomPass(
-	new Vector2(size.width, size.height),
-	0.8,
-	0.1,
-	1.0
-);
-
-const outputPass = new OutputPass();
-
-const bloomComposer = new EffectComposer(renderer);
-bloomComposer.renderToScreen = false;
-bloomComposer.addPass(renderScene);
-bloomComposer.addPass(bloomPass);
-
-const mixPass = new ShaderPass(
-	new ShaderMaterial({
-		vertexShader: bloomVertexShader,
-		fragmentShader: bloomFragmentShader,
-		uniforms: {
-			uDiffuseColor: new Uniform(null),
-			uBloomTexture: new Uniform(bloomComposer.renderTarget2.texture),
-		},
-	}),
-	'uDiffuseColor'
-);
-
-const composer = new EffectComposer(renderer);
-composer.addPass(renderScene);
-composer.addPass(mixPass);
-composer.addPass(outputPass);
-
 /**
  * World
  */
-
-const uniforms = {
-	uProgress: new Uniform(-1.0),
-	uFrequency: new Uniform(2.0),
-	uIntensity: new Uniform(2.5),
-	uNoiseTexture: new Uniform(noiseTexture),
-	uBasicColor: new Uniform(new Color('#87e8de')),
-	uDisslutionColor: new Uniform(new Color('#ff7875')),
-};
-
-const sphereGeometry = new SphereGeometry(1, 64, 64);
-const sphereMaterial = new CustomShaderMaterial({
-	baseMaterial: MeshStandardMaterial,
-	uniforms,
-	vertexShader: disslutionVertexShader,
-	fragmentShader: disslutionFragmentShader,
-	metalness: 0.98,
-	roughness: 0.1,
-});
-
-const sphere = new Mesh(sphereGeometry, sphereMaterial);
-sphere.layers.set(LAYER.BLOOM);
-
-scene.add(sphere);
-
-const ambientLight = new AmbientLight(0xffffff, 10.0);
-scene.add(ambientLight);
 
 /**
  * Pane
@@ -208,33 +118,9 @@ const fpsGraph: any = pane.addBlade({
 	rows: 4,
 });
 
-pane.addBinding(uniforms.uProgress, 'value', {
-	step: 0.01,
-	min: -1.0,
-	max: 1.0,
-});
-
-pane.addBinding(uniforms.uIntensity, 'value', {
-	step: 0.01,
-	min: 1.0,
-	max: 10.0,
-});
 /**
  * Events
  */
-
-let env: Scene['background'];
-
-function renderBloom(delta: number) {
-	scene.traverse(darkenMaterial);
-	env = scene.background;
-	scene.background = null;
-
-	bloomComposer.render(delta);
-
-	scene.background = env;
-	scene.traverse(restoreMaterial);
-}
 
 function render() {
 	fpsGraph.begin();
@@ -242,8 +128,7 @@ function render() {
 	const delta = clock.getDelta();
 
 	// Render
-	renderBloom(delta);
-	composer.render(delta);
+	renderer.render(scene, camera);
 
 	// Update
 	controls.update(delta);
@@ -266,17 +151,3 @@ function resize() {
 }
 
 window.addEventListener('resize', resize);
-
-function darkenMaterial(obj: Object3D) {
-	if (obj instanceof Mesh && obj.layers.test(layer) === false) {
-		materials[obj.uuid] = obj.material;
-		obj.material = darkMaterial;
-	}
-}
-
-function restoreMaterial(obj: Object3D) {
-	if (materials[obj.uuid] && obj instanceof Mesh) {
-		obj.material = materials[obj.uuid];
-		delete materials[obj.uuid];
-	}
-}
