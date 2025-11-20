@@ -47,6 +47,7 @@ const size = {
 
 const LAYER = {
 	BLOOM: 1,
+	RAIN: 2,
 };
 
 const layer = new Layers();
@@ -73,12 +74,13 @@ gltfLoader.setPath('/src/assets/models/');
  * Textures
  */
 
+const rainNormal = textureLoader.load('rainNormal.png');
+
 const noiseTexture = textureLoader.load('noiseTexture.png');
 noiseTexture.wrapT = noiseTexture.wrapS = MirroredRepeatWrapping;
 
 hdrLoader.load('rural_evening_road_1k.hdr', (data) => {
 	data.mapping = EquirectangularReflectionMapping;
-
 	scene.background = data;
 });
 
@@ -103,6 +105,7 @@ const camera = new PerspectiveCamera(50, size.width / size.height, 0.1, 1000);
 camera.position.set(4, 4, 4);
 camera.lookAt(scene.position);
 camera.layers.enable(LAYER.BLOOM);
+camera.layers.enable(LAYER.RAIN);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -145,6 +148,7 @@ scene.add(floorReflector);
 
 const uniforms: Record<string, IUniform<any>> = {
 	uFrameTexture: new Uniform(frameRenderTarget.texture),
+	uRainNormal: new Uniform(rainNormal),
 };
 
 if (floorReflector.material instanceof ShaderMaterial) {
@@ -172,6 +176,7 @@ const rainMaterial = new ShaderMaterial({
 
 const rain = new Mesh(rainGeometry, rainMaterial);
 rain.position.set(1, 1, 1);
+rain.layers.set(LAYER.RAIN);
 scene.add(rain);
 
 /**
