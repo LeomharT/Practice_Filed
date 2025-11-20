@@ -14,8 +14,11 @@ import {
 	Scene,
 	ShaderChunk,
 	ShaderMaterial,
+	SRGBColorSpace,
 	TextureLoader,
+	Uniform,
 	WebGLRenderer,
+	WebGLRenderTarget,
 	type IUniform,
 } from 'three';
 import {
@@ -29,6 +32,8 @@ import { Pane } from 'tweakpane';
 import floorFragmentShader from './shader/floor/fragment.glsl?raw';
 import floorVertexShader from './shader/floor/vertex.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
+import rainFragmentShader from './shader/rain/fragment.glsl?raw';
+import rainVertexShader from './shader/rain/vertex.glsl?raw';
 import './style.css';
 
 (ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
@@ -111,6 +116,11 @@ controls2.noZoom = false;
 
 const clock = new Clock();
 
+const frameRenderTarget = new WebGLRenderTarget(size.width, size.height, {
+	generateMipmaps: true,
+	colorSpace: SRGBColorSpace,
+});
+
 /**
  * World
  */
@@ -133,7 +143,9 @@ floorReflector.rotation.x = -Math.PI / 2;
 floorReflector.position.y = -0.001;
 scene.add(floorReflector);
 
-const uniforms: Record<string, IUniform<any>> = {};
+const uniforms: Record<string, IUniform<any>> = {
+	uFrameTexture: new Uniform(frameRenderTarget.texture),
+};
 
 if (floorReflector.material instanceof ShaderMaterial) {
 	uniforms['uReflectorColor'] = floorReflector.material.uniforms.tDiffuse;
@@ -144,11 +156,23 @@ const floorMaterial = new ShaderMaterial({
 	vertexShader: floorVertexShader,
 	fragmentShader: floorFragmentShader,
 	uniforms,
+	transparent: true,
 });
 
 const floor = new Mesh(floorGeometry, floorMaterial);
 floor.rotation.x = -Math.PI / 2;
 scene.add(floor);
+
+const rainGeometry = new PlaneGeometry(0.5, 0.5, 64, 64);
+const rainMaterial = new ShaderMaterial({
+	vertexShader: rainVertexShader,
+	fragmentShader: rainFragmentShader,
+	uniforms,
+});
+
+const rain = new Mesh(rainGeometry, rainMaterial);
+rain.position.set(1, 1, 1);
+scene.add(rain);
 
 /**
  * Pane
@@ -166,12 +190,23 @@ const fpsGraph: any = pane.addBlade({
  * Events
  */
 
+function renderFrameTexture() {
+	rain.visible = false;
+
+	renderer.setRenderTarget(frameRenderTarget);
+	renderer.render(scene, camera);
+	renderer.setRenderTarget(null);
+
+	rain.visible = true;
+}
+
 function render() {
 	fpsGraph.begin();
 	// Time
 	const delta = clock.getDelta();
 
 	// Render
+	renderFrameTexture();
 	renderer.render(scene, camera);
 
 	// Update
