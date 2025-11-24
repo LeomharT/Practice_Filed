@@ -13,23 +13,18 @@ import {
 	Raycaster,
 	Scene,
 	ShaderChunk,
-	ShaderMaterial,
 	TextureLoader,
 	Vector2,
 	Vector3,
 	WebGLRenderer,
-	type IUniform,
 } from 'three';
 import {
 	GLTFLoader,
 	HDRLoader,
 	OrbitControls,
-	Reflector,
 	TrackballControls,
 } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
-import floorFragmentShader from './shader/floor/fragment.glsl?raw';
-import floorVertexShader from './shader/floor/vertex.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
 import './style.css';
 
@@ -94,7 +89,7 @@ const scene = new Scene();
 scene.background = new Color('#1e1e1e');
 
 const camera = new PerspectiveCamera(50, size.width / size.height, 0.1, 1000);
-camera.position.set(4, 4, 4);
+camera.position.set(4, 0, 0);
 camera.lookAt(scene.position);
 camera.layers.enable(LAYER.BLOOM);
 camera.layers.enable(LAYER.RAIN);
@@ -123,31 +118,14 @@ spaceship.position.x = -3;
 
 // scene.add(spaceship);
 
-const uniforms: Record<string, IUniform<any>> = {};
-
 const planeGeometry = new PlaneGeometry(5, 5, 64, 64);
-
-const floorReflector = new Reflector(planeGeometry, {
-	textureWidth: size.width,
-	textureHeight: size.height,
-});
-floorReflector.rotation.x = -Math.PI / 2;
-floorReflector.position.y = -0.0011;
-scene.add(floorReflector);
-
-if (floorReflector.material instanceof ShaderMaterial) {
-	uniforms['uDiffuse'] = floorReflector.material.uniforms.tDiffuse;
-	uniforms['uTextureMatrix'] = floorReflector.material.uniforms.textureMatrix;
-}
-
-const planeMaterial = new ShaderMaterial({
-	vertexShader: floorVertexShader,
-	fragmentShader: floorFragmentShader,
-	uniforms,
+const planeMaterial = new MeshBasicMaterial({
+	color: '#85a5ff',
+	wireframe: true,
 });
 
 const plane = new Mesh(planeGeometry, planeMaterial);
-plane.rotation.x = -Math.PI / 2;
+plane.rotation.y = Math.PI / 2;
 scene.add(plane);
 
 const ballGeometry = new IcosahedronGeometry(0.1, 3);
@@ -160,6 +138,7 @@ scene.add(ball);
 /**
  * Pane
  */
+
 const pane = new Pane({ title: 'Debug Params' });
 pane.element.parentElement!.style.width = '380px';
 pane.registerPlugin(EssentialsPlugin);
@@ -176,29 +155,19 @@ const fpsGraph: any = pane.addBlade({
 const point = new Vector2();
 const intersectPoint = new Vector3();
 
-let translateZ = 0;
-let accelerationZ = 0;
-
-let translateX = 0;
-let accelerationX = 0;
+let translateY = 0;
+let accelerationY = 0;
 
 function updateBallPosition() {
 	const target = {
-		x: intersectPoint.x,
-		z: intersectPoint.z,
+		y: intersectPoint.y,
 	};
 
-	accelerationZ += (target.z - translateZ) * 0.002;
-	accelerationZ *= 0.95;
-	translateZ += accelerationZ;
+	accelerationY += (target.y - translateY) * 0.1;
+	// accelerationY *= 0.95;
+	translateY = accelerationY;
 
-	accelerationX += (target.x - translateX) * 0.002;
-	accelerationX *= 0.95;
-	translateX += accelerationX;
-
-	ball.position.z = translateZ;
-	ball.position.y = 1.25;
-	ball.position.x = translateX;
+	ball.position.y = translateY;
 }
 
 function render() {
@@ -212,7 +181,6 @@ function render() {
 	// Update
 	controls.update(delta);
 	controls2.update();
-
 	updateBallPosition();
 
 	// Animation
