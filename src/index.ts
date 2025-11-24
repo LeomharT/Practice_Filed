@@ -3,7 +3,6 @@ import {
 	ACESFilmicToneMapping,
 	Clock,
 	Color,
-	EquirectangularReflectionMapping,
 	IcosahedronGeometry,
 	Layers,
 	Mesh,
@@ -11,29 +10,22 @@ import {
 	MirroredRepeatWrapping,
 	PerspectiveCamera,
 	PlaneGeometry,
+	Raycaster,
 	Scene,
 	ShaderChunk,
-	ShaderMaterial,
-	SRGBColorSpace,
 	TextureLoader,
-	Uniform,
+	Vector2,
+	Vector3,
 	WebGLRenderer,
-	WebGLRenderTarget,
-	type IUniform,
 } from 'three';
 import {
 	GLTFLoader,
 	HDRLoader,
 	OrbitControls,
-	Reflector,
 	TrackballControls,
 } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
-import floorFragmentShader from './shader/floor/fragment.glsl?raw';
-import floorVertexShader from './shader/floor/vertex.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
-import rainFragmentShader from './shader/rain/fragment.glsl?raw';
-import rainVertexShader from './shader/rain/vertex.glsl?raw';
 import './style.css';
 
 (ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
@@ -70,19 +62,14 @@ gltfLoader.setPath('/src/assets/models/');
  * Models
  */
 
+const spaceshipModel = await gltfLoader.loadAsync('sapceship.glb');
+
 /**
  * Textures
  */
 
-const rainNormal = textureLoader.load('rainNormal.png');
-
 const noiseTexture = textureLoader.load('noiseTexture.png');
 noiseTexture.wrapT = noiseTexture.wrapS = MirroredRepeatWrapping;
-
-hdrLoader.load('rural_evening_road_1k.hdr', (data) => {
-	data.mapping = EquirectangularReflectionMapping;
-	scene.background = data;
-});
 
 /**
  * Basic
@@ -102,7 +89,7 @@ const scene = new Scene();
 scene.background = new Color('#1e1e1e');
 
 const camera = new PerspectiveCamera(50, size.width / size.height, 0.1, 1000);
-camera.position.set(4, 4, 4);
+camera.position.set(4, 0, 0);
 camera.lookAt(scene.position);
 camera.layers.enable(LAYER.BLOOM);
 camera.layers.enable(LAYER.RAIN);
@@ -119,65 +106,34 @@ controls2.noZoom = false;
 
 const clock = new Clock();
 
-const frameRenderTarget = new WebGLRenderTarget(size.width, size.height, {
-	generateMipmaps: true,
-	colorSpace: SRGBColorSpace,
-});
+const raycaster = new Raycaster();
 
 /**
  * World
  */
 
-const sphereGeometry = new IcosahedronGeometry(0.1, 3);
-const sphereMaterial = new MeshBasicMaterial({
+const spaceship = spaceshipModel.scene;
+spaceship.scale.setScalar(0.1);
+spaceship.position.x = -3;
+
+// scene.add(spaceship);
+
+const planeGeometry = new PlaneGeometry(5, 5, 64, 64);
+const planeMaterial = new MeshBasicMaterial({
 	color: 'yellow',
-});
-const sphere = new Mesh(sphereGeometry, sphereMaterial);
-sphere.position.y = 0.5;
-scene.add(sphere);
-
-const floorGeometry = new PlaneGeometry(3, 3, 64, 64);
-
-const floorReflector = new Reflector(floorGeometry, {
-	textureWidth: size.width,
-	textureHeight: size.height,
-});
-floorReflector.rotation.x = -Math.PI / 2;
-floorReflector.position.y = -0.001;
-scene.add(floorReflector);
-
-const uniforms: Record<string, IUniform<any>> = {
-	uFrameTexture: new Uniform(frameRenderTarget.texture),
-	uRainNormal: new Uniform(rainNormal),
-};
-
-if (floorReflector.material instanceof ShaderMaterial) {
-	uniforms['uReflectorColor'] = floorReflector.material.uniforms.tDiffuse;
-	uniforms['uTextureMatrix'] = floorReflector.material.uniforms.textureMatrix;
-}
-
-const floorMaterial = new ShaderMaterial({
-	vertexShader: floorVertexShader,
-	fragmentShader: floorFragmentShader,
-	uniforms,
-	transparent: true,
+	wireframe: true,
 });
 
-const floor = new Mesh(floorGeometry, floorMaterial);
-floor.rotation.x = -Math.PI / 2;
-scene.add(floor);
+const plane = new Mesh(planeGeometry, planeMaterial);
+plane.rotation.y = Math.PI / 2;
+scene.add(plane);
 
-const rainGeometry = new PlaneGeometry(0.5, 0.5, 64, 64);
-const rainMaterial = new ShaderMaterial({
-	vertexShader: rainVertexShader,
-	fragmentShader: rainFragmentShader,
-	uniforms,
+const ballGeometry = new IcosahedronGeometry(0.1, 3);
+const ballMaterial = new MeshBasicMaterial({
+	color: '#fa541c',
 });
-
-const rain = new Mesh(rainGeometry, rainMaterial);
-rain.position.set(1, 1, 1);
-rain.layers.set(LAYER.RAIN);
-scene.add(rain);
+const ball = new Mesh(ballGeometry, ballMaterial);
+scene.add(ball);
 
 /**
  * Pane
@@ -195,15 +151,8 @@ const fpsGraph: any = pane.addBlade({
  * Events
  */
 
-function renderFrameTexture() {
-	rain.visible = false;
-
-	renderer.setRenderTarget(frameRenderTarget);
-	renderer.render(scene, camera);
-	renderer.setRenderTarget(null);
-
-	rain.visible = true;
-}
+const point = new Vector2();
+const intersectPoint = new Vector3();
 
 function render() {
 	fpsGraph.begin();
@@ -211,12 +160,13 @@ function render() {
 	const delta = clock.getDelta();
 
 	// Render
-	renderFrameTexture();
 	renderer.render(scene, camera);
 
 	// Update
 	controls.update(delta);
 	controls2.update();
+
+	ball.position.copy(intersectPoint);
 
 	// Animation
 	requestAnimationFrame(render);
@@ -235,3 +185,18 @@ function resize() {
 }
 
 window.addEventListener('resize', resize);
+
+function onPointerMove(e: PointerEvent) {
+	point.x = (e.clientX / window.innerWidth) * 2 - 1;
+	point.y = -(e.clientY / window.innerHeight) * 2 + 1;
+
+	raycaster.setFromCamera(point, camera);
+
+	const intersects = raycaster.intersectObject(plane);
+
+	if (intersects.length) {
+		intersectPoint.copy(intersects[0].point);
+	}
+}
+
+window.addEventListener('pointermove', onPointerMove);
