@@ -120,7 +120,7 @@ spaceship.position.x = -3;
 
 const planeGeometry = new PlaneGeometry(5, 5, 64, 64);
 const planeMaterial = new MeshBasicMaterial({
-	color: '#85a5ff',
+	color: '#722ed1',
 	wireframe: true,
 });
 
@@ -158,16 +158,25 @@ const intersectPoint = new Vector3();
 let translateY = 0;
 let accelerationY = 0;
 
+let translateZ = 0;
+let accelerationZ = 0;
+
 function updateBallPosition() {
 	const target = {
 		y: intersectPoint.y,
+		z: intersectPoint.z,
 	};
 
 	accelerationY += (target.y - translateY) * 0.1;
 	// accelerationY *= 0.95;
 	translateY = accelerationY;
 
+	accelerationZ += (target.z - translateZ) * 0.1;
+	// accelerationZ *= 0.95;
+	translateZ = accelerationZ;
+
 	ball.position.y = translateY;
+	ball.position.z = translateZ;
 }
 
 function render() {
