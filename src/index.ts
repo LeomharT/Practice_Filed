@@ -132,7 +132,7 @@ const floorReflector = new Reflector(planeGeometry, {
 	textureHeight: size.height,
 });
 floorReflector.rotation.x = -Math.PI / 2;
-floorReflector.position.y = -0.0001;
+floorReflector.position.y = -0.0011;
 scene.add(floorReflector);
 
 if (floorReflector.material instanceof ShaderMaterial) {
@@ -205,7 +205,6 @@ function render() {
 	fpsGraph.begin();
 	// Time
 	const delta = clock.getDelta();
-	const elapsed = clock.getElapsedTime();
 
 	// Render
 	renderer.render(scene, camera);
