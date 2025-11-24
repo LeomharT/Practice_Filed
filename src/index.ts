@@ -97,7 +97,7 @@ camera.layers.enable(LAYER.RAIN);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.enablePan = false;
-controls.enabled = true;
+controls.enabled = false;
 
 const controls2 = new TrackballControls(camera, renderer.domElement);
 controls2.noPan = true;
@@ -120,7 +120,7 @@ spaceship.position.x = -3;
 
 const planeGeometry = new PlaneGeometry(5, 5, 64, 64);
 const planeMaterial = new MeshBasicMaterial({
-	color: 'yellow',
+	color: '#722ed1',
 	wireframe: true,
 });
 
@@ -154,6 +154,30 @@ const fpsGraph: any = pane.addBlade({
 const point = new Vector2();
 const intersectPoint = new Vector3();
 
+let translateZ = 0;
+let accelerationZ = 0;
+
+let translateY = 0;
+let accelerationY = 0;
+
+function updateBallPosition() {
+	const target = {
+		y: intersectPoint.y,
+		z: intersectPoint.z,
+	};
+
+	accelerationZ += (target.z - translateZ) * 0.002;
+	accelerationZ *= 0.95;
+	translateZ += accelerationZ;
+
+	accelerationY += (target.y - translateY) * 0.002;
+	accelerationY *= 0.95;
+	translateY += accelerationY;
+
+	ball.position.z = translateZ;
+	ball.position.y = translateY;
+}
+
 function render() {
 	fpsGraph.begin();
 	// Time
@@ -166,7 +190,7 @@ function render() {
 	controls.update(delta);
 	controls2.update();
 
-	ball.position.copy(intersectPoint);
+	updateBallPosition();
 
 	// Animation
 	requestAnimationFrame(render);
