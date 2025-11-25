@@ -165,6 +165,11 @@ const intersectPoint = new Vector3();
 let translateY = 0;
 let accelerationY = 0;
 
+let angleZ = 0;
+let accelerationZ = 0;
+
+const up = new Vector3(0, 1, 0);
+
 function updateSpaceshipPosition() {
   const target = {
     y: intersectPoint.y,
@@ -175,7 +180,23 @@ function updateSpaceshipPosition() {
   accelerationY *= 0.95;
   translateY += accelerationY;
 
+  // Angle
+  const dir = intersectPoint
+    .clone()
+    .sub(new Vector3(0, translateY, 0))
+    .normalize();
+
+  const dirCos = dir.dot(up);
+  const angle = Math.acos(dirCos) - Math.PI / 2;
+
+  accelerationZ += (angle - angleZ) * 0.06;
+  accelerationZ *= 0.85;
+  angleZ = accelerationZ;
+
   spaceship.position.y = translateY;
+
+  spaceship.rotation.x = angleZ;
+  spaceship.rotation.z = angleZ;
 }
 
 function render() {
