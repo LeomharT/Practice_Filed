@@ -170,7 +170,7 @@ composer.addPass(outputPass);
 
 const uniforms = {
   uColor: new Uniform(new Color('#391085')),
-  uEdgeColor: new Uniform(new Color('#780650')),
+  uEdgeColor: new Uniform(new Color('#2f54eb')),
   uProgress: new Uniform(-1.0),
   uFrequency: new Uniform(2.5),
 };
@@ -227,6 +227,10 @@ const fpsGraph: any = pane.addBlade({
 
 pane.addBinding(uniforms.uColor, 'value', {
   label: 'Color',
+  color: { type: 'float' },
+});
+pane.addBinding(uniforms.uEdgeColor, 'value', {
+  label: 'Edge Color',
   color: { type: 'float' },
 });
 pane.addBinding(uniforms.uProgress, 'value', {
