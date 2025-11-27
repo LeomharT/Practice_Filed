@@ -11,8 +11,6 @@ void main(){
 
     float linear = smoothstep(0.05, 0.35, distanceToCenter);
 
-    
-
     color = mix(
         vec3(1.0, 0.0, 0.0),
         vec3(0.0, 0.0, 1.0),
