@@ -2,6 +2,7 @@ varying vec2 vUv;
 
 uniform float uTime;
 uniform vec3 uWaveColor;
+uniform vec3 uWaveColor2;
 
 void main(){
     vec3 color  = vec3(1.0);
@@ -12,13 +13,13 @@ void main(){
 
     if(distanceToCenter > 0.5) discard;
 
-    distanceToCenter = smoothstep(0.0, 0.95, distanceToCenter);
+    distanceToCenter  = smoothstep(0.0, 0.95, distanceToCenter);
     distanceToCenter *= 8.0;
     distanceToCenter -= uTime * 0.5;
     distanceToCenter  = fract(distanceToCenter);
 
     color = mix(
-        vec3(1.0),
+        uWaveColor2,
         uWaveColor,
         distanceToCenter
     );
