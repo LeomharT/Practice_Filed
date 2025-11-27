@@ -14,6 +14,7 @@ import {
   ShaderChunk,
   ShaderMaterial,
   TextureLoader,
+  Uniform,
   WebGLRenderer,
 } from 'three';
 import {
@@ -113,13 +114,18 @@ const clock = new Clock();
  * World
  */
 
+const uniforms = {
+  uTime: new Uniform(0.0),
+  uWaveColor: new Uniform(new Color('#69b1ff')),
+};
+
 const planeGeometry = new PlaneGeometry(2, 2, 64, 64);
 const planeMaterial = new ShaderMaterial({
   vertexShader: floorVertexShader,
   fragmentShader: floorFragmentShader,
   transparent: true,
   side: DoubleSide,
-  wireframe: false,
+  uniforms,
 });
 
 const plane = new Mesh(planeGeometry, planeMaterial);
@@ -154,6 +160,7 @@ function render() {
   // Update
   controls.update(delta);
   controls2.update();
+  uniforms.uTime.value += 0.01;
 
   // Animation
   requestAnimationFrame(render);
