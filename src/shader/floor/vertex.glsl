@@ -6,8 +6,8 @@ void main(){
     vec4 modelPosition    = modelMatrix * vec4(position, 1.0);
          modelPosition.y += pow(distanceToCenter, 1.5);
     
-    if(distanceToCenter >= 0.48) {
-        modelPosition.y = pow(0.48, 1.5);
+    if(distanceToCenter >= 0.3) {
+        modelPosition.y = pow(0.3, 1.5);
     }
 
     vec4  viewPosition       = viewMatrix * modelPosition;
