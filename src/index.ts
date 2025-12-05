@@ -126,6 +126,7 @@ const planeMaterial = new ShaderMaterial({
   fragmentShader: floorFragmentShader,
   transparent: true,
   side: DoubleSide,
+  wireframe: true,
   uniforms,
 });
 
@@ -145,6 +146,7 @@ const fpsGraph: any = pane.addBlade({
   label: undefined,
   rows: 4,
 });
+pane.addBinding(planeMaterial, 'wireframe');
 
 /**
  * Events
