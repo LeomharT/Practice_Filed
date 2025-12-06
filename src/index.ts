@@ -126,7 +126,7 @@ const planeMaterial = new ShaderMaterial({
   fragmentShader: floorFragmentShader,
   transparent: true,
   side: DoubleSide,
-  wireframe: true,
+  wireframe: false,
   uniforms,
 });
 

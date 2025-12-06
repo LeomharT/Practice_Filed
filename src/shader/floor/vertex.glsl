@@ -1,15 +1,16 @@
-#define GRAVITY 1.45
+#define GRAVITY 1.6
 
 varying vec2 vUv;
 
 void main(){
-    float distanceToCenter     = distance(vec2(0.5), uv);
-    vec3  displacementPosition = position;
+    float distanceToCenter       = distance(vec2(0.5), uv);
+    vec3  displacementPosition   = position;
+          displacementPosition.z = pow(distanceToCenter, GRAVITY);
 
-    displacementPosition.z = pow(distanceToCenter, GRAVITY);
+    float edge = 0.45;
 
-    if(distanceToCenter > 0.45) {
-        displacementPosition.z = pow(0.45, GRAVITY);
+    if(distanceToCenter > edge) {
+        displacementPosition.z = pow(edge, GRAVITY);
     }
 
     vec4 modelPosition      = modelMatrix * vec4(displacementPosition, 1.0);
