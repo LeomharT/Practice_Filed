@@ -19,5 +19,6 @@ void main(){
 
     gl_Position = projectionPosition;
 
+    // Varying
     vUv = uv;
 }

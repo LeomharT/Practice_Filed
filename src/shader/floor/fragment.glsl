@@ -12,24 +12,20 @@ void main(){
     vec2  center           = vec2(0.5);
     float distanceToCenter = distance(uv, center);
 
+    color = uWaveColor;
+
     if(distanceToCenter > 0.5) discard;
 
-    float colorMix  = smoothstep(0.0, 1.0, distanceToCenter);
-          colorMix *= 5.0;
-          colorMix -= uTime;
-          colorMix  = fract(colorMix);
-
-    color = mix(
-        uWaveColor,
-        uWaveColor2,
-        colorMix
-    );
+    float alpha  = smoothstep(0.0, 1.0, distanceToCenter);
+          alpha *= 5.0;
+          alpha -= uTime * 0.6;
+          alpha  = fract(alpha);
 
     if(distanceToCenter < 0.5 && distanceToCenter > 0.48) {
-        color = vec3(1.0);
+        color = uWaveColor2;
     }
 
-    gl_FragColor = vec4(color, 1.0);
+    gl_FragColor = vec4(color, alpha);
 
     #include <colorspace_fragment>
     #include <tonemapping_fragment>
