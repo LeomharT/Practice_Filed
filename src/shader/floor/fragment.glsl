@@ -14,7 +14,10 @@ void main(){
 
     if(distanceToCenter > 0.5) discard;
 
-    float colorMix = smoothstep(0.0, 0.8, distanceToCenter);
+    float colorMix  = smoothstep(0.0, 1.0, distanceToCenter);
+          colorMix *= 5.0;
+          colorMix -= uTime;
+          colorMix  = fract(colorMix);
 
     color = mix(
         uWaveColor,
