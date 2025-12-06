@@ -118,6 +118,7 @@ const uniforms = {
   uTime: new Uniform(0.0),
   uWaveColor: new Uniform(new Color('#722ed1')),
   uWaveColor2: new Uniform(new Color('#eb2f96')),
+  uLineColor: new Uniform(new Color('#ffe58f')),
 };
 
 const planeGeometry = new PlaneGeometry(2, 2, 64, 64);
