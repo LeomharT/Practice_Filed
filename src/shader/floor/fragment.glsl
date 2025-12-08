@@ -6,6 +6,7 @@ uniform float uTime;
 uniform vec3 uWaveColor;
 uniform vec3 uWaveColor2;
 uniform vec3 uLineColor;
+uniform sampler2D uImg;
 
 void main(){
     vec3  color            = vec3(1.0);
@@ -13,6 +14,8 @@ void main(){
     vec2  center           = vec2(0.5);
     float distanceToCenter = distance(uv, center);
     float lineWidth        = 0.01;
+
+    vec4 imgColor = texture2D(uImg, uv);
 
     color = uWaveColor;
 
@@ -49,6 +52,8 @@ void main(){
             alpha = 1.0;
         }
     }
+
+    color = imgColor.rgb;
 
     gl_FragColor = vec4(color, alpha);
 

@@ -13,6 +13,7 @@ import {
   Scene,
   ShaderChunk,
   ShaderMaterial,
+  Texture,
   TextureLoader,
   Uniform,
   WebGLRenderer,
@@ -28,6 +29,7 @@ import floorFragmentShader from './shader/floor/fragment.glsl?raw';
 import floorVertexShader from './shader/floor/vertex.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
 import './style.css';
+import imgBase from '/img.txt?raw';
 
 (ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
 
@@ -71,6 +73,15 @@ const spaceshipModel = await gltfLoader.loadAsync('sapceship.glb');
 
 const noiseTexture = textureLoader.load('noiseTexture.png');
 noiseTexture.wrapT = noiseTexture.wrapS = MirroredRepeatWrapping;
+
+const img = new Image();
+img.src = imgBase;
+img.onload = () => {
+  baseImg.image = img;
+};
+
+const baseImg = new Texture();
+baseImg.needsUpdate = true;
 
 /**
  * Basic
@@ -119,6 +130,7 @@ const uniforms = {
   uWaveColor: new Uniform(new Color('#722ed1')),
   uWaveColor2: new Uniform(new Color('#eb2f96')),
   uLineColor: new Uniform(new Color('#ffe58f')),
+  uImg: new Uniform(baseImg),
 };
 
 const planeGeometry = new PlaneGeometry(2, 2, 64, 64);
