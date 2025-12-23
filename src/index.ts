@@ -3,9 +3,11 @@ import {
   ACESFilmicToneMapping,
   Clock,
   Color,
-  DoubleSide,
+  FrontSide,
+  IcosahedronGeometry,
   Layers,
   Mesh,
+  MeshBasicMaterial,
   MirroredRepeatWrapping,
   PCFSoftShadowMap,
   PerspectiveCamera,
@@ -16,11 +18,13 @@ import {
   TextureLoader,
   Uniform,
   WebGLRenderer,
+  type IUniform,
 } from 'three';
 import {
   GLTFLoader,
   HDRLoader,
   OrbitControls,
+  Reflector,
   TrackballControls,
 } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
@@ -114,26 +118,45 @@ const clock = new Clock();
  * World
  */
 
-const uniforms = {
+const uniforms: Record<string, IUniform<any>> = {
   uTime: new Uniform(0.0),
-  uWaveColor: new Uniform(new Color('#722ed1')),
-  uWaveColor2: new Uniform(new Color('#d4380d')),
-  uLineColor: new Uniform(new Color('#ffe58f')),
 };
 
 const planeGeometry = new PlaneGeometry(2, 2, 64, 64);
+
+const reflector = new Reflector(planeGeometry);
+reflector.rotation.x = -Math.PI / 2;
+reflector.position.y = -0.001;
+
+if (reflector.material instanceof ShaderMaterial) {
+  uniforms['uDiffuse'] = reflector.material.uniforms.tDiffuse;
+  uniforms['uTextureMatrix'] = reflector.material.uniforms.textureMatrix;
+
+  console.log(uniforms);
+}
+
+scene.add(reflector);
+
 const planeMaterial = new ShaderMaterial({
   vertexShader: floorVertexShader,
   fragmentShader: floorFragmentShader,
-  transparent: true,
-  side: DoubleSide,
+  transparent: false,
   wireframe: false,
+  side: FrontSide,
   uniforms,
 });
 
 const plane = new Mesh(planeGeometry, planeMaterial);
 plane.rotation.x = -Math.PI / 2;
 scene.add(plane);
+
+const ballGeometry = new IcosahedronGeometry(0.1, 3);
+const ballMaterial = new MeshBasicMaterial({
+  color: 'yellow',
+});
+
+const ball = new Mesh(ballGeometry, ballMaterial);
+scene.add(ball);
 
 /**
  * Pane
@@ -156,6 +179,7 @@ pane.addBinding(planeMaterial, 'wireframe');
 function render() {
   fpsGraph.begin();
   // Time
+  const elapsed = clock.getElapsedTime();
   const delta = clock.getDelta();
 
   // Render
@@ -165,6 +189,10 @@ function render() {
   controls.update(delta);
   controls2.update();
   uniforms.uTime.value += 0.01;
+
+  ball.position.x = Math.cos(elapsed * 0.5) * 0.5;
+  ball.position.y = Math.max(0.25, Math.sin(elapsed) * 1.0);
+  ball.position.z = Math.sin(elapsed * 0.5) * 0.5;
 
   // Animation
   requestAnimationFrame(render);
