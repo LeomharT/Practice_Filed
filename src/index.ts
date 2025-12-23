@@ -18,6 +18,7 @@ import {
   TextureLoader,
   Uniform,
   WebGLRenderer,
+  WebGLRenderTarget,
   type IUniform,
 } from 'three';
 import {
@@ -31,6 +32,8 @@ import { Pane } from 'tweakpane';
 import floorFragmentShader from './shader/floor/fragment.glsl?raw';
 import floorVertexShader from './shader/floor/vertex.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
+import mirrowFragmentShader from './shader/mirrow/fragment.glsl?raw';
+import mirrowVertexShader from './shader/mirrow/vertex.glsl?raw';
 import './style.css';
 
 (ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
@@ -114,6 +117,12 @@ controls2.noZoom = false;
 
 const clock = new Clock();
 
+const sceneTexture = new WebGLRenderTarget(
+  window.innerWidth,
+  window.innerHeight,
+  { generateMipmaps: true }
+);
+
 /**
  * World
  */
@@ -158,6 +167,19 @@ const ballMaterial = new MeshBasicMaterial({
 const ball = new Mesh(ballGeometry, ballMaterial);
 scene.add(ball);
 
+const mirrowGeometry = new PlaneGeometry(0.2, 0.2);
+const mirrowMaterial = new ShaderMaterial({
+  vertexShader: mirrowVertexShader,
+  fragmentShader: mirrowFragmentShader,
+  uniforms: {
+    uSceneTexture: new Uniform(sceneTexture.texture),
+  },
+});
+
+const mirrow = new Mesh(mirrowGeometry, mirrowMaterial);
+mirrow.position.set(1.25, 1.25, 1.25);
+scene.add(mirrow);
+
 /**
  * Pane
  */
@@ -176,6 +198,17 @@ pane.addBinding(planeMaterial, 'wireframe');
  * Events
  */
 
+function renderSceneTexture() {
+  renderer.setRenderTarget(sceneTexture);
+
+  mirrow.visible = false;
+  sceneTexture.texture.needsUpdate = true;
+  renderer.render(scene, camera);
+  mirrow.visible = true;
+
+  renderer.setRenderTarget(null);
+}
+
 function render() {
   fpsGraph.begin();
   // Time
@@ -183,6 +216,7 @@ function render() {
   const delta = clock.getDelta();
 
   // Render
+  renderSceneTexture();
   renderer.render(scene, camera);
 
   // Update
