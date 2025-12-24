@@ -3,7 +3,7 @@ uniform sampler2D uDiffuse;
 varying vec4 vTextureMatrix;
 
 void main(){
-    vec3 color = vec3(0.265, 0.458, 0.222);
+    vec3 color = vec3(0.265, 0.458, 0.722);
 
     vec2 reflectUv = vTextureMatrix.xy / vTextureMatrix.w;
 

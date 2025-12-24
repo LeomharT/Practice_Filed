@@ -8,13 +8,14 @@ void main() {
     vec3 color = vec3(1.0);
     vec2 uv    = vUv;
     vec3 ndc   = vNDC;
- 
+    
+    // Distance to center
     float dist = distance(uv, vec2(0.5));
 
     if(dist > 0.5) discard;
 
     float strength     = dist / 0.5;
-    float distortion   = pow(strength, 2.0);
+    float distortion   = 1.0 + pow(strength, 2.0);
     vec2  distortedNDC = mix(ndc.xy, vec2(0.5), distortion * 0.2);
     vec4  sceneColor   = texture2D(uSceneTexture, distortedNDC);
 
