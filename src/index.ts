@@ -167,7 +167,7 @@ const ballMaterial = new MeshBasicMaterial({
 const ball = new Mesh(ballGeometry, ballMaterial);
 scene.add(ball);
 
-const mirrowGeometry = new PlaneGeometry(0.2, 0.2);
+const mirrowGeometry = new PlaneGeometry(0.5, 0.5);
 const mirrowMaterial = new ShaderMaterial({
   vertexShader: mirrowVertexShader,
   fragmentShader: mirrowFragmentShader,

@@ -9,13 +9,19 @@ void main() {
     vec2 uv    = vUv;
     vec3 ndc   = vNDC;
  
-    float distanceToCenter = distance(uv, vec2(0.5));
+    float dist = distance(uv, vec2(0.5));
 
-    if(distanceToCenter > 0.5) discard;
+    if(dist > 0.5) discard;
 
-    vec4 sceneColor = texture2D(uSceneTexture, ndc.xy);
+    float strength     = dist / 0.5;
+    float distortion   = pow(strength, 2.0);
+    vec2  distortedNDC = mix(ndc.xy, vec2(0.5), distortion * 0.2);
+    vec4  sceneColor   = texture2D(uSceneTexture, distortedNDC);
 
     color = sceneColor.rgb;
 
     gl_FragColor = vec4(color, 1.0);
+
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
 }
