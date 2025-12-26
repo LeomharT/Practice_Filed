@@ -3,6 +3,7 @@ import {
   Color,
   FogExp2,
   Mesh,
+  MeshBasicMaterial,
   PerspectiveCamera,
   PlaneGeometry,
   Raycaster,
@@ -10,9 +11,14 @@ import {
   ShaderMaterial,
   UniformsLib,
   UniformsUtils,
+  Vector2,
   WebGLRenderer,
 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import {
+  GLTFLoader,
+  OrbitControls,
+  type GLTF,
+} from 'three/examples/jsm/Addons.js';
 import classes from './index.module.css';
 import floorFragmentShader from './shader/floor/fragment.glsl?raw';
 import floorVertexShader from './shader/floor/vertex.glsl?raw';
@@ -29,9 +35,23 @@ const pathes = {
   delivery: '/delivery.png',
   deliveryFlat: '/deliveryFlat.png',
   firetruck: '/firetruck.png',
-};
+} as const;
+
+const pointer = new Vector2();
 
 const el = document.querySelector('#root') as HTMLDivElement;
+
+const gltfLoader = new GLTFLoader();
+gltfLoader.setPath('/models/');
+
+const models: Record<keyof typeof pathes, GLTF | undefined> = {
+  ambulance: undefined,
+  delivery: undefined,
+  deliveryFlat: undefined,
+  firetruck: undefined,
+};
+
+let selectedKey: keyof typeof pathes | undefined = undefined;
 
 /**
  * Basic
@@ -46,12 +66,27 @@ renderer.setPixelRatio(size.pixelRatio);
 renderer.domElement.addEventListener('dragover', (e) => {
   e.preventDefault();
 
-  console.log(e);
+  pointer.x = (e.clientX / size.width) * 2 - 1;
+  pointer.y = -(e.clientY / size.height) * 2 + 1;
+  raycaster.setFromCamera(pointer, camera);
+
+  const intersect = raycaster.intersectObjects([floor]);
+  if (intersect.length && selectedKey) {
+    const pointer = intersect[0].point;
+
+    const model = models[selectedKey]!.scene;
+    model.traverse((obj) => {
+      if (obj instanceof Mesh) {
+        obj.material = new MeshBasicMaterial({ color: 'gray' });
+      }
+    });
+    model.scale.setScalar(0.2);
+    model.position.copy(pointer);
+    scene.add(model);
+  }
 });
 renderer.domElement.addEventListener('drop', (e) => {
   e.preventDefault();
-
-  console.warn(e);
 });
 el.append(renderer.domElement);
 
@@ -76,22 +111,38 @@ const panel = document.createElement('div');
 panel.classList.add(classes.panel);
 el.append(panel);
 
+const wrapper = document.createElement('div');
+wrapper.classList.add(classes.wrapper);
+panel.append(wrapper);
+
 const list = document.createElement('div');
 list.classList.add(classes.list);
-panel.append(list);
+wrapper.append(list);
 
 Object.entries(pathes).forEach((value) => {
+  gltfLoader.load(value[0] + '.glb', (data) => {
+    models[value[0] as keyof typeof pathes] = data;
+  });
+
   const cover = document.createElement('img');
   cover.src = '/preview' + value[1];
+
+  const text = document.createElement('span');
+  text.innerText = value[0];
 
   const item = document.createElement('div');
   item.classList.add(classes.item);
   item.draggable = true;
   item.addEventListener('dragstart', (e) => {
-    e.dataTransfer?.setDragImage(cover, 32, 32);
+    const img = cover.cloneNode() as HTMLImageElement;
+    img.style.opacity = '0.15';
+
+    e.dataTransfer?.setDragImage(img, 32, 32);
+    selectedKey = value[0];
   });
 
   item.append(cover);
+  item.append(text);
   list.append(item);
 });
 
@@ -114,13 +165,14 @@ const floor = new Mesh(floorGeometry, floorMaterial);
 floor.rotation.x = -Math.PI / 2;
 scene.add(floor);
 
-const fog = new FogExp2(new Color('red'), 0.1);
+const fog = new FogExp2(scene.background, 0.2);
 scene.fog = fog;
 
 /**
  * Helper
  */
 const axesHelper = new AxesHelper(1);
+axesHelper.material.fog = false;
 scene.add(axesHelper);
 
 /**

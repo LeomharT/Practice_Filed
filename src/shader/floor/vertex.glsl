@@ -1,7 +1,5 @@
 varying vec2 vUv;
-varying float vFogDepth;
-varying vec3 fogDensity;
-
+#include <fog_pars_vertex>
 
 void main(){
     #include <begin_vertex>

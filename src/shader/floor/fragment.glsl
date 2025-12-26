@@ -1,9 +1,7 @@
 precision mediump float;
 
 varying vec2 vUv;
-varying float vFogDepth;
-uniform float fogDensity;
-uniform vec3 fogColor;
+#include <fog_pars_fragment>
 
 void main(){
     vec2  uv        = vUv;
