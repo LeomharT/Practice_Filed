@@ -1,11 +1,21 @@
 import {
   AxesHelper,
   Color,
+  FogExp2,
+  Mesh,
   PerspectiveCamera,
+  PlaneGeometry,
+  Raycaster,
   Scene,
+  ShaderMaterial,
+  UniformsLib,
+  UniformsUtils,
   WebGLRenderer,
 } from 'three';
+import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import classes from './index.module.css';
+import floorFragmentShader from './shader/floor/fragment.glsl?raw';
+import floorVertexShader from './shader/floor/vertex.glsl?raw';
 import './style.css';
 
 const size = {
@@ -22,6 +32,41 @@ const pathes = {
 };
 
 const el = document.querySelector('#root') as HTMLDivElement;
+
+/**
+ * Basic
+ */
+
+const renderer = new WebGLRenderer({
+  alpha: true,
+  antialias: true,
+});
+renderer.setSize(size.width, size.height);
+renderer.setPixelRatio(size.pixelRatio);
+renderer.domElement.addEventListener('dragover', (e) => {
+  e.preventDefault();
+
+  console.log(e);
+});
+renderer.domElement.addEventListener('drop', (e) => {
+  e.preventDefault();
+
+  console.warn(e);
+});
+el.append(renderer.domElement);
+
+const scene = new Scene();
+scene.background = new Color('#1e1e1e');
+
+const camera = new PerspectiveCamera(70, size.width / size.height, 0.1, 1000);
+camera.position.set(0, 2, 2);
+camera.lookAt(scene.position);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.enabled = true;
+
+const raycaster = new Raycaster();
 
 /**
  * DOM
@@ -51,23 +96,26 @@ Object.entries(pathes).forEach((value) => {
 });
 
 /**
- * Basic
+ * World
  */
 
-const renderer = new WebGLRenderer({
-  alpha: true,
-  antialias: true,
+const floorGeometry = new PlaneGeometry(10, 10, 64, 64);
+const floorMaterial = new ShaderMaterial({
+  uniforms: UniformsUtils.merge([
+    UniformsLib['fog'], // Include fog uniforms
+  ]),
+  vertexShader: floorVertexShader,
+  fragmentShader: floorFragmentShader,
+  transparent: true,
+  fog: true,
 });
-renderer.setSize(size.width, size.height);
-renderer.setPixelRatio(size.pixelRatio);
-el.append(renderer.domElement);
 
-const scene = new Scene();
-scene.background = new Color('#1e1e1e');
+const floor = new Mesh(floorGeometry, floorMaterial);
+floor.rotation.x = -Math.PI / 2;
+scene.add(floor);
 
-const camera = new PerspectiveCamera(70, size.width / size.height, 0.1, 1000);
-camera.position.set(3, 3, 3);
-camera.lookAt(scene.position);
+const fog = new FogExp2(new Color('red'), 0.1);
+scene.fog = fog;
 
 /**
  * Helper
@@ -82,6 +130,9 @@ scene.add(axesHelper);
 function render() {
   // Render
   renderer.render(scene, camera);
+
+  // Update
+  controls.update();
 
   // Animation
   requestAnimationFrame(render);

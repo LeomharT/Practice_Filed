@@ -1,0 +1,37 @@
+precision mediump float;
+
+varying vec2 vUv;
+varying float vFogDepth;
+uniform float fogDensity;
+uniform vec3 fogColor;
+
+void main(){
+    vec2  uv        = vUv;
+    vec3  color     = vec3(0.0);
+    vec3  lineColor = vec3(0.3, 0.3, 0.3);
+    float lineWidth = 0.005;
+    float gap       = 1.0 / 5.0;
+    float alpha     = 0.0;
+
+    uv *= 5.0;
+    uv = fract(uv);
+
+    for(float i = 0.0; i < 5.0; i++) {
+        float space = i * gap;
+
+        if(uv.x > space && uv.x < space + lineWidth) {
+            color = lineColor;
+            alpha = 1.0;
+        }
+        if(uv.y > space && uv.y < space + lineWidth) {
+            color = lineColor;
+            alpha = 1.0;
+        }
+    }
+
+    gl_FragColor = vec4(color, alpha);
+
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
+    #include <fog_fragment>
+}

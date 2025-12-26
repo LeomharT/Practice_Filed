@@ -16,7 +16,7 @@
   grid-template-columns: 1fr 1fr;
   gap: 12px;
   background-color: #1e1e1e;
-  border: 1px solid #303030;
+  border: 1px solid hsl(0, 0%, 19%);
 }
 
 .item {
