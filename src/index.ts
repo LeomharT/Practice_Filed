@@ -78,7 +78,11 @@ renderer.domElement.addEventListener('dragover', (e) => {
     const pointer = intersect[0].point;
 
     const model = models[selectedKey]!.scene;
-
+    model.traverse((obj) => {
+      if (obj instanceof Mesh) {
+        obj.material.fog = false;
+      }
+    });
     model.scale.setScalar(0.2);
     model.position.copy(pointer);
     scene.add(model);
@@ -89,6 +93,9 @@ renderer.domElement.addEventListener('drop', (e) => {
 
   if (selectedKey) {
     const model = models[selectedKey]!.scene;
+
+    controls.target.copy(model.position);
+    controls2.target.copy(model.position);
 
     tc.attach(model);
   }
@@ -115,6 +122,7 @@ controls2.noZoom = false;
 const raycaster = new Raycaster();
 
 const tc = new TransformControls(camera, renderer.domElement);
+tc.showY = false;
 tc.addEventListener('dragging-changed', function (e) {
   controls.enabled = !e.value;
 });
