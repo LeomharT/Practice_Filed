@@ -1,9 +1,10 @@
 import {
+  AmbientLight,
   AxesHelper,
   Color,
+  DirectionalLight,
   FogExp2,
   Mesh,
-  MeshBasicMaterial,
   PerspectiveCamera,
   PlaneGeometry,
   Raycaster,
@@ -75,11 +76,7 @@ renderer.domElement.addEventListener('dragover', (e) => {
     const pointer = intersect[0].point;
 
     const model = models[selectedKey]!.scene;
-    model.traverse((obj) => {
-      if (obj instanceof Mesh) {
-        obj.material = new MeshBasicMaterial({ color: 'gray' });
-      }
-    });
+
     model.scale.setScalar(0.2);
     model.position.copy(pointer);
     scene.add(model);
@@ -138,7 +135,7 @@ Object.entries(pathes).forEach((value) => {
     img.style.opacity = '0.15';
 
     e.dataTransfer?.setDragImage(img, 32, 32);
-    selectedKey = value[0];
+    selectedKey = value[0] as keyof typeof pathes;
   });
 
   item.append(cover);
@@ -174,6 +171,28 @@ scene.fog = fog;
 const axesHelper = new AxesHelper(1);
 axesHelper.material.fog = false;
 scene.add(axesHelper);
+
+const ambientLight = new AmbientLight(0xffffff, 10.0);
+scene.add(ambientLight);
+
+const directionLight = new DirectionalLight(0xffffff, 10.0);
+scene.add(directionLight);
+
+const directionLight1 = new DirectionalLight(0xffffff, 10.0);
+directionLight1.position.x = 1;
+scene.add(directionLight1);
+
+const directionLight2 = new DirectionalLight(0xffffff, 10.0);
+directionLight2.position.x = -1;
+scene.add(directionLight2);
+
+const directionLight3 = new DirectionalLight(0xffffff, 10.0);
+directionLight3.position.z = 1;
+scene.add(directionLight3);
+
+const directionLight4 = new DirectionalLight(0xffffff, 10.0);
+directionLight4.position.z = -1;
+scene.add(directionLight4);
 
 /**
  * Events
