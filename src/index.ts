@@ -18,6 +18,8 @@ import {
 import {
   GLTFLoader,
   OrbitControls,
+  TrackballControls,
+  TransformControls,
   type GLTF,
 } from 'three/examples/jsm/Addons.js';
 import classes from './index.module.css';
@@ -84,6 +86,12 @@ renderer.domElement.addEventListener('dragover', (e) => {
 });
 renderer.domElement.addEventListener('drop', (e) => {
   e.preventDefault();
+
+  if (selectedKey) {
+    const model = models[selectedKey]!.scene;
+
+    tc.attach(model);
+  }
 });
 el.append(renderer.domElement);
 
@@ -97,8 +105,21 @@ camera.lookAt(scene.position);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 controls.enabled = true;
+controls.enableZoom = false;
+
+const controls2 = new TrackballControls(camera, renderer.domElement);
+controls2.noRotate = true;
+controls2.noPan = true;
+controls2.noZoom = false;
 
 const raycaster = new Raycaster();
+
+const tc = new TransformControls(camera, renderer.domElement);
+tc.addEventListener('dragging-changed', function (e) {
+  controls.enabled = !e.value;
+});
+const tcHelper = tc.getHelper();
+scene.add(tcHelper);
 
 /**
  * DOM
@@ -204,6 +225,7 @@ function render() {
 
   // Update
   controls.update();
+  controls2.update();
 
   // Animation
   requestAnimationFrame(render);
