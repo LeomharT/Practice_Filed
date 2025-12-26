@@ -1,0 +1,31 @@
+.panel {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  padding-block: 64px;
+  padding-inline-start: 12px;
+}
+
+.list {
+  width: 230px;
+  padding: 4px;
+  background-color: white;
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  background-color: #1e1e1e;
+  border: 1px solid #303030;
+}
+
+.item {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  aspect-ratio: 1 / 1;
+  & img {
+    user-select: none;
+    pointer-events: none;
+  }
+}
