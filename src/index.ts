@@ -1,3 +1,4 @@
+import gsap from 'gsap';
 import {
   AmbientLight,
   AxesHelper,
@@ -17,6 +18,7 @@ import {
 } from 'three';
 import {
   GLTFLoader,
+  InteractiveGroup,
   OrbitControls,
   TrackballControls,
   TransformControls,
@@ -85,20 +87,12 @@ renderer.domElement.addEventListener('dragover', (e) => {
     });
     model.scale.setScalar(0.2);
     model.position.copy(pointer);
-    scene.add(model);
+    interactiveGrouop.add(model);
   }
 });
 renderer.domElement.addEventListener('drop', (e) => {
   e.preventDefault();
-
-  if (selectedKey) {
-    const model = models[selectedKey]!.scene;
-
-    controls.target.copy(model.position);
-    controls2.target.copy(model.position);
-
-    tc.attach(model);
-  }
+  attachToModel();
 });
 el.append(renderer.domElement);
 
@@ -128,6 +122,28 @@ tc.addEventListener('dragging-changed', function (e) {
 });
 const tcHelper = tc.getHelper();
 scene.add(tcHelper);
+
+const interactiveGrouop = new InteractiveGroup();
+scene.add(interactiveGrouop);
+
+function attachToModel() {
+  if (selectedKey) {
+    const model = models[selectedKey]!.scene;
+
+    const from = controls.target.clone();
+
+    gsap.to(from, {
+      ...model.position,
+      duration: 1.0,
+      onUpdate() {
+        controls.target.copy(from);
+        controls2.target.copy(from);
+      },
+    });
+
+    tc.attach(model);
+  }
+}
 
 /**
  * DOM
@@ -251,3 +267,23 @@ function resize() {
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize);
+
+function onPointerDown(e: PointerEvent) {
+  const coord = new Vector2(
+    (e.clientX / size.width) * 2 - 1,
+    -(e.clientY / size.height) * 2 + 1
+  );
+
+  raycaster.setFromCamera(coord, camera);
+
+  const intersects = raycaster.intersectObjects(interactiveGrouop.children);
+  if (intersects.length) {
+    const target = intersects[0].object.parent?.parent;
+    if (target?.name) {
+      selectedKey = target.name as keyof typeof pathes;
+      attachToModel();
+    }
+  }
+}
+
+window.addEventListener('click', onPointerDown);
