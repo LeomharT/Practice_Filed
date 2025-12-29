@@ -57,6 +57,7 @@ const models: Record<keyof typeof pathes, GLTF | undefined> = {
 };
 
 let selectedKey: keyof typeof pathes | undefined = undefined;
+let enabledSelect = true;
 
 /**
  * Basic
@@ -119,6 +120,14 @@ const tc = new TransformControls(camera, renderer.domElement);
 tc.showY = false;
 tc.addEventListener('dragging-changed', function (e) {
   controls.enabled = !e.value;
+
+  if (e.value) {
+    enabledSelect = false;
+  } else {
+    setTimeout(() => {
+      enabledSelect = true;
+    }, 200);
+  }
 });
 const tcHelper = tc.getHelper();
 scene.add(tcHelper);
@@ -269,6 +278,8 @@ function resize() {
 window.addEventListener('resize', resize);
 
 function onPointerDown(e: PointerEvent) {
+  if (!enabledSelect) return;
+
   const coord = new Vector2(
     (e.clientX / size.width) * 2 - 1,
     -(e.clientY / size.height) * 2 + 1
@@ -283,6 +294,8 @@ function onPointerDown(e: PointerEvent) {
       selectedKey = target.name as keyof typeof pathes;
       attachToModel();
     }
+  } else {
+    tc.detach();
   }
 }
 
