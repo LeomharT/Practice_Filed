@@ -57,7 +57,6 @@ const models: Record<keyof typeof pathes, GLTF | undefined> = {
 };
 
 let selectedKey: keyof typeof pathes | undefined = undefined;
-let enabledSelect = true;
 
 /**
  * Basic
@@ -121,12 +120,8 @@ tc.showY = false;
 tc.addEventListener('dragging-changed', function (e) {
   controls.enabled = !e.value;
 
-  if (e.value) {
-    enabledSelect = false;
-  } else {
-    setTimeout(() => {
-      enabledSelect = true;
-    }, 200);
+  if (!e.value) {
+    attachToModel();
   }
 });
 const tcHelper = tc.getHelper();
@@ -147,6 +142,12 @@ function attachToModel() {
       onUpdate() {
         controls.target.copy(from);
         controls2.target.copy(from);
+      },
+      onStart() {
+        controls.enabled = false;
+      },
+      onComplete() {
+        controls.enabled = true;
       },
     });
 
@@ -278,8 +279,6 @@ function resize() {
 window.addEventListener('resize', resize);
 
 function onPointerDown(e: PointerEvent) {
-  if (!enabledSelect) return;
-
   const coord = new Vector2(
     (e.clientX / size.width) * 2 - 1,
     -(e.clientY / size.height) * 2 + 1
@@ -294,9 +293,14 @@ function onPointerDown(e: PointerEvent) {
       selectedKey = target.name as keyof typeof pathes;
       attachToModel();
     }
-  } else {
-    tc.detach();
   }
 }
 
 window.addEventListener('click', onPointerDown);
+
+function detachTC(e: KeyboardEvent) {
+  if (e.key === 'Escape') {
+    tc.detach();
+  }
+}
+window.addEventListener('keydown', detachTC);
