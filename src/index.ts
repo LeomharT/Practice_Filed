@@ -5,6 +5,7 @@ import {
   Color,
   DirectionalLight,
   FogExp2,
+  Group,
   Mesh,
   PerspectiveCamera,
   PlaneGeometry,
@@ -15,6 +16,7 @@ import {
   UniformsUtils,
   Vector2,
   WebGLRenderer,
+  type Object3DEventMap,
 } from 'three';
 import {
   GLTFLoader,
@@ -56,7 +58,8 @@ const models: Record<keyof typeof pathes, GLTF | undefined> = {
   firetruck: undefined,
 };
 
-let selectedKey: keyof typeof pathes | undefined = undefined;
+let draggingModel: Group<Object3DEventMap> | undefined;
+let selectedKey: number | undefined = undefined;
 
 /**
  * Basic
@@ -68,6 +71,7 @@ const renderer = new WebGLRenderer({
 });
 renderer.setSize(size.width, size.height);
 renderer.setPixelRatio(size.pixelRatio);
+
 renderer.domElement.addEventListener('dragover', (e) => {
   e.preventDefault();
 
@@ -79,20 +83,23 @@ renderer.domElement.addEventListener('dragover', (e) => {
   if (intersect.length && selectedKey) {
     const pointer = intersect[0].point;
 
-    const model = models[selectedKey]!.scene;
-    model.traverse((obj) => {
-      if (obj instanceof Mesh) {
-        obj.material.fog = false;
-      }
-    });
-    model.scale.setScalar(0.2);
-    model.position.copy(pointer);
-    interactiveGrouop.add(model);
+    if (draggingModel) {
+      draggingModel.traverse((obj) => {
+        if (obj instanceof Mesh) {
+          obj.material.fog = false;
+        }
+      });
+      draggingModel.scale.setScalar(0.2);
+      draggingModel.position.copy(pointer);
+      interactiveGrouop.add(draggingModel);
+    }
   }
 });
 renderer.domElement.addEventListener('drop', (e) => {
   e.preventDefault();
   attachToModel();
+
+  draggingModel = undefined;
 });
 el.append(renderer.domElement);
 
@@ -132,9 +139,12 @@ scene.add(interactiveGrouop);
 
 function attachToModel() {
   if (selectedKey) {
-    const model = models[selectedKey]!.scene;
+    const model = interactiveGrouop.getObjectById(selectedKey);
+    if (!model) return;
 
     const from = controls.target.clone();
+
+    console.log(model);
 
     gsap.to(from, {
       ...model.position,
@@ -190,7 +200,8 @@ Object.entries(pathes).forEach((value) => {
     img.style.opacity = '0.15';
 
     e.dataTransfer?.setDragImage(img, 32, 32);
-    selectedKey = value[0] as keyof typeof pathes;
+    draggingModel = models[value[0] as keyof typeof pathes]?.scene.clone();
+    selectedKey = draggingModel!.id;
   });
 
   item.append(cover);
@@ -288,9 +299,9 @@ function onPointerDown(e: PointerEvent) {
 
   const intersects = raycaster.intersectObjects(interactiveGrouop.children);
   if (intersects.length) {
-    const target = intersects[0].object.parent?.parent;
-    if (target?.name) {
-      selectedKey = target.name as keyof typeof pathes;
+    const target = intersects[0].object.parent?.parent?.parent;
+    if (target?.id) {
+      selectedKey = target.id;
       attachToModel();
     }
   }
