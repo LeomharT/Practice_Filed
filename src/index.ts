@@ -144,8 +144,6 @@ function attachToModel() {
 
     const from = controls.target.clone();
 
-    console.log(model);
-
     gsap.to(from, {
       ...model.position,
       duration: 1.0,
@@ -153,12 +151,12 @@ function attachToModel() {
         controls.target.copy(from);
         controls2.target.copy(from);
       },
-      onStart() {
-        controls.enabled = false;
-      },
-      onComplete() {
-        controls.enabled = true;
-      },
+      // onStart() {
+      //   controls.enabled = false;
+      // },
+      // onComplete() {
+      //   controls.enabled = true;
+      // },
     });
 
     tc.attach(model);

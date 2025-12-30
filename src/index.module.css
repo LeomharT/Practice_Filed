@@ -16,7 +16,7 @@
 
 .list {
   width: 230px;
-  padding: 4px;
+  padding: 12px;
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 12px;
@@ -28,6 +28,8 @@
   align-items: center;
   justify-content: center;
   aspect-ratio: 1 / 1;
+  background-color: rgb(48, 48, 48);
+  border-radius: 8px;
   & img {
     user-select: none;
     pointer-events: none;
