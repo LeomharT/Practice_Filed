@@ -6,7 +6,9 @@ import {
   DirectionalLight,
   FogExp2,
   Group,
+  Material,
   Mesh,
+  MeshStandardMaterial,
   PerspectiveCamera,
   PlaneGeometry,
   Raycaster,
@@ -98,6 +100,12 @@ renderer.domElement.addEventListener('dragover', (e) => {
 renderer.domElement.addEventListener('drop', (e) => {
   e.preventDefault();
 
+  draggingModel?.traverse((obj) => {
+    if (obj instanceof Mesh) {
+      obj.material = loadingMaterial[obj.uuid];
+    }
+  });
+
   draggingModel = undefined;
 });
 el.append(renderer.domElement);
@@ -172,6 +180,12 @@ const list = document.createElement('div');
 list.classList.add(classes.list);
 wrapper.append(list);
 
+const waitingMaterial = new MeshStandardMaterial({
+  color: new Color('#494848'),
+});
+
+const loadingMaterial: Record<string, Material> = {};
+
 Object.entries(pathes).forEach((value) => {
   gltfLoader.load(value[0] + '.glb', (data) => {
     models[value[0] as keyof typeof pathes] = data;
@@ -192,6 +206,12 @@ Object.entries(pathes).forEach((value) => {
 
     e.dataTransfer?.setDragImage(img, 32, 32);
     draggingModel = models[value[0] as keyof typeof pathes]?.scene.clone();
+    draggingModel?.traverse((obj) => {
+      if (obj instanceof Mesh) {
+        loadingMaterial[obj.uuid] = obj.material;
+        obj.material = waitingMaterial;
+      }
+    });
     selectedKey = draggingModel!.id;
   });
 
