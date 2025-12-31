@@ -181,7 +181,7 @@ list.classList.add(classes.list);
 wrapper.append(list);
 
 const waitingMaterial = new MeshStandardMaterial({
-  color: new Color('#494848'),
+  color: new Color('#555555'),
 });
 
 const loadingMaterial: Record<string, Material> = {};
