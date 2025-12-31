@@ -97,7 +97,6 @@ renderer.domElement.addEventListener('dragover', (e) => {
 });
 renderer.domElement.addEventListener('drop', (e) => {
   e.preventDefault();
-  attachToModel();
 
   draggingModel = undefined;
 });
@@ -151,12 +150,6 @@ function attachToModel() {
         controls.target.copy(from);
         controls2.target.copy(from);
       },
-      // onStart() {
-      //   controls.enabled = false;
-      // },
-      // onComplete() {
-      //   controls.enabled = true;
-      // },
     });
 
     tc.attach(model);
