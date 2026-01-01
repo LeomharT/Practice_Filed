@@ -103,6 +103,7 @@ renderer.domElement.addEventListener('drop', (e) => {
   draggingModel?.traverse((obj) => {
     if (obj instanceof Mesh) {
       obj.material = loadingMaterial[obj.uuid];
+      delete loadingMaterial[obj.uuid];
     }
   });
 
