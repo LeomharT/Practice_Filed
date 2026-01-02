@@ -6,6 +6,7 @@ import {
   DirectionalLight,
   FogExp2,
   Group,
+  LoadingManager,
   Material,
   Mesh,
   MeshStandardMaterial,
@@ -50,7 +51,19 @@ const pointer = new Vector2();
 
 const el = document.querySelector('#root') as HTMLDivElement;
 
-const gltfLoader = new GLTFLoader();
+let loadingResources = false;
+
+const loadingManager = new LoadingManager(
+  () => {
+    loadingResources = true;
+  },
+  (url, loaded, total) => {
+    console.log(url);
+    if (loaded === total) loadingResources = false;
+  }
+);
+
+const gltfLoader = new GLTFLoader(loadingManager);
 gltfLoader.setPath('/models/');
 
 const models: Record<keyof typeof pathes, GLTF | undefined> = {
@@ -180,6 +193,9 @@ panel.append(wrapper);
 const list = document.createElement('div');
 list.classList.add(classes.list);
 wrapper.append(list);
+
+const loadOverlay = document.createElement('div');
+loadOverlay.classList.add('loading');
 
 const waitingMaterial = new MeshStandardMaterial({
   color: new Color('#555555'),
