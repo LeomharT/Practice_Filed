@@ -29,6 +29,7 @@ import {
   TransformControls,
   type GLTF,
 } from 'three/examples/jsm/Addons.js';
+import { Pane } from 'tweakpane';
 import classes from './index.module.css';
 import floorFragmentShader from './shader/floor/fragment.glsl?raw';
 import floorVertexShader from './shader/floor/vertex.glsl?raw';
@@ -287,6 +288,12 @@ scene.add(directionLight3);
 const directionLight4 = new DirectionalLight(0xffffff, 10.0);
 directionLight4.position.z = -1;
 scene.add(directionLight4);
+
+/**
+ * Pane
+ */
+const pane = new Pane({ title: 'Debug Params' });
+pane.element.parentElement!.style.width = '380px';
 
 /**
  * Events
