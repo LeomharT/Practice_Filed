@@ -18,6 +18,7 @@ import {
   UniformsLib,
   UniformsUtils,
   Vector2,
+  Vector3,
   WebGLRenderer,
   type Object3DEventMap,
 } from 'three';
@@ -347,6 +348,11 @@ window.addEventListener('click', onPointerDown);
 function detachTC(e: KeyboardEvent) {
   if (e.key === 'Escape') {
     tc.detach();
+
+    const origin = new Vector3(0, 0, 0);
+
+    controls.target.copy(origin);
+    controls2.target.copy(origin);
   }
 }
 window.addEventListener('keydown', detachTC);
