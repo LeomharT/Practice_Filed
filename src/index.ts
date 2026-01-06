@@ -2,6 +2,8 @@ import gsap from 'gsap';
 import {
   AmbientLight,
   AxesHelper,
+  BoxGeometry,
+  Clock,
   Color,
   DirectionalLight,
   FogExp2,
@@ -15,6 +17,7 @@ import {
   Raycaster,
   Scene,
   ShaderMaterial,
+  Uniform,
   UniformsLib,
   UniformsUtils,
   Vector2,
@@ -34,6 +37,8 @@ import { Pane } from 'tweakpane';
 import classes from './index.module.css';
 import floorFragmentShader from './shader/floor/fragment.glsl?raw';
 import floorVertexShader from './shader/floor/vertex.glsl?raw';
+import loadingFragmentShader from './shader/loading/fragment.glsl?raw';
+import loadingVertexShader from './shader/loading/vertex.glsl?raw';
 import './style.css';
 
 const size = {
@@ -144,6 +149,8 @@ controls2.noPan = true;
 controls2.noZoom = false;
 
 const raycaster = new Raycaster();
+
+const clock = new Clock();
 
 const tc = new TransformControls(camera, renderer.domElement);
 tc.showY = false;
@@ -261,6 +268,20 @@ scene.add(floor);
 const fog = new FogExp2(scene.background, 0.2);
 scene.fog = fog;
 
+const uniforms = {
+  uTime: new Uniform(0),
+};
+
+const loadingTest = new Mesh(
+  new BoxGeometry(0.5, 0.5, 0.5),
+  new ShaderMaterial({
+    vertexShader: loadingVertexShader,
+    fragmentShader: loadingFragmentShader,
+    uniforms,
+  })
+);
+scene.add(loadingTest);
+
 /**
  * Helper
  */
@@ -301,12 +322,16 @@ pane.element.parentElement!.style.width = '380px';
  */
 
 function render() {
+  // Time
+  const e = clock.getElapsedTime();
+
   // Render
   renderer.render(scene, camera);
 
   // Update
   controls.update();
   controls2.update();
+  uniforms.uTime.value = e;
 
   // Animation
   requestAnimationFrame(render);
