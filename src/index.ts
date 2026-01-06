@@ -127,6 +127,7 @@ renderer.domElement.addEventListener('drop', (e) => {
   draggingModel?.traverse((obj) => {
     if (obj instanceof Mesh) {
       obj.material = loadingMaterial[obj.uuid];
+      obj.material = testMaterial;
       delete loadingMaterial[obj.uuid];
     }
   });
@@ -276,14 +277,13 @@ const uniforms = {
   uTime: new Uniform(0),
 };
 
-const loadingTest = new Mesh(
-  new BoxGeometry(0.5, 0.5, 0.5),
-  new ShaderMaterial({
-    vertexShader: loadingVertexShader,
-    fragmentShader: loadingFragmentShader,
-    uniforms,
-  })
-);
+const testMaterial = new ShaderMaterial({
+  vertexShader: loadingVertexShader,
+  fragmentShader: loadingFragmentShader,
+  uniforms,
+});
+
+const loadingTest = new Mesh(new BoxGeometry(0.5, 0.5, 0.5), testMaterial);
 scene.add(loadingTest);
 
 /**
