@@ -16,7 +16,13 @@ void main(){
 
     vec3 color = vec3(r);
 
-    if(noise < mod(uTime * 0.1, 1.0) + 1.0) discard;
+    float progress = mod(uTime * 0.2, 2.5);
+
+    if(noise < progress) discard;
+
+    if(noise > progress && noise < progress + 0.1) {
+        color *= vec3(1.0, 0.0, 0.0);
+    }
  
     gl_FragColor = vec4(color, 1.0);
 }
