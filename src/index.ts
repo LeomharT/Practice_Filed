@@ -16,6 +16,7 @@ import {
   PlaneGeometry,
   Raycaster,
   Scene,
+  ShaderChunk,
   ShaderMaterial,
   Uniform,
   UniformsLib,
@@ -37,9 +38,12 @@ import { Pane } from 'tweakpane';
 import classes from './index.module.css';
 import floorFragmentShader from './shader/floor/fragment.glsl?raw';
 import floorVertexShader from './shader/floor/vertex.glsl?raw';
+import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
 import loadingFragmentShader from './shader/loading/fragment.glsl?raw';
 import loadingVertexShader from './shader/loading/vertex.glsl?raw';
 import './style.css';
+
+(ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
 
 const size = {
   width: window.innerWidth,
