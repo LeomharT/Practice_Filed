@@ -41,6 +41,8 @@ import floorVertexShader from './shader/floor/vertex.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
 import loadingFragmentShader from './shader/loading/fragment.glsl?raw';
 import loadingVertexShader from './shader/loading/vertex.glsl?raw';
+import rotateFragmentShader from './shader/rotate/fragment.glsl?raw';
+import rotateVertexShader from './shader/rotate/vertex.glsl?raw';
 import './style.css';
 
 (ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
@@ -140,7 +142,7 @@ const scene = new Scene();
 scene.background = new Color('#1e1e1e');
 
 const camera = new PerspectiveCamera(70, size.width / size.height, 0.1, 1000);
-camera.position.set(0, 2, 2);
+camera.position.set(0, 0, 2);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -275,6 +277,7 @@ scene.fog = fog;
 
 const uniforms = {
   uTime: new Uniform(0),
+  uRotateDeg: new Uniform(0),
 };
 
 const testMaterial = new ShaderMaterial({
@@ -284,7 +287,17 @@ const testMaterial = new ShaderMaterial({
 });
 
 const loadingTest = new Mesh(new BoxGeometry(0.5, 0.5, 0.5), testMaterial);
-scene.add(loadingTest);
+// scene.add(loadingTest);
+
+const plane = new Mesh(
+  new PlaneGeometry(1, 1, 16, 16),
+  new ShaderMaterial({
+    uniforms,
+    vertexShader: rotateVertexShader,
+    fragmentShader: rotateFragmentShader,
+  })
+);
+scene.add(plane);
 
 /**
  * Helper
@@ -320,6 +333,13 @@ scene.add(directionLight4);
  */
 const pane = new Pane({ title: 'Debug Params' });
 pane.element.parentElement!.style.width = '380px';
+
+pane.addBinding(uniforms.uRotateDeg, 'value', {
+  label: 'deg',
+  step: 0.01,
+  min: 0,
+  max: Math.PI * 2,
+});
 
 /**
  * Events
