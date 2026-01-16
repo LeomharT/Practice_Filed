@@ -28,6 +28,5 @@ void main(){
         uv.x
     );
 
-
     gl_FragColor = vec4(color, 1.0);
 }
