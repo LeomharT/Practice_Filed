@@ -1,4 +1,5 @@
 varying vec2 vUv;
+varying vec3 vNDC;
 
 uniform float uTime;
 
@@ -23,11 +24,12 @@ void main(){
     vec3 pos    = position;
         //  pos.xy = rotate2D(pos.xy, uTime * 0.125);
 
-    vec4 mvPosition = modelViewMatrix * vec4(vec3(0.0), 1.0);
-    mvPosition.xy += pos.xy;
+    vec4 mvPosition     = modelViewMatrix * vec4(vec3(0.0), 1.0);
+         mvPosition.xy += pos.xy;
  
     gl_Position = projectionMatrix * mvPosition;
  
     // Varying
-    vUv = uv;
+    vUv  = uv;
+    vNDC = ((gl_Position.xyz / gl_Position.w) + 1.0) / 2.0;
 }

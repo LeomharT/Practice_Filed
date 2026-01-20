@@ -24,6 +24,7 @@ import {
   Vector2,
   Vector3,
   WebGLRenderer,
+  WebGLRenderTarget,
   type Object3DEventMap,
 } from 'three';
 import {
@@ -194,6 +195,10 @@ function attachToModel() {
   }
 }
 
+const frameTarget = new WebGLRenderTarget(size.width, size.height, {
+  generateMipmaps: true,
+});
+
 /**
  * DOM
  */
@@ -278,6 +283,7 @@ scene.fog = fog;
 const uniforms = {
   uTime: new Uniform(0),
   uRotateDeg: new Uniform(0),
+  uFrameTarget: new Uniform(frameTarget.texture),
 };
 
 const testMaterial = new ShaderMaterial({
@@ -287,7 +293,7 @@ const testMaterial = new ShaderMaterial({
 });
 
 const loadingTest = new Mesh(new BoxGeometry(0.5, 0.5, 0.5), testMaterial);
-// scene.add(loadingTest);
+scene.add(loadingTest);
 
 const plane = new Mesh(
   new PlaneGeometry(1, 1, 16, 16),
@@ -297,6 +303,7 @@ const plane = new Mesh(
     fragmentShader: rotateFragmentShader,
   }),
 );
+plane.position.set(1, 1, 1);
 scene.add(plane);
 
 /**
@@ -345,11 +352,22 @@ pane.addBinding(uniforms.uRotateDeg, 'value', {
  * Events
  */
 
+function renderFrame() {
+  plane.visible = false;
+
+  renderer.setRenderTarget(frameTarget);
+  renderer.render(scene, camera);
+  renderer.setRenderTarget(null);
+
+  plane.visible = true;
+}
+
 function render() {
   // Time
   const e = clock.getElapsedTime();
 
   // Render
+  renderFrame();
   renderer.render(scene, camera);
 
   // Update
