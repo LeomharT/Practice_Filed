@@ -73,7 +73,7 @@ const loadingManager = new LoadingManager(
   (url, loaded, total) => {
     console.log(url);
     if (loaded === total) loadingResources = false;
-  }
+  },
 );
 
 const gltfLoader = new GLTFLoader(loadingManager);
@@ -142,7 +142,7 @@ const scene = new Scene();
 scene.background = new Color('#1e1e1e');
 
 const camera = new PerspectiveCamera(70, size.width / size.height, 0.1, 1000);
-camera.position.set(0, 0, 2);
+camera.position.set(2, 2, 2);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -295,7 +295,7 @@ const plane = new Mesh(
     uniforms,
     vertexShader: rotateVertexShader,
     fragmentShader: rotateFragmentShader,
-  })
+  }),
 );
 scene.add(plane);
 
@@ -377,7 +377,7 @@ window.addEventListener('resize', resize);
 function onPointerDown(e: PointerEvent) {
   const coord = new Vector2(
     (e.clientX / size.width) * 2 - 1,
-    -(e.clientY / size.height) * 2 + 1
+    -(e.clientY / size.height) * 2 + 1,
   );
 
   raycaster.setFromCamera(coord, camera);
