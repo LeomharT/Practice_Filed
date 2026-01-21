@@ -1,6 +1,9 @@
 precision mediump float;
 
 varying vec2 vUv;
+varying vec4 vTextureUv;
+
+uniform sampler2D uReflector;
 #include <fog_pars_fragment>
 
 void main(){
@@ -9,8 +12,10 @@ void main(){
     vec3  lineColor = vec3(0.3, 0.3, 0.3);
     float lineWidth = 0.005;
     float gap       = 1.0 / 5.0;
-    float alpha     = 0.0;
+    float alpha     = 1.0;
 
+    vec4 reflectUv = vTextureUv;
+ 
     uv *= 5.0;
     uv = fract(uv);
 
@@ -26,6 +31,9 @@ void main(){
             alpha = 1.0;
         }
     }
+
+    vec4 reflectorColor = texture2DProj(uReflector, reflectUv);
+    color += reflectorColor.rgb;
 
     gl_FragColor = vec4(color, alpha);
 

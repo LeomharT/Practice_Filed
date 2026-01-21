@@ -31,6 +31,7 @@ import {
   GLTFLoader,
   InteractiveGroup,
   OrbitControls,
+  Reflector,
   TrackballControls,
   TransformControls,
   type GLTF,
@@ -273,6 +274,15 @@ const floorMaterial = new ShaderMaterial({
   fog: true,
 });
 
+const floorReflector = new Reflector(floorGeometry, {
+  textureWidth: size.width,
+  textureHeight: size.height,
+});
+floorReflector.position.y = -0.001;
+floorReflector.rotation.x = -Math.PI / 2;
+
+scene.add(floorReflector);
+
 const floor = new Mesh(floorGeometry, floorMaterial);
 floor.rotation.x = -Math.PI / 2;
 scene.add(floor);
@@ -284,7 +294,17 @@ const uniforms = {
   uTime: new Uniform(0),
   uRotateDeg: new Uniform(0),
   uFrameTarget: new Uniform(frameTarget.texture),
+  uReflector: new Uniform(null),
+  uTextureMatrix: new Uniform(null),
 };
+
+if (floorReflector.material instanceof ShaderMaterial) {
+  console.log(floorReflector.material);
+  floorMaterial.uniforms.uReflector =
+    floorReflector.material.uniforms['tDiffuse'];
+  floorMaterial.uniforms.uTextureMatrix =
+    floorReflector.material.uniforms['textureMatrix'];
+}
 
 const testMaterial = new ShaderMaterial({
   vertexShader: loadingVertexShader,
@@ -293,6 +313,7 @@ const testMaterial = new ShaderMaterial({
 });
 
 const loadingTest = new Mesh(new BoxGeometry(0.5, 0.5, 0.5), testMaterial);
+loadingTest.position.y = 1.0;
 scene.add(loadingTest);
 
 const plane = new Mesh(
