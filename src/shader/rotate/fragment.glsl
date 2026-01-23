@@ -18,8 +18,8 @@ void main(){
     vec2 center = vec2(0.5);
     vec3 ndc    = vNDC;
 
-    vec3 color1 = vec3(0.98, 0.85, 0.07);
-    vec3 color2 = vec3(0.07, 0.70, 0.76);
+    vec3 color1 = vec3(0.811, 0.0745, 0.133);
+    vec3 color2 = vec3(0.325, 0.113, 0.670);
 
     uv -= center;
     uv = rotate2D(uv, uTime * 2.0);
