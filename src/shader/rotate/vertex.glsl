@@ -1,5 +1,6 @@
 
 varying vec2 vUv;
+varying vec3 vNDC;
 
 uniform float uTime;
 
@@ -24,5 +25,8 @@ void main(){
 
     gl_Position = projectionPosition;
 
-    vUv = uv;
+    vec3 ndc = gl_Position.xyz / gl_Position.w;
+
+    vUv  = uv;
+    vNDC = ndc * 0.5 + 0.5;
 }

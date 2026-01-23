@@ -11,6 +11,7 @@ import {
   ShaderMaterial,
   Uniform,
   WebGLRenderer,
+  WebGLRenderTarget,
 } from 'three';
 import { OrbitControls, TrackballControls } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
@@ -26,6 +27,10 @@ const sizes = {
   width: window.innerWidth,
   height: window.innerHeight,
   pixelRatio: Math.min(2, window.devicePixelRatio),
+};
+
+const LAYERS = {
+  WINDOW: 1,
 };
 
 const el = document.querySelector('#root');
@@ -62,12 +67,17 @@ controls2.noZoom = false;
 
 const clock = new Clock();
 
+const frameTarget = new WebGLRenderTarget(sizes.width, sizes.height, {
+  generateMipmaps: true,
+});
+
 /**
  * World
  */
 
 const uniforms = {
   uTime: new Uniform(0),
+  uFrameTexture: new Uniform(frameTarget.texture),
 };
 
 const planeGrometry = new PlaneGeometry(1, 1, 16, 16);
@@ -78,11 +88,13 @@ const planeMaterial = new ShaderMaterial({
 });
 const plane = new Mesh(planeGrometry, planeMaterial);
 plane.position.set(1.5, 1.5, 1.5);
+plane.layers.enable(LAYERS.WINDOW);
 scene.add(plane);
 
 const ballGeometry = new IcosahedronGeometry(0.3, 1);
 const ballMaterial = new MeshBasicMaterial();
 const ball = new Mesh(ballGeometry, ballMaterial);
+ball.layers.set(LAYERS.WINDOW);
 scene.add(ball);
 
 /**
@@ -128,6 +140,20 @@ function updateBall(angle: number, radius: number) {
   ball.position.set(x, y, z);
 }
 
+function renderFrame() {
+  plane.visible = false;
+
+  const origin = renderer.getRenderTarget();
+
+  renderer.setRenderTarget(frameTarget);
+  camera.layers.enable(LAYERS.WINDOW);
+  renderer.render(scene, camera);
+  camera.layers.disable(LAYERS.WINDOW);
+  renderer.setRenderTarget(origin);
+
+  plane.visible = true;
+}
+
 function render() {
   // Time
   const elapsedTime = clock.getElapsedTime();
@@ -141,6 +167,7 @@ function render() {
   uniforms.uTime.value = elapsedTime;
 
   // Render
+  renderFrame();
   renderer.render(scene, camera);
 
   // Animation
