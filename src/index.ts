@@ -1,3 +1,4 @@
+import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import {
   AxesHelper,
   Clock,
@@ -113,7 +114,13 @@ const params = {
 };
 
 const pane = new Pane({ title: 'Debug Params' });
+pane.registerPlugin(EssentialsPlugin);
 pane.element.parentElement!.style.width = '380px';
+const fpsGraph = pane.addBlade({
+  view: 'fpsgraph',
+  label: undefined,
+  rows: 4,
+}) as any;
 
 const ballFolder = pane.addFolder({ title: '⚽ Ball' });
 ballFolder.addBinding(params, 'radius', {
@@ -155,6 +162,8 @@ function renderFrame() {
 }
 
 function render() {
+  fpsGraph.begin();
+
   // Time
   const elapsedTime = clock.getElapsedTime();
 
@@ -172,6 +181,8 @@ function render() {
 
   // Animation
   requestAnimationFrame(render);
+
+  fpsGraph.end();
 }
 render();
 
