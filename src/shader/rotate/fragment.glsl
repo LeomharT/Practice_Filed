@@ -3,6 +3,8 @@ varying vec3 vNDC;
 
 uniform float uTime;
 uniform sampler2D uFrameTexture;
+uniform vec3 uColor1;
+uniform vec3 uColor2;
 
 vec2 rotate2D(vec2 v, float angle) {
     mat2 m = mat2(
@@ -18,8 +20,8 @@ void main(){
     vec2 center = vec2(0.5);
     vec3 ndc    = vNDC;
 
-    vec3 color1 = vec3(0.811, 0.0745, 0.133);
-    vec3 color2 = vec3(0.325, 0.113, 0.670);
+    vec3 color1 = uColor1;
+    vec3 color2 = uColor2;
 
     uv -= center;
     uv = rotate2D(uv, uTime * 2.0);

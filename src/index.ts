@@ -79,6 +79,8 @@ const frameTarget = new WebGLRenderTarget(sizes.width, sizes.height, {
 const uniforms = {
   uTime: new Uniform(0),
   uFrameTexture: new Uniform(frameTarget.texture),
+  uColor1: new Uniform(new Color('#cf1322')),
+  uColor2: new Uniform(new Color('#1d39c4')),
 };
 
 const planeGrometry = new PlaneGeometry(1, 1, 16, 16);
@@ -134,6 +136,18 @@ ballFolder.addBinding(params, 'frequency', {
   step: 0.001,
   min: 1.0,
   max: 5.0,
+});
+
+const planPane = pane.addFolder({ title: '🏁 Plane' });
+planPane.addBinding(uniforms.uColor1, 'value', {
+  color: {
+    type: 'float',
+  },
+});
+planPane.addBinding(uniforms.uColor2, 'value', {
+  color: {
+    type: 'float',
+  },
 });
 
 /**
