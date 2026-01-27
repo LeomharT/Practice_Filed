@@ -24,7 +24,7 @@ void main(){
     vec3 color2 = uColor2;
 
     uv -= center;
-    uv = rotate2D(uv, uTime * 2.0);
+    uv  = rotate2D(uv, uTime * 2.0);
     uv += center;
 
     color = mix(
