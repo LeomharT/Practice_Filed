@@ -19,6 +19,8 @@ import {
 } from 'three';
 import { OrbitControls, TrackballControls } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
+import earthFragmentShader from './shader/earth/fragment.glsl?raw';
+import earthVertexShader from './shader/earth/vertex.glsl?raw';
 import './style.css';
 
 /**
@@ -38,9 +40,14 @@ textureLoader.setPath('/src/assets/textures/');
 
 const earthDayMapTexture = textureLoader.load('2k_earth_daymap.jpg');
 earthDayMapTexture.colorSpace = SRGBColorSpace;
+earthDayMapTexture.anisotropy = 8;
 
 const earthNightMapTexture = textureLoader.load('2k_earth_nightmap.jpg');
 earthNightMapTexture.colorSpace = SRGBColorSpace;
+earthNightMapTexture.anisotropy = 8;
+
+const earthSpecularCloudTexture = textureLoader.load('specularClouds.jpg');
+
 /**
  * Basic
  */
@@ -79,9 +86,13 @@ const clock = new Clock();
 
 const uniforms = {
   uTime: new Uniform(0),
-  uSunPosition: new Uniform(new Vector3()),
+  uSunDirection: new Uniform(new Vector3()),
   uDayMapTexture: new Uniform(earthDayMapTexture),
   uNightMapTexture: new Uniform(earthNightMapTexture),
+  uSpecularCloudTexture: new Uniform(earthSpecularCloudTexture),
+  uCloudVolumn: new Uniform(0.3),
+  uAtmosphereDayColor: new Uniform(new Color('#00aaff')),
+  uAtmosphereTwilightColor: new Uniform(new Color('#ff6600')),
 };
 
 const sunSpherical = new Spherical(1, Math.PI / 2, 0.5);
@@ -97,14 +108,18 @@ function updateSun() {
   // Position
   sunPosition.setFromSpherical(sunSpherical);
   // Uniform
-  uniforms.uSunPosition.value = sunPosition.clone();
+  uniforms.uSunDirection.value = sunPosition.clone();
   // Mesh Position
   sun.position.copy(sunPosition.clone().multiplyScalar(3.0));
 }
 updateSun();
 
-const earthGeometry = new SphereGeometry(1, 32, 32);
-const earthMaterial = new ShaderMaterial({});
+const earthGeometry = new SphereGeometry(1, 64, 64);
+const earthMaterial = new ShaderMaterial({
+  uniforms,
+  vertexShader: earthVertexShader,
+  fragmentShader: earthFragmentShader,
+});
 const earth = new Mesh(earthGeometry, earthMaterial);
 scene.add(earth);
 
@@ -127,7 +142,7 @@ const fpsGraph = pane.addBlade({
   rows: 4,
 }) as any;
 
-const sunF = pane.addFolder({ title: 'Sun' });
+const sunF = pane.addFolder({ title: '🌞 Sun' });
 sunF
   .addBinding(sunSpherical, 'phi', {
     min: 0,
@@ -143,6 +158,14 @@ sunF
   })
   .on('change', updateSun);
 
+const cloudF = pane.addFolder({ title: '☁️ Cloud' });
+cloudF.addBinding(uniforms.uCloudVolumn, 'value', {
+  label: 'Cloud Volumn',
+  max: 1.0,
+  min: 0.0,
+  step: 0.01,
+});
+
 /**
  * Events
  */
@@ -151,6 +174,7 @@ function render() {
   fpsGraph.begin();
 
   // Time
+  const delta = clock.getDelta();
   const elapsedTime = clock.getElapsedTime();
 
   // Update
@@ -158,6 +182,8 @@ function render() {
   controls2.update();
 
   uniforms.uTime.value = elapsedTime;
+  earth.rotation.y += delta * 0.1;
+  earth.rotation.y = earth.rotation.y % (Math.PI * 2);
 
   // Render
 
