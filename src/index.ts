@@ -7,23 +7,18 @@ import {
   Mesh,
   MeshBasicMaterial,
   PerspectiveCamera,
-  PlaneGeometry,
   Scene,
   ShaderMaterial,
+  SphereGeometry,
+  Spherical,
+  SRGBColorSpace,
+  TextureLoader,
   Uniform,
+  Vector3,
   WebGLRenderer,
-  WebGLRenderTarget,
 } from 'three';
-import {
-  OrbitControls,
-  Reflector,
-  TrackballControls,
-} from 'three/examples/jsm/Addons.js';
+import { OrbitControls, TrackballControls } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
-import floorFragmentShader from './shader/floor/fragment.glsl?raw';
-import floorVertexShader from './shader/floor/vertex.glsl?raw';
-import fragmentShader from './shader/rotate/fragment.glsl?raw';
-import vertexShader from './shader/rotate/vertex.glsl?raw';
 import './style.css';
 
 /**
@@ -36,12 +31,16 @@ const sizes = {
   pixelRatio: Math.min(2, window.devicePixelRatio),
 };
 
-const LAYERS = {
-  WINDOW: 1,
-};
-
 const el = document.querySelector('#root');
 
+const textureLoader = new TextureLoader();
+textureLoader.setPath('/src/assets/textures/');
+
+const earthDayMapTexture = textureLoader.load('2k_earth_daymap.jpg');
+earthDayMapTexture.colorSpace = SRGBColorSpace;
+
+const earthNightMapTexture = textureLoader.load('2k_earth_nightmap.jpg');
+earthNightMapTexture.colorSpace = SRGBColorSpace;
 /**
  * Basic
  */
@@ -58,7 +57,7 @@ const scene = new Scene();
 scene.background = new Color('#1e1e1e');
 
 const camera = new PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000);
-camera.position.set(3, 3, 3);
+camera.position.set(2, 2, 2);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -74,64 +73,40 @@ controls2.noZoom = false;
 
 const clock = new Clock();
 
-const frameTarget = new WebGLRenderTarget(sizes.width, sizes.height, {
-  generateMipmaps: true,
-});
-
 /**
  * World
  */
 
 const uniforms = {
   uTime: new Uniform(0),
-  uFrameTexture: new Uniform(frameTarget.texture),
-  uColor1: new Uniform(new Color('#cf1322')),
-  uColor2: new Uniform(new Color('#1d39c4')),
-  uReflector: new Uniform(null),
-  uTextureMatrix: new Uniform(null),
+  uSunPosition: new Uniform(new Vector3()),
+  uDayMapTexture: new Uniform(earthDayMapTexture),
+  uNightMapTexture: new Uniform(earthNightMapTexture),
 };
 
-const planeGrometry = new PlaneGeometry(1, 1, 16, 16);
-const planeMaterial = new ShaderMaterial({
-  uniforms,
-  vertexShader,
-  fragmentShader,
-});
-const plane = new Mesh(planeGrometry, planeMaterial);
-plane.position.set(1.5, 1.5, 1.5);
-plane.layers.enable(LAYERS.WINDOW);
-scene.add(plane);
+const sunSpherical = new Spherical(1, Math.PI / 2, 0.5);
+const sunPosition = new Vector3();
 
-const ballGeometry = new IcosahedronGeometry(0.3, 1);
-const ballMaterial = new MeshBasicMaterial();
-const ball = new Mesh(ballGeometry, ballMaterial);
-ball.layers.set(LAYERS.WINDOW);
-scene.add(ball);
+const sunGeometry = new IcosahedronGeometry(0.1, 3);
+const sunMaterial = new MeshBasicMaterial({ color: 'yellow' });
 
-const floorGeometry = new PlaneGeometry(5, 5, 16, 16);
+const sun = new Mesh(sunGeometry, sunMaterial);
+scene.add(sun);
 
-const floorReflector = new Reflector(floorGeometry, {
-  textureWidth: sizes.width,
-  textureHeight: sizes.height,
-});
-floorReflector.rotation.x = -Math.PI / 2;
-scene.add(floorReflector);
-
-if (floorReflector.material instanceof ShaderMaterial) {
-  uniforms['uReflector'].value =
-    floorReflector.material.uniforms['tDiffuse'].value;
-  uniforms['uTextureMatrix'].value =
-    floorReflector.material.uniforms['textureMatrix'].value;
+function updateSun() {
+  // Position
+  sunPosition.setFromSpherical(sunSpherical);
+  // Uniform
+  uniforms.uSunPosition.value = sunPosition.clone();
+  // Mesh Position
+  sun.position.copy(sunPosition.clone().multiplyScalar(3.0));
 }
+updateSun();
 
-const floorMaterial = new ShaderMaterial({
-  vertexShader: floorVertexShader,
-  fragmentShader: floorFragmentShader,
-  uniforms,
-});
-const floor = new Mesh(floorGeometry, floorMaterial);
-floor.rotation.x = -Math.PI / 2;
-scene.add(floor);
+const earthGeometry = new SphereGeometry(1, 32, 32);
+const earthMaterial = new ShaderMaterial({});
+const earth = new Mesh(earthGeometry, earthMaterial);
+scene.add(earth);
 
 /**
  * Helpers
@@ -143,11 +118,6 @@ scene.add(axesHelper);
  * Pane
  */
 
-const params = {
-  radius: 1.75,
-  frequency: 3.725,
-};
-
 const pane = new Pane({ title: 'Debug Params' });
 pane.registerPlugin(EssentialsPlugin);
 pane.element.parentElement!.style.width = '380px';
@@ -157,72 +127,25 @@ const fpsGraph = pane.addBlade({
   rows: 4,
 }) as any;
 
-const ballFolder = pane.addFolder({ title: '⚽ Ball' });
-ballFolder.addBinding(params, 'radius', {
-  label: 'Radius',
-  step: 0.001,
-  min: 1.0,
-  max: 5.0,
-});
-ballFolder.addBinding(params, 'frequency', {
-  label: 'Frequency',
-  step: 0.001,
-  min: 1.0,
-  max: 5.0,
-});
-
-const planPane = pane.addFolder({ title: '🏁 Plane' });
-planPane.addBinding(uniforms.uColor1, 'value', {
-  color: {
-    type: 'float',
-  },
-});
-planPane.addBinding(uniforms.uColor2, 'value', {
-  color: {
-    type: 'float',
-  },
-});
+const sunF = pane.addFolder({ title: 'Sun' });
+sunF
+  .addBinding(sunSpherical, 'phi', {
+    min: 0,
+    max: Math.PI,
+    step: 0.0001,
+  })
+  .on('change', updateSun);
+sunF
+  .addBinding(sunSpherical, 'theta', {
+    min: -Math.PI,
+    max: Math.PI,
+    step: 0.0001,
+  })
+  .on('change', updateSun);
 
 /**
  * Events
  */
-
-function updateBall(angle: number, radius: number) {
-  const x = Math.cos(angle) * radius;
-  const y = Math.sin(angle * params.frequency) * 0.5 + 0.5;
-  const z = Math.sin(angle) * radius;
-  ball.position.set(x, y + 0.3, z);
-}
-
-function renderFrame() {
-  plane.visible = false;
-
-  const origin = renderer.getRenderTarget();
-
-  renderer.setRenderTarget(frameTarget);
-  camera.layers.enable(LAYERS.WINDOW);
-  renderer.render(scene, camera);
-  camera.layers.disable(LAYERS.WINDOW);
-  renderer.setRenderTarget(origin);
-
-  plane.visible = true;
-}
-
-function renderReflector() {
-  plane.visible = false;
-  axesHelper.visible = false;
-
-  floorReflector.visible = true;
-  ball.layers.set(0);
-
-  renderer.render(scene, camera);
-
-  floorReflector.visible = false;
-  ball.layers.set(LAYERS.WINDOW);
-
-  plane.visible = true;
-  axesHelper.visible = true;
-}
 
 function render() {
   fpsGraph.begin();
@@ -234,13 +157,10 @@ function render() {
   controls.update();
   controls2.update();
 
-  updateBall(elapsedTime, params.radius);
-
   uniforms.uTime.value = elapsedTime;
 
   // Render
-  renderReflector();
-  renderFrame();
+
   renderer.render(scene, camera);
 
   // Animation
