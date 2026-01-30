@@ -25,6 +25,7 @@ import atmosphereVertexShader from './shader/atmosphere/vertex.glsl?raw';
 import earthFragmentShader from './shader/earth/fragment.glsl?raw';
 import earthVertexShader from './shader/earth/vertex.glsl?raw';
 import './style.css';
+
 /**
  * Variables
  */
