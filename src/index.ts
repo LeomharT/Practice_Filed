@@ -2,7 +2,6 @@ import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import {
   AxesHelper,
   BoxGeometry,
-  Color,
   Mesh,
   PerspectiveCamera,
   Scene,
@@ -22,8 +21,8 @@ root?.append(el);
 
 const rect = el.getBoundingClientRect();
 const size = {
-  width: rect.width,
-  height: rect.height,
+  width: rect.width - 32 * 2,
+  height: rect.height - 32 * 2,
   pixelRatio: Math.min(2.0, window.devicePixelRatio),
 };
 
@@ -36,9 +35,8 @@ renderer.setPixelRatio(size.pixelRatio);
 el?.append(renderer.domElement);
 
 const scene = new Scene();
-scene.background = new Color('#1e1e1e');
 
-const camera = new PerspectiveCamera(30, size.width / size.height, 0.1, 1000);
+const camera = new PerspectiveCamera(45, size.width / size.height, 0.1, 1000);
 camera.position.set(3, 3, 3);
 camera.lookAt(scene.position);
 
@@ -66,6 +64,17 @@ const fpsGraph: any = pane.addBlade({
   label: undefined,
   rows: 4,
 });
+
+const folder_camera = pane.addFolder({ title: '📷 Camera' });
+folder_camera
+  .addBinding(camera, 'fov', {
+    step: 1,
+    min: 20,
+    max: 90,
+  })
+  .on('change', () => {
+    camera.updateProjectionMatrix();
+  });
 
 function render() {
   fpsGraph.begin();
