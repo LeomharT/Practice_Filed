@@ -12,8 +12,8 @@ body {
   height: 600px;
   margin: 50px auto;
   padding: 32px;
+  border-radius: 16px;
   /* border: 1px solid wheat; */
   background: rgba(0, 129, 194, 0.1);
   box-shadow: inset 0px 0px 22px 8px rgba(129, 194, 240, 0.25);
-  border-radius: 16px;
 }
