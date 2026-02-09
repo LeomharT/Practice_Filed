@@ -1,5 +1,7 @@
-import { BoxGeometry, FrontSide, Mesh, ShaderMaterial } from 'three';
+import { BackSide, BoxGeometry, Mesh, ShaderMaterial } from 'three';
 import type { Experience } from '..';
+import fragmentShader from '../../shader/box/fragment.glsl?raw';
+import vertexShader from '../../shader/box/vertex.glsl?raw';
 
 export class Box {
   constructor(exp: Experience) {
@@ -17,21 +19,19 @@ export class Box {
   private _mesh!: Mesh;
 
   private _setGeometry() {
-    this._geometry = new BoxGeometry(1, 1, 1, 32, 32, 32);
+    this._geometry = new BoxGeometry(1, 1, 3, 32, 32, 32);
   }
 
   private _setMaterial() {
     this._material = new ShaderMaterial({
-      side: FrontSide,
+      side: BackSide,
+      fragmentShader,
+      vertexShader,
+      transparent: true,
     });
   }
 
   private _setMesh() {
     this._mesh = new Mesh(this._geometry, this._material);
-    this._mesh.scale.setScalar(-1);
-  }
-
-  public update() {
-    this._mesh.rotation.y += 0.01;
   }
 }

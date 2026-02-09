@@ -19,7 +19,5 @@ export class World {
 
   public box: Box;
 
-  public update() {
-    this.box.update();
-  }
+  public update() {}
 }

@@ -28,7 +28,7 @@ export class Camera {
       1000,
     );
 
-    this.instance.position.set(6, 4, 8);
+    this.instance.position.set(0, 0, 2);
     this._exp.scene.add(this.instance);
   }
 
