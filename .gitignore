@@ -24,3 +24,5 @@ dist-ssr
 *.sw?
 
 chevrolet_corvette_c7.glb
+
+*.gltf

@@ -1,14 +1,12 @@
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import {
+  AmbientLight,
   AxesHelper,
-  BoxGeometry,
-  Mesh,
   PerspectiveCamera,
   Scene,
-  ShaderMaterial,
   WebGLRenderer,
 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import { GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
 import './style.css';
 
@@ -20,11 +18,15 @@ el.classList.add('viewer');
 root?.append(el);
 
 const rect = el.getBoundingClientRect();
+
 const size = {
   width: rect.width - 32 * 2,
   height: rect.height - 32 * 2,
   pixelRatio: Math.min(2.0, window.devicePixelRatio),
 };
+
+const gltfLoader = new GLTFLoader();
+gltfLoader.setPath('/src/assets/models/');
 
 const renderer = new WebGLRenderer({
   alpha: true,
@@ -44,11 +46,14 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
 /** World */
-const floorGeometry = new BoxGeometry(1, 1, 1);
-const floorMaterial = new ShaderMaterial();
 
-const test = new Mesh(floorGeometry, floorMaterial);
-scene.add(test);
+gltfLoader.load('Drone.gltf', (model) => {
+  scene.add(model.scene);
+});
+
+/** Lights */
+const ambientLight = new AmbientLight('0xffffff', 1.5);
+scene.add(ambientLight);
 
 /** Helper */
 const axesHelper = new AxesHelper();
