@@ -1,7 +1,13 @@
 body {
-	margin: 0;
+  margin: 0;
 }
 
 #root {
-	overflow: hidden;
+  overflow: hidden;
+}
+
+.viewer {
+  width: 480px;
+  height: 600px;
+  margin: 0 auto;
 }

@@ -1,9 +1,10 @@
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import {
   AxesHelper,
+  BoxGeometry,
   Color,
+  Mesh,
   PerspectiveCamera,
-  PlaneGeometry,
   Scene,
   ShaderMaterial,
   WebGLRenderer,
@@ -12,13 +13,19 @@ import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
 import './style.css';
 
+/** DOM */
+const root = document.querySelector('#root');
+
+const el = document.createElement('div');
+el.classList.add('viewer');
+root?.append(el);
+
+const rect = el.getBoundingClientRect();
 const size = {
-  width: window.innerWidth,
-  height: window.innerHeight,
+  width: rect.width,
+  height: rect.height,
   pixelRatio: Math.min(2.0, window.devicePixelRatio),
 };
-
-const el = document.querySelector('#root');
 
 const renderer = new WebGLRenderer({
   alpha: true,
@@ -31,7 +38,7 @@ el?.append(renderer.domElement);
 const scene = new Scene();
 scene.background = new Color('#1e1e1e');
 
-const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
+const camera = new PerspectiveCamera(30, size.width / size.height, 0.1, 1000);
 camera.position.set(3, 3, 3);
 camera.lookAt(scene.position);
 
@@ -39,8 +46,11 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
 /** World */
-const floorGeometry = new PlaneGeometry(3, 3, 16, 16);
+const floorGeometry = new BoxGeometry(1, 1, 1);
 const floorMaterial = new ShaderMaterial();
+
+const test = new Mesh(floorGeometry, floorMaterial);
+scene.add(test);
 
 /** Helper */
 const axesHelper = new AxesHelper();
@@ -78,4 +88,4 @@ function resize() {
   camera.aspect = size.width / size.height;
   camera.updateProjectionMatrix();
 }
-window.addEventListener('resize', resize);
+// window.addEventListener('resize', resize);
