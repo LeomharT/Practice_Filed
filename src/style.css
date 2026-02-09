@@ -8,6 +8,7 @@ body {
 }
 
 .viewer {
+  box-sizing: border-box;
   width: 480px;
   height: 600px;
   margin: 50px auto;
