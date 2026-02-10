@@ -2,6 +2,7 @@ import { Scene } from 'three';
 import { Camera } from './Camera';
 import { Renderer } from './Renderer';
 import { DebugPane } from './Utils/DebugPane';
+import Resources from './Utils/Resources';
 import Sizes from './Utils/Size';
 import Time from './Utils/Time';
 import { World } from './World';
@@ -18,6 +19,7 @@ export class Experience {
     this.canvas = this.renderer.element;
     this.scene = new Scene();
     this.camera = new Camera(this);
+    this.resources = new Resources();
     this.world = new World(this);
 
     // Event
@@ -32,6 +34,7 @@ export class Experience {
   public renderer: Renderer;
   public scene: Scene;
   public camera: Camera;
+  public resources: Resources;
   public world: World;
 
   private _update() {

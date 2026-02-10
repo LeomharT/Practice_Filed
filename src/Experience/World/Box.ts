@@ -5,12 +5,14 @@ import vertexShader from '../../shader/box/vertex.glsl?raw';
 
 export class Box {
   constructor(exp: Experience) {
+    this._exp = exp;
+
     this._setGeometry();
     this._setMaterial();
     this._setMesh();
-
-    exp.scene.add(this._mesh);
   }
+
+  private _exp: Experience;
 
   private _geometry!: BoxGeometry;
 
@@ -33,5 +35,7 @@ export class Box {
 
   private _setMesh() {
     this._mesh = new Mesh(this._geometry, this._material);
+    this._mesh.lookAt(this._exp.camera.instance.position);
+    this._exp.scene.add(this._mesh);
   }
 }

@@ -1,19 +1,18 @@
-import { EventDispatcher, Texture, TextureLoader } from 'three';
+import { EventDispatcher, Texture } from 'three';
 import { GLTFLoader, type GLTF } from 'three/examples/jsm/Addons.js';
-import sources from '../sources.json' with { type: 'json' };
+import { sources } from '../../sources';
 
 export type ResourcesLoaders = {
   gltfLoader: GLTFLoader;
 };
 
 export type ResourcesItems = {
-  environmentMapTexture: Texture;
-  grassColorTexture: Texture;
-  grassNormalTexture: Texture;
-  foxModel: GLTF;
+  droneModel: GLTF;
 };
 
-export default class Resources extends EventDispatcher {
+export default class Resources extends EventDispatcher<{
+  ready: {};
+}> {
   constructor() {
     super();
 
@@ -31,57 +30,34 @@ export default class Resources extends EventDispatcher {
 
   private _setLoaders() {
     this.loaders.gltfLoader = new GLTFLoader();
-    this.loaders.gltfLoader.setPath(
-      '/threejs-project-code-structure/assets/models/',
-    );
-
-    this.loaders.rgbeLoader = new RGBELoader();
-    this.loaders.rgbeLoader.setPath(
-      '/threejs-project-code-structure/assets/texture/',
-    );
-
-    this.loaders.textureLoader = new TextureLoader();
-    this.loaders.textureLoader.setPath(
-      '/threejs-project-code-structure/assets/texture/',
-    );
+    this.loaders.gltfLoader.setPath('/src/assets/models/');
   }
 
   private _startLoading() {
     for (const source of sources) {
       switch (source.type) {
-        case 'texture': {
-          this.loaders.textureLoader.load(source.path, (data) => {
-            this._sourceLoaded(source, data);
-          });
-          break;
-        }
-
-        case 'rgbeTexture': {
-          this.loaders.rgbeLoader.load(source.path, (data) => {
-            this._sourceLoaded(source, data);
-          });
-          break;
-        }
-
         case 'gltfModel': {
           this.loaders.gltfLoader.load(source.path, (data) => {
             this._sourceLoaded(source, data);
           });
+          break;
         }
-
         default:
           break;
       }
     }
   }
 
-  private _sourceLoaded<T>(source: (typeof sources)[number], data: T) {
-    this.items[source.name] = data;
+  private _sourceLoaded<T extends GLTF | Texture>(
+    source: (typeof sources)[number],
+    data: T,
+  ) {
+    this.items[source.name] = data as GLTF & Texture;
 
     this.loaded++;
 
     if (this.loaded === this.toLoad) {
-      this.trigger('ready');
+      this.dispatchEvent({ type: 'ready' });
     }
   }
 }
