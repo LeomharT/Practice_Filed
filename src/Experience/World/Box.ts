@@ -1,4 +1,11 @@
-import { BackSide, BoxGeometry, Mesh, ShaderMaterial } from 'three';
+import {
+  BackSide,
+  BoxGeometry,
+  Color,
+  Mesh,
+  ShaderMaterial,
+  Uniform,
+} from 'three';
 import type { Experience } from '..';
 import fragmentShader from '../../shader/box/fragment.glsl?raw';
 import vertexShader from '../../shader/box/vertex.glsl?raw';
@@ -30,6 +37,9 @@ export class Box {
       fragmentShader,
       vertexShader,
       transparent: true,
+      uniforms: {
+        uColor: new Uniform(new Color('#131825')),
+      },
     });
   }
 

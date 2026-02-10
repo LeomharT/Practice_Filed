@@ -1,11 +1,13 @@
 varying vec3 vPosition;
 varying vec2 vUv;
 
+uniform vec3 uColor;
+
 #include <simplex3DNoise>
 
 void main() {
   vec2  uv            = vUv;
-  vec3  color         = vec3(0.0);
+  vec3  color         = uColor;
   vec3  worldPosition = vPosition;
 
   vec3  lineColor = vec3(1.0, 1.0, 1.0);
