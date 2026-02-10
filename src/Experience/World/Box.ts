@@ -45,7 +45,11 @@ export class Box {
 
   private _setMesh() {
     this._mesh = new Mesh(this._geometry, this._material);
-    this._mesh.lookAt(this._exp.camera.instance.position);
     this._exp.scene.add(this._mesh);
+    this.updateDir();
+  }
+
+  public updateDir() {
+    this._mesh.lookAt(this._exp.camera.instance.position);
   }
 }

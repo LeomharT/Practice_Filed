@@ -43,6 +43,10 @@ export class Camera {
     this._controls2.noRotate = true;
     this._controls2.noZoom = false;
     this._controls2.zoomSpeed = 1.5;
+
+    this._controls.addEventListener('change', () => {
+      this._exp.world.box.updateDir();
+    });
   }
 
   private _setPane() {
