@@ -16,7 +16,7 @@ void main(){
     if(noise < uProgress) discard;
     
     if(uProgress > 0.0 && noise > uProgress && noise < uProgress + 0.05) {
-        color = uEdgeColor;
+        color = 7.1 * uEdgeColor;
     }
 
     gl_FragColor = vec4(color, 1.0);

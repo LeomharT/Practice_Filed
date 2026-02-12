@@ -1,8 +1,10 @@
 import {
-  BoxGeometry,
   Color,
+  Layers,
+  Material,
   Mesh,
   MeshBasicMaterial,
+  Object3D,
   PerspectiveCamera,
   Scene,
   ShaderChunk,
@@ -23,9 +25,10 @@ import {
 import { Pane } from 'tweakpane';
 import ballFragmentShader from './shader/ball/fragment.glsl?raw';
 import ballVertexShader from './shader/ball/vertex.glsl?raw';
+import bloomFragmentShader from './shader/bloom/fragment.glsl?raw';
+import bloomVertexShader from './shader/bloom/vertex.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
 import './style.css';
-
 (ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
 
 const el = document.querySelector('#root');
@@ -36,7 +39,14 @@ const size = {
   pixelRatio: Math.min(2, window.devicePixelRatio),
 };
 
+const layers = {
+  bloom: 1,
+};
+const layer = new Layers();
+layer.set(layers.bloom);
 const background = new Color('#1e1e1e');
+const darkMaterial = new MeshBasicMaterial({ color: '#000' });
+const materials: Record<string, Material> = {};
 
 const renderer = new WebGLRenderer({
   alpha: true,
@@ -52,6 +62,7 @@ scene.background = background;
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
 camera.position.set(2, 2, 2);
 camera.lookAt(scene.position);
+camera.layers.enable(layers.bloom);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
@@ -61,9 +72,9 @@ const outputPass = new OutputPass();
 
 const bloomPass = new UnrealBloomPass(
   new Vector2(size.width, size.height),
-  0.985,
   0.5,
-  0.0,
+  0.5,
+  0.99,
 );
 
 const bloomComposer = new EffectComposer(renderer);
@@ -77,6 +88,8 @@ const mixPass = new ShaderPass(
       uDiffuseColor: new Uniform(null),
       uBloomTexture: new Uniform(bloomComposer.renderTarget2.texture),
     },
+    vertexShader: bloomVertexShader,
+    fragmentShader: bloomFragmentShader,
   }),
   'uDiffuseColor',
 );
@@ -104,16 +117,8 @@ const sphereMaterial = new ShaderMaterial({
   fragmentShader: ballFragmentShader,
 });
 const ball = new Mesh(sphereGeometry, sphereMaterial);
+ball.layers.set(layers.bloom);
 scene.add(ball);
-
-const lightObj = new Mesh(
-  new BoxGeometry(1, 1, 1),
-  new MeshBasicMaterial({
-    color: '#ffffff',
-  }),
-);
-lightObj.position.z = -2.0;
-scene.add(lightObj);
 
 /**
  * Pane
@@ -138,10 +143,19 @@ pane.addBinding(uniforms.uProgress, 'value', {
  * Event
  */
 
+function renderBloom() {
+  scene.traverse(darkenMatrials);
+  scene.background = null;
+  bloomComposer.render();
+  scene.background = background;
+  scene.traverse(restoreMatrial);
+}
+
 function render() {
   // Update
   controls.update();
   // Render
+  renderBloom();
   composer.render();
   // Animation
   requestAnimationFrame(render);
@@ -158,3 +172,16 @@ function resize() {
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize);
+
+function darkenMatrials(obj: Object3D) {
+  if (obj instanceof Mesh && obj.layers.test(layer) === false) {
+    materials[obj.uuid] = obj.material;
+    obj.material = darkMaterial;
+  }
+}
+function restoreMatrial(obj: Object3D) {
+  if (obj instanceof Mesh && materials[obj.uuid]) {
+    obj.material = materials[obj.uuid];
+    delete materials[obj.uuid];
+  }
+}
