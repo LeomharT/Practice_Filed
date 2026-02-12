@@ -25,8 +25,9 @@ void main(){
     vec3 direction = uDirection;
 
     float orientation = dot(normal, direction);
- 
-    color = vec3(orientation);
+          orientation = smoothstep(0.9, 2.85,orientation);
+
+    color += vec3(orientation);
 
     gl_FragColor = vec4(color, 1.0);
 

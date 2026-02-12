@@ -120,7 +120,6 @@ const sphereMaterial = new ShaderMaterial({
   fragmentShader: ballFragmentShader,
 });
 const ball = new Mesh(sphereGeometry, sphereMaterial);
-ball.layers.set(layers.bloom);
 scene.add(ball);
 
 const lightCube = new Mesh(
