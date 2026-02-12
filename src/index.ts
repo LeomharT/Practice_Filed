@@ -120,6 +120,7 @@ const sphereMaterial = new ShaderMaterial({
   fragmentShader: ballFragmentShader,
 });
 const ball = new Mesh(sphereGeometry, sphereMaterial);
+ball.layers.set(layers.bloom);
 scene.add(ball);
 
 const lightCube = new Mesh(
@@ -129,7 +130,7 @@ const lightCube = new Mesh(
 scene.add(lightCube);
 lightCube.position.x = 2;
 lightCube.layers.set(layers.bloom);
-uniforms.uDirection.value.copy(lightCube.position);
+uniforms.uDirection.value.copy(lightCube.position.clone().normalize());
 
 /**
  * Pane
