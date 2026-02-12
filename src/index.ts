@@ -1,4 +1,5 @@
 import {
+  BoxGeometry,
   Color,
   Layers,
   Material,
@@ -12,6 +13,7 @@ import {
   SphereGeometry,
   Uniform,
   Vector2,
+  Vector3,
   WebGLRenderer,
 } from 'three';
 import {
@@ -60,7 +62,7 @@ const scene = new Scene();
 scene.background = background;
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(2, 2, 2);
+camera.position.set(2, 3, 2);
 camera.lookAt(scene.position);
 camera.layers.enable(layers.bloom);
 
@@ -107,6 +109,7 @@ const uniforms = {
   uProgress: new Uniform(0.0),
   uColor: new Uniform(new Color('#531dab')),
   uEdgeColor: new Uniform(new Color('#c41d7f')),
+  uDirection: new Uniform(new Vector3()),
 };
 
 const sphereGeometry = new SphereGeometry(1, 64, 64);
@@ -119,6 +122,15 @@ const sphereMaterial = new ShaderMaterial({
 const ball = new Mesh(sphereGeometry, sphereMaterial);
 ball.layers.set(layers.bloom);
 scene.add(ball);
+
+const lightCube = new Mesh(
+  new BoxGeometry(0.5, 0.5, 0.5),
+  new MeshBasicMaterial({ color: new Color(1, 1, 1) }),
+);
+scene.add(lightCube);
+lightCube.position.x = 2;
+lightCube.layers.set(layers.bloom);
+uniforms.uDirection.value.copy(lightCube.position);
 
 /**
  * Pane
