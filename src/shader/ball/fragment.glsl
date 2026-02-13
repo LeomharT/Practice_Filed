@@ -25,7 +25,7 @@ void main(){
     vec3 direction = uDirection;
 
     float orientation = dot(normal, direction);
-          orientation = smoothstep(0.5, 1.5, orientation);
+          orientation = smoothstep(0.5, 2.0, orientation);
 
     color += vec3(orientation);
 

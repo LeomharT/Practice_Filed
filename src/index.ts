@@ -7,6 +7,7 @@ import {
   MeshBasicMaterial,
   Object3D,
   PerspectiveCamera,
+  PlaneGeometry,
   Scene,
   ShaderChunk,
   ShaderMaterial,
@@ -20,6 +21,7 @@ import {
   EffectComposer,
   OrbitControls,
   OutputPass,
+  Reflector,
   RenderPass,
   ShaderPass,
   UnrealBloomPass,
@@ -120,7 +122,7 @@ const sphereMaterial = new ShaderMaterial({
   fragmentShader: ballFragmentShader,
 });
 const ball = new Mesh(sphereGeometry, sphereMaterial);
-ball.layers.set(layers.bloom);
+ball.layers.enable(layers.bloom);
 scene.add(ball);
 
 const lightCube = new Mesh(
@@ -131,6 +133,16 @@ scene.add(lightCube);
 lightCube.position.x = 2;
 lightCube.layers.set(layers.bloom);
 uniforms.uDirection.value.copy(lightCube.position.clone().normalize());
+
+const floorGeometry = new PlaneGeometry(5, 5, 64, 64);
+const floorReflector = new Reflector(floorGeometry, {
+  textureWidth: size.width,
+  textureHeight: size.height,
+  clipBias: 0.003,
+});
+floorReflector.rotation.x = -Math.PI / 2;
+floorReflector.position.y = -1;
+scene.add(floorReflector);
 
 /**
  * Pane
