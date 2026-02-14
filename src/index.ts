@@ -131,7 +131,7 @@ const lightCube = new Mesh(
 );
 scene.add(lightCube);
 lightCube.position.x = 2;
-lightCube.layers.set(layers.bloom);
+lightCube.layers.enable(layers.bloom);
 uniforms.uDirection.value.copy(lightCube.position.clone().normalize());
 
 const floorGeometry = new PlaneGeometry(5, 5, 64, 64);
@@ -140,6 +140,7 @@ const floorReflector = new Reflector(floorGeometry, {
   textureHeight: size.height,
   clipBias: 0.003,
 });
+floorReflector.layers.enable(layers.bloom);
 floorReflector.rotation.x = -Math.PI / 2;
 floorReflector.position.y = -1;
 scene.add(floorReflector);
