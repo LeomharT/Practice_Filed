@@ -184,7 +184,9 @@ pane.addBinding(uniforms.uProgress, 'value', {
 function renderBloom() {
   scene.traverse(darkenMatrials);
   scene.background = null;
+  mirrow.visible = false;
   bloomComposer.render();
+  mirrow.visible = true;
   scene.background = background;
   scene.traverse(restoreMatrial);
 }
