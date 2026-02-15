@@ -32,7 +32,10 @@ import ballVertexShader from './shader/ball/vertex.glsl?raw';
 import bloomFragmentShader from './shader/bloom/fragment.glsl?raw';
 import bloomVertexShader from './shader/bloom/vertex.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
+import mirrowFragmentShader from './shader/mirrow/fragment.glsl?raw';
+import mirrowVertexShader from './shader/mirrow/vertex.glsl?raw';
 import './style.css';
+
 (ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
 
 const el = document.querySelector('#root');
@@ -144,6 +147,16 @@ floorReflector.layers.enable(layers.bloom);
 floorReflector.rotation.x = -Math.PI / 2;
 floorReflector.position.y = -1;
 scene.add(floorReflector);
+
+const mirrowGeometry = new PlaneGeometry(1, 1, 16, 16);
+const mirrowMaterial = new ShaderMaterial({
+  vertexShader: mirrowVertexShader,
+  fragmentShader: mirrowFragmentShader,
+});
+
+const mirrow = new Mesh(mirrowGeometry, mirrowMaterial);
+mirrow.position.set(1, 1, 1);
+scene.add(mirrow);
 
 /**
  * Pane
