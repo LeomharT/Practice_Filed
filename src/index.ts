@@ -47,7 +47,7 @@ const scene = new Scene();
 scene.background = background;
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(0, 0, 2);
+camera.position.set(0, 0, 6);
 camera.lookAt(scene.position);
 camera.layers.enable(layers.bloom);
 
@@ -58,10 +58,12 @@ controls.enableDamping = true;
  * World
  */
 const params = {
-  count: 30,
+  count: 50,
+  radius: 4,
+  time: 0,
 };
 
-const startGeometry = new PlaneGeometry(1, 1, 16, 16);
+const startGeometry = new PlaneGeometry(0.2, 0.2, 16, 16);
 const startMaterial = new ShaderMaterial({
   vertexShader: starVertexShader,
   fragmentShader: starFragmentShader,
@@ -70,12 +72,19 @@ const starts = new InstancedMesh(startGeometry, startMaterial, params.count);
 
 const obj = new Object3D();
 
-for (let i = 0; i < params.count; i++) {
-  obj.position.set(i / 10, Math.random() * 10, Math.random() * 5);
-  obj.updateMatrix();
-
-  starts.setMatrixAt(i, obj.matrix);
+function upadteInstances() {
+  for (let i = 0; i < params.count; i++) {
+    obj.position.set(
+      Math.cos(i + params.time) * params.radius,
+      Math.sin(i + params.time) * params.radius,
+      0,
+    );
+    obj.updateMatrix();
+    starts.setMatrixAt(i, obj.matrix);
+  }
+  starts.instanceMatrix.needsUpdate = true;
 }
+upadteInstances();
 scene.add(starts);
 
 /**
@@ -99,6 +108,8 @@ pane.element.parentElement!.style.width = '380px';
 function render() {
   // Update
   controls.update();
+  params.time += 0.01;
+  upadteInstances();
   // Render
   renderer.render(scene, camera);
   // Animation
