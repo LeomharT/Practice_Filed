@@ -18,6 +18,14 @@ import starFragmentShader from './shader/start/fragment.glsl?raw';
 import starVertexShader from './shader/start/vertex.glsl?raw';
 import './style.css';
 
+function random(min: number, max: number) {
+  return Math.random() * (max - min) + min;
+}
+
+for (let i = 0; i < 100; i++) {
+  console.log(random(-10, 10));
+}
+
 (ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
 
 const el = document.querySelector('#root');
@@ -59,7 +67,7 @@ controls.enableDamping = true;
  */
 const params = {
   count: 500,
-  radius: 4,
+
   time: 0,
 };
 
@@ -69,16 +77,11 @@ const startMaterial = new ShaderMaterial({
   fragmentShader: starFragmentShader,
 });
 const starts = new InstancedMesh(startGeometry, startMaterial, params.count);
-
 const obj = new Object3D();
 
 function upadteInstances() {
   for (let i = 0; i < params.count; i++) {
-    obj.position.set(
-      Math.cos(i + params.time) * params.radius,
-      Math.sin(i + params.time) * params.radius,
-      Math.cos(i * 6),
-    );
+    obj.position.set(random(-10, 10), random(-10, 10), random(-10, 10));
     obj.updateMatrix();
     starts.setMatrixAt(i, obj.matrix);
   }
@@ -108,8 +111,6 @@ pane.element.parentElement!.style.width = '380px';
 function render() {
   // Update
   controls.update();
-  params.time += 0.01;
-  upadteInstances();
   // Render
   renderer.render(scene, camera);
   // Animation
