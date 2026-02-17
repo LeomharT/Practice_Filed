@@ -58,7 +58,7 @@ controls.enableDamping = true;
  * World
  */
 const params = {
-  count: 50,
+  count: 500,
   radius: 4,
   time: 0,
 };
@@ -77,7 +77,7 @@ function upadteInstances() {
     obj.position.set(
       Math.cos(i + params.time) * params.radius,
       Math.sin(i + params.time) * params.radius,
-      0,
+      Math.cos(i * 6),
     );
     obj.updateMatrix();
     starts.setMatrixAt(i, obj.matrix);
