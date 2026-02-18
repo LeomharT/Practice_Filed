@@ -3,6 +3,7 @@ import {
   Clock,
   Color,
   CylinderGeometry,
+  FogExp2,
   InstancedMesh,
   Layers,
   NormalBlending,
@@ -42,6 +43,8 @@ const layer = new Layers();
 layer.set(layers.bloom);
 const background = new Color('#1e1e1e');
 
+const fog = new FogExp2(background, 0.2);
+
 const renderer = new WebGLRenderer({
   alpha: true,
   antialias: true,
@@ -52,6 +55,7 @@ el?.append(renderer.domElement);
 
 const scene = new Scene();
 scene.background = background;
+scene.fog = fog;
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
 camera.position.set(0, 0, 5);
@@ -67,7 +71,7 @@ const clock = new Clock();
  * World
  */
 const params = {
-  count: 200,
+  count: 2000,
   time: 0,
   speed: 20,
 };
@@ -98,7 +102,9 @@ function upadteInstances(time: number = 0) {
   for (let i = 0; i < params.count; i++) {
     const p = positions[i];
     p[2] += time * 20;
-    p[2] = p[2] % 100;
+    if (p[2] > 100) {
+      p[2] = random(-100, 100);
+    }
     obj.position.set(p[0], p[1], p[2]);
     obj.updateMatrix();
     starts.setMatrixAt(i, obj.matrix);

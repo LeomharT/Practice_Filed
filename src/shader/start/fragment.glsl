@@ -1,5 +1,6 @@
 varying vec3 vPosition;
 varying vec2 vUv;
+varying float vGradient;
 
 void main(){
     vec3  color  = vec3(1.0);
@@ -8,7 +9,7 @@ void main(){
     float dist   = distance(uv, center);
     float alpha  = 0.1 / dist - 0.2;
  
-    gl_FragColor = vec4(color, 1.0);
+    gl_FragColor = vec4(color, vGradient);
     
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
