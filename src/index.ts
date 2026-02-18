@@ -52,7 +52,7 @@ const scene = new Scene();
 scene.background = background;
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(0, 0, 10);
+camera.position.set(0, 0, 3);
 camera.lookAt(scene.position);
 camera.layers.enable(layers.bloom);
 
@@ -72,11 +72,12 @@ const uniforms = {
   uTime: new Uniform(0),
 };
 
-const startGeometry = new PlaneGeometry(0.1, 0.1, 16, 16);
+const startGeometry = new PlaneGeometry(0.3, 0.3, 16, 16);
 const startMaterial = new ShaderMaterial({
   vertexShader: starVertexShader,
   fragmentShader: starFragmentShader,
   uniforms,
+  transparent: true,
 });
 const starts = new InstancedMesh(startGeometry, startMaterial, params.count);
 const obj = new Object3D();
