@@ -67,7 +67,6 @@ controls.enableDamping = true;
  */
 const params = {
   count: 500,
-
   time: 0,
 };
 
