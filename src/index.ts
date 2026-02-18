@@ -9,6 +9,7 @@ import {
   Scene,
   ShaderChunk,
   ShaderMaterial,
+  Uniform,
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
@@ -20,10 +21,6 @@ import './style.css';
 
 function random(min: number, max: number) {
   return Math.random() * (max - min) + min;
-}
-
-for (let i = 0; i < 100; i++) {
-  console.log(random(-10, 10));
 }
 
 (ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
@@ -55,7 +52,7 @@ const scene = new Scene();
 scene.background = background;
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(0, 0, 6);
+camera.position.set(0, 0, 10);
 camera.lookAt(scene.position);
 camera.layers.enable(layers.bloom);
 
@@ -68,12 +65,18 @@ controls.enableDamping = true;
 const params = {
   count: 500,
   time: 0,
+  speed: 20,
 };
 
-const startGeometry = new PlaneGeometry(0.2, 0.2, 16, 16);
+const uniforms = {
+  uTime: new Uniform(0),
+};
+
+const startGeometry = new PlaneGeometry(0.1, 0.1, 16, 16);
 const startMaterial = new ShaderMaterial({
   vertexShader: starVertexShader,
   fragmentShader: starFragmentShader,
+  uniforms,
 });
 const starts = new InstancedMesh(startGeometry, startMaterial, params.count);
 const obj = new Object3D();
@@ -110,6 +113,7 @@ pane.element.parentElement!.style.width = '380px';
 function render() {
   // Update
   controls.update();
+  uniforms.uTime.value += 0.01;
   // Render
   renderer.render(scene, camera);
   // Animation
