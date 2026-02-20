@@ -1,4 +1,3 @@
-varying vec3 vPosition;
 varying vec2 vUv;
 varying float vGradient;
 #include <fog_pars_fragment>

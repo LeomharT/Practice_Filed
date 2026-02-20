@@ -103,7 +103,7 @@ function upadteInstances(time: number = 0) {
     const p = positions[i];
     p[2] += time * 20;
     if (p[2] > 100) {
-      p[2] = random(-100, 100) - 50;
+      p[2] = random(-100, 100) - 200;
     }
     obj.position.set(p[0], p[1], p[2]);
     obj.updateMatrix();
