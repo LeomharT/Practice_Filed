@@ -1,6 +1,7 @@
 varying vec3 vPosition;
 varying vec2 vUv;
 varying float vGradient;
+#include <fog_pars_fragment>
 
 void main(){
     vec3  color  = vec3(1.0);
@@ -13,4 +14,5 @@ void main(){
     
     #include <tonemapping_fragment>
     #include <colorspace_fragment>
+    #include <fog_fragment>
 }

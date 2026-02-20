@@ -5,6 +5,8 @@ varying float vGradient;
 
 uniform float uTime;
 
+#include <fog_pars_vertex>
+
 void main(){
     float h = position.z;
 
@@ -13,6 +15,7 @@ void main(){
     vec4 projectionPosition = projectionMatrix * viewPosition;
 
     gl_Position = projectionPosition;
+    #include <fog_vertex>
 
     vPosition = modelPosition.xyz;
     vUv       = uv;

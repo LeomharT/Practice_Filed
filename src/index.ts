@@ -43,7 +43,7 @@ const layer = new Layers();
 layer.set(layers.bloom);
 const background = new Color('#1e1e1e');
 
-const fog = new FogExp2(background, 0.2);
+const fog = new FogExp2(background, 0.4);
 
 const renderer = new WebGLRenderer({
   alpha: true,
@@ -80,7 +80,7 @@ const uniforms = {
   uTime: new Uniform(0),
 };
 
-const startGeometry = new CylinderGeometry(0.1, 0.1, 10, 32, 32);
+const startGeometry = new CylinderGeometry(0.3, 0.3, 10, 32, 32);
 startGeometry.rotateX(Math.PI / 2);
 const startMaterial = new ShaderMaterial({
   vertexShader: starVertexShader,
@@ -103,7 +103,7 @@ function upadteInstances(time: number = 0) {
     const p = positions[i];
     p[2] += time * 20;
     if (p[2] > 100) {
-      p[2] = random(-100, 100);
+      p[2] = random(-100, 100) - 50;
     }
     obj.position.set(p[0], p[1], p[2]);
     obj.updateMatrix();
