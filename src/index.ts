@@ -6,12 +6,15 @@ import {
   FogExp2,
   InstancedMesh,
   Layers,
+  Mesh,
+  MeshStandardMaterial,
   NormalBlending,
   Object3D,
   PerspectiveCamera,
   Scene,
   ShaderChunk,
   ShaderMaterial,
+  SphereGeometry,
   Uniform,
   WebGLRenderer,
 } from 'three';
@@ -103,7 +106,7 @@ function upadteInstances(time: number = 0) {
     const p = positions[i];
     p[2] += time * 20;
     if (p[2] > 100) {
-      p[2] = random(-100, 100) - 200;
+      p[2] = random(-100, 100) - 100;
     }
     obj.position.set(p[0], p[1], p[2]);
     obj.updateMatrix();
@@ -113,6 +116,11 @@ function upadteInstances(time: number = 0) {
 }
 upadteInstances();
 scene.add(starts);
+
+const sphereGeometry = new SphereGeometry(1, 32, 32);
+const sphereMaterial = new MeshStandardMaterial({ fog: false });
+const sphere = new Mesh(sphereGeometry, sphereMaterial);
+scene.add(sphere);
 
 /**
  * Helper
