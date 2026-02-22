@@ -1,6 +1,5 @@
 import {
   AxesHelper,
-  Clock,
   Color,
   CylinderGeometry,
   FogExp2,
@@ -11,12 +10,15 @@ import {
   NormalBlending,
   Object3D,
   PerspectiveCamera,
+  PMREMGenerator,
   Scene,
   ShaderChunk,
   ShaderMaterial,
   SphereGeometry,
+  Timer,
   Uniform,
   WebGLRenderer,
+  WebGLRenderTarget,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
@@ -68,7 +70,12 @@ camera.layers.enable(layers.bloom);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-const clock = new Clock();
+const clock = new Timer();
+
+let envMap: WebGLRenderTarget | undefined;
+
+const pmremGenerator = new PMREMGenerator(renderer);
+pmremGenerator.compileEquirectangularShader();
 
 /**
  * World
@@ -118,7 +125,11 @@ upadteInstances();
 scene.add(starts);
 
 const sphereGeometry = new SphereGeometry(1, 32, 32);
-const sphereMaterial = new MeshStandardMaterial({ fog: false });
+const sphereMaterial = new MeshStandardMaterial({
+  fog: false,
+  roughness: 0.4,
+  metalness: 0.5,
+});
 const sphere = new Mesh(sphereGeometry, sphereMaterial);
 scene.add(sphere);
 
@@ -144,9 +155,17 @@ function render() {
   // Time
   const delta = clock.getDelta();
   // Update
+  clock.update();
   controls.update();
   uniforms.uTime.value += 0.01;
   upadteInstances(delta);
+  if (envMap) envMap.dispose();
+  envMap = pmremGenerator.fromScene(scene, 0, 0.1, 1000);
+
+  if (envMap) {
+    sphere.material.envMap = envMap.texture;
+  }
+
   // Render
   renderer.render(scene, camera);
   // Animation
