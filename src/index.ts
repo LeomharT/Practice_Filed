@@ -85,7 +85,7 @@ const cubeRenderTarget = new WebGLCubeRenderTarget(256, {
   minFilter: LinearMipmapLinearFilter,
 });
 
-const cubeCamera = new CubeCamera(1, 100000, cubeRenderTarget);
+const cubeCamera = new CubeCamera(20.0, 100000, cubeRenderTarget);
 
 /**
  * World
