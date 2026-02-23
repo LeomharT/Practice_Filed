@@ -1,10 +1,12 @@
 import {
   AxesHelper,
   Color,
+  CubeCamera,
   CylinderGeometry,
   FogExp2,
   InstancedMesh,
   Layers,
+  LinearMipmapLinearFilter,
   Mesh,
   MeshStandardMaterial,
   NormalBlending,
@@ -17,6 +19,7 @@ import {
   SphereGeometry,
   Timer,
   Uniform,
+  WebGLCubeRenderTarget,
   WebGLRenderer,
   WebGLRenderTarget,
 } from 'three';
@@ -76,6 +79,13 @@ let envMap: WebGLRenderTarget | undefined;
 
 const pmremGenerator = new PMREMGenerator(renderer);
 pmremGenerator.compileEquirectangularShader();
+
+const cubeRenderTarget = new WebGLCubeRenderTarget(256, {
+  generateMipmaps: true,
+  minFilter: LinearMipmapLinearFilter,
+});
+
+const cubeCamera = new CubeCamera(1, 100000, cubeRenderTarget);
 
 /**
  * World
@@ -151,6 +161,15 @@ pane.element.parentElement!.style.width = '380px';
  * Event
  */
 
+function renderPMREM() {
+  if (envMap) envMap.dispose();
+  envMap = pmremGenerator.fromScene(scene, 0, 0.1, 1000);
+
+  // if (envMap) {
+  //   sphere.material.envMap = envMap.texture;
+  // }
+}
+
 function render() {
   // Time
   const delta = clock.getDelta();
@@ -159,12 +178,13 @@ function render() {
   controls.update();
   uniforms.uTime.value += 0.01;
   upadteInstances(delta);
-  if (envMap) envMap.dispose();
-  envMap = pmremGenerator.fromScene(scene, 0, 0.1, 1000);
+  renderPMREM();
 
-  if (envMap) {
-    sphere.material.envMap = envMap.texture;
-  }
+  sphere.visible = false;
+  cubeCamera.update(renderer, scene);
+  sphere.visible = true;
+
+  sphere.material.envMap = cubeRenderTarget.texture;
 
   // Render
   renderer.render(scene, camera);
