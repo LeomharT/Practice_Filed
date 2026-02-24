@@ -87,7 +87,7 @@ const cubeRenderTarget = new WebGLCubeRenderTarget(256, {
   minFilter: LinearMipmapLinearFilter,
 });
 
-const cubeCamera = new CubeCamera(2.0, 100000, cubeRenderTarget);
+const cubeCamera = new CubeCamera(1.0, 100000, cubeRenderTarget);
 
 /**
  * World
@@ -141,13 +141,14 @@ const sphereMaterial = new MeshStandardMaterial({
   fog: false,
   roughness: 0.2,
   metalness: 0.8,
+  transparent: true,
 });
 const sphere = new Mesh(sphereGeometry, sphereMaterial);
 scene.add(sphere);
 
 const envObj1 = new Mesh(
   new IcosahedronGeometry(0.1, 3),
-  new MeshBasicMaterial({ color: '#123ffc', fog: false }),
+  new MeshBasicMaterial({ color: '#123ffc' }),
 );
 
 scene.add(envObj1);
@@ -183,7 +184,7 @@ function updateTest(time: number) {
   const radius = 2;
 
   envObj1.position.x = Math.cos(time) * radius;
-  envObj1.position.y = Math.sin(time);
+  envObj1.position.y = Math.sin(time * 3) * 0.5;
   envObj1.position.z = Math.sin(time) * radius;
 }
 
