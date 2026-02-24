@@ -21,6 +21,8 @@ import {
   SphereGeometry,
   Timer,
   Uniform,
+  UniformsLib,
+  UniformsUtils,
   Vector3,
   WebGLCubeRenderTarget,
   WebGLRenderer,
@@ -57,7 +59,7 @@ const layer = new Layers();
 layer.set(layers.bloom);
 const background = new Color('#1e1e1e');
 
-const fog = new FogExp2(background, 0.4);
+const fog = new FogExp2(background, 0.03);
 
 const renderer = new WebGLRenderer({
   alpha: true,
@@ -102,9 +104,10 @@ const params = {
   speed: 20,
 };
 
-const uniforms = {
-  uTime: new Uniform(0),
-};
+const uniforms = UniformsUtils.merge([
+  UniformsLib['fog'],
+  { uTime: new Uniform(0) },
+]);
 
 const startGeometry = new CylinderGeometry(0.3, 0.3, 10, 32, 32);
 startGeometry.rotateX(Math.PI / 2);
@@ -114,6 +117,7 @@ const startMaterial = new ShaderMaterial({
   uniforms,
   transparent: true,
   blending: NormalBlending,
+  fog: true,
 });
 const starts = new InstancedMesh(startGeometry, startMaterial, params.count);
 const obj = new Object3D();
@@ -155,7 +159,7 @@ const testMaterial = new ShaderMaterial({
   vertexShader: testVertexShader,
   fragmentShader: testFragmentShader,
 });
-const sphere = new Mesh(sphereGeometry, testMaterial);
+const sphere = new Mesh(sphereGeometry, sphereMaterial);
 scene.add(sphere);
 
 const envObj1 = new Mesh(
@@ -219,7 +223,9 @@ function render() {
   cubeCamera.update(renderer, scene);
   sphere.visible = true;
 
-  // sphere.material.envMap = cubeRenderTarget.texture;
+  if (sphere.material instanceof MeshStandardMaterial) {
+    sphere.material.envMap = cubeRenderTarget.texture;
+  }
 
   // Render
   renderer.render(scene, camera);
