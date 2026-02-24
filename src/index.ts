@@ -21,6 +21,7 @@ import {
   SphereGeometry,
   Timer,
   Uniform,
+  Vector3,
   WebGLCubeRenderTarget,
   WebGLRenderer,
   WebGLRenderTarget,
@@ -30,6 +31,9 @@ import { Pane } from 'tweakpane';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
 import starFragmentShader from './shader/start/fragment.glsl?raw';
 import starVertexShader from './shader/start/vertex.glsl?raw';
+import testFragmentShader from './shader/test/fragment.glsl?raw';
+import testVertexShader from './shader/test/vertex.glsl?raw';
+
 import './style.css';
 
 function random(min: number, max: number) {
@@ -143,7 +147,15 @@ const sphereMaterial = new MeshStandardMaterial({
   metalness: 0.8,
   transparent: true,
 });
-const sphere = new Mesh(sphereGeometry, sphereMaterial);
+const uniforms_ = {
+  uDirection: new Uniform(new Vector3()),
+};
+const testMaterial = new ShaderMaterial({
+  uniforms: uniforms_,
+  vertexShader: testVertexShader,
+  fragmentShader: testFragmentShader,
+});
+const sphere = new Mesh(sphereGeometry, testMaterial);
 scene.add(sphere);
 
 const envObj1 = new Mesh(
@@ -186,6 +198,8 @@ function updateTest(time: number) {
   envObj1.position.x = Math.cos(time) * radius;
   envObj1.position.y = Math.sin(time * 3) * 0.5;
   envObj1.position.z = Math.sin(time) * radius;
+
+  uniforms_.uDirection.value.copy(envObj1.position.clone().normalize());
 }
 
 function render() {
@@ -205,7 +219,7 @@ function render() {
   cubeCamera.update(renderer, scene);
   sphere.visible = true;
 
-  sphere.material.envMap = cubeRenderTarget.texture;
+  // sphere.material.envMap = cubeRenderTarget.texture;
 
   // Render
   renderer.render(scene, camera);
