@@ -4,10 +4,12 @@ import {
   CubeCamera,
   CylinderGeometry,
   FogExp2,
+  IcosahedronGeometry,
   InstancedMesh,
   Layers,
   LinearMipmapLinearFilter,
   Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
   NormalBlending,
   Object3D,
@@ -85,7 +87,7 @@ const cubeRenderTarget = new WebGLCubeRenderTarget(256, {
   minFilter: LinearMipmapLinearFilter,
 });
 
-const cubeCamera = new CubeCamera(20.0, 100000, cubeRenderTarget);
+const cubeCamera = new CubeCamera(2.0, 100000, cubeRenderTarget);
 
 /**
  * World
@@ -137,11 +139,18 @@ scene.add(starts);
 const sphereGeometry = new SphereGeometry(1, 32, 32);
 const sphereMaterial = new MeshStandardMaterial({
   fog: false,
-  roughness: 0.4,
-  metalness: 0.5,
+  roughness: 0.2,
+  metalness: 0.8,
 });
 const sphere = new Mesh(sphereGeometry, sphereMaterial);
 scene.add(sphere);
+
+const envObj1 = new Mesh(
+  new IcosahedronGeometry(0.1, 3),
+  new MeshBasicMaterial({ color: '#123ffc', fog: false }),
+);
+
+scene.add(envObj1);
 
 /**
  * Helper
@@ -170,15 +179,26 @@ function renderPMREM() {
   // }
 }
 
+function updateTest(time: number) {
+  const radius = 2;
+
+  envObj1.position.x = Math.cos(time) * radius;
+  envObj1.position.y = Math.sin(time);
+  envObj1.position.z = Math.sin(time) * radius;
+}
+
 function render() {
   // Time
   const delta = clock.getDelta();
+  const elapsed = clock.getElapsed();
+
   // Update
   clock.update();
   controls.update();
   uniforms.uTime.value += 0.01;
   upadteInstances(delta);
   renderPMREM();
+  updateTest(elapsed);
 
   sphere.visible = false;
   cubeCamera.update(renderer, scene);
