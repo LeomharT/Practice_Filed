@@ -29,14 +29,21 @@ import {
   WebGLRenderer,
   WebGLRenderTarget,
 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import {
+  EffectComposer,
+  OrbitControls,
+  OutputPass,
+  RenderPass,
+  ShaderPass,
+} from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
+import effectFragmentShader from './shader/effect/fragment.glsl?raw';
+import effectVertexShader from './shader/effect/vertex.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
 import starFragmentShader from './shader/start/fragment.glsl?raw';
 import starVertexShader from './shader/start/vertex.glsl?raw';
 import testFragmentShader from './shader/test/fragment.glsl?raw';
 import testVertexShader from './shader/test/vertex.glsl?raw';
-
 import './style.css';
 
 function random(min: number, max: number) {
@@ -95,6 +102,24 @@ const cubeRenderTarget = new WebGLCubeRenderTarget(256, {
 });
 
 const cubeCamera = new CubeCamera(1.0, 100000, cubeRenderTarget);
+
+const renderScene = new RenderPass(scene, camera);
+const mixPass = new ShaderPass(
+  new ShaderMaterial({
+    vertexShader: effectVertexShader,
+    fragmentShader: effectFragmentShader,
+    uniforms: {
+      uDiffuse: new Uniform(null),
+    },
+  }),
+  'uDiffuse',
+);
+const outputPass = new OutputPass();
+
+const composer = new EffectComposer(renderer);
+composer.addPass(renderScene);
+composer.addPass(mixPass);
+composer.addPass(outputPass);
 
 /**
  * World
@@ -231,7 +256,8 @@ function render() {
   }
 
   // Render
-  renderer.render(scene, camera);
+  // renderer.render(scene, camera);
+  composer.render();
   // Animation
   requestAnimationFrame(render);
 }
