@@ -10,6 +10,10 @@ void main(){
 
     vec3  direction   = uDirection;
     float orientation = dot(direction, normal);
+          orientation = smoothstep(0.0, 1.6, orientation);
+
+    float fresnel = dot(viewDirection, normal) + 1.0;
+          fresnel = pow(fresnel, 2.0);
 
     vec3  reflection = reflect(-direction, normal);
 
@@ -17,7 +21,8 @@ void main(){
           specular = max(0.0, specular);
           specular = pow(specular, 20.0);
 
-    color = vec3(specular);
+    color  = vec3(orientation);
+    color += vec3(specular) * vec3(0.21, 1.0, 0.3456) * fresnel;
 
     gl_FragColor = vec4(color, 1.0);
 

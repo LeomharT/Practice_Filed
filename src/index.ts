@@ -163,7 +163,7 @@ const testMaterial = new ShaderMaterial({
   vertexShader: testVertexShader,
   fragmentShader: testFragmentShader,
 });
-const sphere = new Mesh(sphereGeometry, sphereMaterial);
+const sphere = new Mesh(sphereGeometry, testMaterial);
 scene.add(sphere);
 
 const envObj1 = new Mesh(
