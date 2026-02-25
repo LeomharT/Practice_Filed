@@ -5,6 +5,7 @@ import {
   CylinderGeometry,
   FogExp2,
   IcosahedronGeometry,
+  InstancedBufferAttribute,
   InstancedMesh,
   Layers,
   LinearMipmapLinearFilter,
@@ -99,7 +100,7 @@ const cubeCamera = new CubeCamera(1.0, 100000, cubeRenderTarget);
  * World
  */
 const params = {
-  count: 2000,
+  count: 5000,
   time: 0,
   speed: 20,
 };
@@ -109,7 +110,7 @@ const uniforms = UniformsUtils.merge([
   { uTime: new Uniform(0) },
 ]);
 
-const startGeometry = new CylinderGeometry(0.3, 0.3, 10, 32, 32);
+const startGeometry = new CylinderGeometry(0.3, 0.3, 10, 16, 16);
 startGeometry.rotateX(Math.PI / 2);
 const startMaterial = new ShaderMaterial({
   vertexShader: starVertexShader,
@@ -128,14 +129,16 @@ const positions = Array.from({ length: params.count }, () => [
   random(-100, 100),
 ]);
 
-function upadteInstances(time: number = 0) {
+const offsetArr = new Float32Array(params.count).map(
+  (_, index) => positions[index][2],
+);
+const offsetAttr = new InstancedBufferAttribute(offsetArr, 1);
+startGeometry.setAttribute('aOffset', offsetAttr);
+
+function upadteInstances() {
   for (let i = 0; i < params.count; i++) {
     const p = positions[i];
-    p[2] += time * 20;
-    if (p[2] > 100) {
-      p[2] = random(-100, 100) - 100;
-    }
-    obj.position.set(p[0], p[1], p[2]);
+    obj.position.set(p[0], p[1], 0);
     obj.updateMatrix();
     starts.setMatrixAt(i, obj.matrix);
   }
@@ -147,9 +150,10 @@ scene.add(starts);
 const sphereGeometry = new SphereGeometry(1, 32, 32);
 const sphereMaterial = new MeshStandardMaterial({
   fog: false,
-  roughness: 0.2,
-  metalness: 0.8,
+  roughness: 0.4,
+  metalness: 0.4,
   transparent: true,
+  color: 'white',
 });
 const uniforms_ = {
   uDirection: new Uniform(new Vector3()),
@@ -214,8 +218,7 @@ function render() {
   // Update
   clock.update();
   controls.update();
-  uniforms.uTime.value += 0.01;
-  upadteInstances(delta);
+  uniforms.uTime.value += delta;
   renderPMREM();
   updateTest(elapsed);
 
