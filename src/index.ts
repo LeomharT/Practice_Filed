@@ -4,8 +4,10 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
+  DoubleSide,
   FogExp2,
-  Mesh,
+  InstancedMesh,
+  Object3D,
   PerspectiveCamera,
   Scene,
   ShaderChunk,
@@ -22,6 +24,10 @@ import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
 import './style.css';
 
 (ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
+
+function random(min: number, max: number) {
+  return Math.random() * (max - min) + min;
+}
 
 const el = document.querySelector('#root');
 
@@ -48,7 +54,7 @@ scene.background = background;
 scene.fog = fog;
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(0, 0, 2);
+camera.position.set(0, 1, 4);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -87,12 +93,32 @@ const grassGeometry = new BufferGeometry();
 grassGeometry.setAttribute('position', positionAttr);
 grassGeometry.setAttribute('uv', uvAttr);
 
+const params = {
+  count: 1000,
+};
+
 const grassMaterial = new ShaderMaterial({
   vertexShader: grassVertexShader,
   fragmentShader: grassFragmentShader,
   uniforms,
+  side: DoubleSide,
 });
-const grass = new Mesh(grassGeometry, grassMaterial);
+const grass = new InstancedMesh(grassGeometry, grassMaterial, params.count);
+grass.scale.setScalar(0.55);
+
+const obj = new Object3D();
+
+function updateGrass() {
+  for (let i = 0; i < params.count; i++) {
+    obj.position.set(random(-10, 10), 0, random(-10, 10));
+    obj.scale.y = random(1.0, 2.0);
+    obj.updateMatrixWorld();
+    grass.setMatrixAt(i, obj.matrix);
+  }
+  grass.instanceMatrix.needsUpdate = true;
+}
+
+updateGrass();
 
 scene.add(grass);
 
@@ -115,6 +141,12 @@ const fpsGraph: any = pane.addBlade({
   view: 'fpsgraph',
   label: undefined,
   rows: 4,
+});
+
+pane.addBinding(params, 'count', {
+  step: 1,
+  min: 50,
+  max: 500,
 });
 
 /**

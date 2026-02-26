@@ -19,8 +19,8 @@ void main(){
     uv -= center;
     uv  = rotateUv(uv, uTime);
     uv += center;
-
-    color = vec3(uv, cos(uTime));
+    
+    color = vec3(uv, 0.65);
 
     gl_FragColor = vec4(color, 1.0);
 }
