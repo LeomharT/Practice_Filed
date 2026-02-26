@@ -22,7 +22,15 @@ void main(){
           specular = pow(specular, 20.0);
 
     color  = vec3(orientation);
-    color += vec3(specular) * vec3(0.21, 1.0, 0.3456) * fresnel;
+    color += vec3(specular) * vec3(0.0705, 0.24705, 0.9882);
+
+    if(color.r < 0.1001) {
+      color = mix(
+        vec3(1.0, 0.0, 0.25),
+        vec3(0.01, 1.0, 0.0257),
+        fresnel
+      );
+    }
 
     gl_FragColor = vec4(color, 1.0);
 

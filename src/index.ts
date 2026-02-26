@@ -9,6 +9,7 @@ import {
   InstancedMesh,
   Layers,
   LinearMipmapLinearFilter,
+  Material,
   Mesh,
   MeshBasicMaterial,
   MeshStandardMaterial,
@@ -24,6 +25,7 @@ import {
   Uniform,
   UniformsLib,
   UniformsUtils,
+  Vector2,
   Vector3,
   WebGLCubeRenderTarget,
   WebGLRenderer,
@@ -35,6 +37,7 @@ import {
   OutputPass,
   RenderPass,
   ShaderPass,
+  UnrealBloomPass,
 } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
 import effectFragmentShader from './shader/effect/fragment.glsl?raw';
@@ -65,6 +68,10 @@ const layers = {
 };
 const layer = new Layers();
 layer.set(layers.bloom);
+
+const materials: Record<string, Material> = {};
+const darkMaterial = new MeshBasicMaterial({ color: '#000000' });
+
 const background = new Color('#1e1e1e');
 
 const fog = new FogExp2(background, 0.03);
@@ -104,12 +111,26 @@ const cubeRenderTarget = new WebGLCubeRenderTarget(256, {
 const cubeCamera = new CubeCamera(1.0, 100000, cubeRenderTarget);
 
 const renderScene = new RenderPass(scene, camera);
+
+const bloomPass = new UnrealBloomPass(
+  new Vector2(size.width, size.height),
+  0.5,
+  0.5,
+  0.0,
+);
+
+const bloomComposer = new EffectComposer(renderer);
+bloomComposer.renderToScreen = false;
+bloomComposer.addPass(renderScene);
+bloomComposer.addPass(bloomPass);
+
 const mixPass = new ShaderPass(
   new ShaderMaterial({
     vertexShader: effectVertexShader,
     fragmentShader: effectFragmentShader,
     uniforms: {
       uDiffuse: new Uniform(null),
+      uBloomTexture: new Uniform(bloomComposer.renderTarget2.texture),
     },
   }),
   'uDiffuse',
@@ -170,6 +191,7 @@ function upadteInstances() {
   starts.instanceMatrix.needsUpdate = true;
 }
 upadteInstances();
+starts.layers.enable(layers.bloom);
 scene.add(starts);
 
 const sphereGeometry = new SphereGeometry(1, 32, 32);
@@ -195,6 +217,7 @@ const envObj1 = new Mesh(
   new IcosahedronGeometry(0.1, 3),
   new MeshBasicMaterial({ color: '#123ffc' }),
 );
+envObj1.layers.set(layers.bloom);
 
 scene.add(envObj1);
 
@@ -235,6 +258,16 @@ function updateTest(time: number) {
   uniforms_.uDirection.value.copy(envObj1.position.clone().normalize());
 }
 
+function renderBloomLayer() {
+  scene.traverse(darkenMaterials);
+  scene.background = darkMaterial.color;
+
+  bloomComposer.render();
+
+  scene.background = background;
+  scene.traverse(restoreMaterial);
+}
+
 function render() {
   // Time
   const delta = clock.getDelta();
@@ -257,6 +290,7 @@ function render() {
 
   // Render
   // renderer.render(scene, camera);
+  renderBloomLayer();
   composer.render();
   // Animation
   requestAnimationFrame(render);
@@ -273,3 +307,17 @@ function resize() {
   camera.updateProjectionMatrix();
 }
 window.addEventListener('resize', resize);
+
+function darkenMaterials(obj: Object3D) {
+  if (obj instanceof Mesh && obj.layers.test(layer) === false) {
+    materials[obj.uuid] = obj.material;
+    obj.material = darkMaterial;
+  }
+}
+
+function restoreMaterial(obj: Object3D) {
+  if (obj instanceof Mesh && materials[obj.uuid]) {
+    obj.material = materials[obj.uuid];
+    delete materials[obj.uuid];
+  }
+}
