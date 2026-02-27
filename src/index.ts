@@ -7,11 +7,13 @@ import {
   DoubleSide,
   FogExp2,
   InstancedMesh,
+  MirroredRepeatWrapping,
   Object3D,
   PerspectiveCamera,
   Scene,
   ShaderChunk,
   ShaderMaterial,
+  TextureLoader,
   Timer,
   Uniform,
   WebGLRenderer,
@@ -41,6 +43,9 @@ const background = new Color('#1e1e1e');
 
 const fog = new FogExp2(background, 0.03);
 
+const textureLoader = new TextureLoader();
+textureLoader.setPath('/src/assets/textures/');
+
 const renderer = new WebGLRenderer({
   alpha: true,
   antialias: true,
@@ -62,13 +67,12 @@ controls.enableDamping = true;
 
 const clock = new Timer();
 
+const noiseTexture = textureLoader.load('noiseTexture.png');
+noiseTexture.wrapS = noiseTexture.wrapT = MirroredRepeatWrapping;
+
 /**
  * World
  */
-
-const uniforms = {
-  uTime: new Uniform(0),
-};
 
 const positionArr = new Float32Array([
   0, 1, 0,
@@ -94,9 +98,15 @@ grassGeometry.setAttribute('position', positionAttr);
 grassGeometry.setAttribute('uv', uvAttr);
 
 const params = {
-  count: 1000,
+  count: 5000,
 };
 
+const uniforms = {
+  uTime: new Uniform(0),
+  uNoiseTexture: new Uniform(noiseTexture),
+  uColor1: new Uniform(new Color('#62D96B')),
+  uColor2: new Uniform(new Color('#29A634')),
+};
 const grassMaterial = new ShaderMaterial({
   vertexShader: grassVertexShader,
   fragmentShader: grassFragmentShader,
@@ -110,8 +120,8 @@ const obj = new Object3D();
 
 function updateGrass() {
   for (let i = 0; i < params.count; i++) {
-    obj.position.set(random(-15, 15), 0, random(-15, 15));
-    obj.scale.y = random(1.0, 3.0);
+    obj.position.set(random(-25, 25), 0, random(-25, 25));
+    obj.scale.y = random(1.0, 3.5);
     obj.updateMatrixWorld();
     grass.setMatrixAt(i, obj.matrix);
   }
