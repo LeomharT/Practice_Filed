@@ -158,6 +158,12 @@ pane.addBinding(params, 'count', {
   min: 50,
   max: 500,
 });
+pane.addBinding(uniforms.uColor1, 'value', {
+  color: { type: 'float' },
+});
+pane.addBinding(uniforms.uColor2, 'value', {
+  color: { type: 'float' },
+});
 
 /**
  * Event
