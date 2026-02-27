@@ -54,7 +54,7 @@ scene.background = background;
 scene.fog = fog;
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(0, 1, 4);
+camera.position.set(0, 1, 5);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -104,14 +104,14 @@ const grassMaterial = new ShaderMaterial({
   side: DoubleSide,
 });
 const grass = new InstancedMesh(grassGeometry, grassMaterial, params.count);
-grass.scale.setScalar(0.55);
+grass.scale.setScalar(0.15);
 
 const obj = new Object3D();
 
 function updateGrass() {
   for (let i = 0; i < params.count; i++) {
-    obj.position.set(random(-10, 10), 0, random(-10, 10));
-    obj.scale.y = random(1.0, 2.0);
+    obj.position.set(random(-15, 15), 0, random(-15, 15));
+    obj.scale.y = random(1.0, 3.0);
     obj.updateMatrixWorld();
     grass.setMatrixAt(i, obj.matrix);
   }
