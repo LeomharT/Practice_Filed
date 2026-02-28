@@ -121,6 +121,8 @@ const uniforms = {
   uTime: new Uniform(0),
   uAlphaTexture: new Uniform(bladeAlphaTexture),
   uDiffuseTexture: new Uniform(bladeDiffuseTexture),
+  uTipColor: new Uniform(new Color(0.0, 0.6, 0.0).convertSRGBToLinear()),
+  uBottomColor: new Uniform(new Color(0.0, 0.1, 0.0).convertSRGBToLinear()),
 };
 
 const { offsets } = getAttributeData(GRASS_BLADE_INSTANCE, 100);
@@ -175,6 +177,14 @@ const fpsGraph: any = pane.addBlade({
   rows: 4,
 });
 
+pane.addBinding(uniforms.uTipColor, 'value', {
+  label: 'uTipColor',
+  color: { type: 'float' },
+});
+pane.addBinding(uniforms.uBottomColor, 'value', {
+  label: 'uBottomColor',
+  color: { type: 'float' },
+});
 /**
  * Event
  */

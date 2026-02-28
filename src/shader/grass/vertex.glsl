@@ -5,6 +5,7 @@ attribute vec4 orientation;
 
 varying vec2 vUv;
 varying vec3 vPosition;
+varying float vH;
 
 uniform float uTime;
 
@@ -110,12 +111,15 @@ void main() {
   float angle = atan(viewDirection.z, viewDirection.x);
   transformed.xz = rotate2D(transformed.xz, angle - PI / 2.0);
 
+  float h = position.y / 1.0;
+
   vec4 modelPosition = modelMatrix * vec4(transformed + aOffset, 1.0);
   vec4 viewPosition = viewMatrix * modelPosition;
   vec4 projectionPosition = projectionMatrix * viewPosition;
 
   gl_Position = projectionPosition;
 
+  vH = h;
   vUv = uv;
   vPosition = modelPosition.xyz;
 }
