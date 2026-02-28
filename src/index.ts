@@ -95,7 +95,7 @@ scene.add(ground);
 
 const options = { bW: 0.12, bH: 1, joints: 5 };
 
-const GRASS_BLADE_INSTANCE = 50000;
+const GRASS_BLADE_INSTANCE = 200000;
 
 function getAttributeData(instance: number, width: number) {
   const offsets: number[] = [];
