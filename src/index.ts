@@ -4,7 +4,6 @@ import { createNoise2D } from 'simplex-noise';
 import {
   AxesHelper,
   Color,
-  DoubleSide,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
   Mesh,
@@ -15,6 +14,7 @@ import {
   Scene,
   ShaderChunk,
   ShaderMaterial,
+  SRGBColorSpace,
   TextureLoader,
   Timer,
   Uniform,
@@ -70,6 +70,8 @@ noiseTexture.wrapS = noiseTexture.wrapT = MirroredRepeatWrapping;
 
 const bladeAlphaTexture = textureLoader.load('blade_alpha.jpg');
 const bladeDiffuseTexture = textureLoader.load('blade_diffuse.jpg');
+bladeDiffuseTexture.anisotropy = 8;
+bladeDiffuseTexture.colorSpace = SRGBColorSpace;
 
 /**
  * World
@@ -117,6 +119,8 @@ function getAttributeData(instance: number, width: number) {
 
 const uniforms = {
   uTime: new Uniform(0),
+  uAlphaTexture: new Uniform(bladeAlphaTexture),
+  uDiffuseTexture: new Uniform(bladeDiffuseTexture),
 };
 
 const { offsets } = getAttributeData(GRASS_BLADE_INSTANCE, 100);
@@ -143,8 +147,9 @@ const grassMaterial = new ShaderMaterial({
   fragmentShader: grassFragmentShader,
   uniforms,
   wireframe: false,
-  side: DoubleSide,
 });
+
+console.log(grassGeometry);
 
 const grass = new Mesh(grassGeometry, grassMaterial);
 scene.add(grass);

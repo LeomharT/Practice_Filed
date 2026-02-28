@@ -105,7 +105,6 @@ vec2 rotate2D(vec2 v, float angle) {
 
 void main() {
   vec3 transformed = vec3(position);
-
   vec3 viewDirection = normalize(cameraPosition - (transformed + aOffset));
 
   float angle = atan(viewDirection.z, viewDirection.x);
