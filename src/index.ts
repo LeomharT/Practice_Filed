@@ -51,7 +51,7 @@ const scene = new Scene();
 scene.background = background;
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(0, 1, 2);
+camera.position.set(0, 15, 55);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -86,15 +86,14 @@ const grassMaterial = new MeshBasicMaterial({ color: 'green' });
 const grass = new Mesh(grassGeometry, grassMaterial);
 scene.add(grass);
 
-const geoPlane = new PlaneGeometry(100, 100, 32, 32);
-
-const groundGeometry = geoPlane.clone();
+const groundGeometry = new PlaneGeometry(100, 100, 32, 32);
 groundGeometry.rotateX(-Math.PI / 2);
 const positionArr = groundGeometry.getAttribute('position').array;
 for (let i = 0; i < positionArr.length; i += 3) {
   positionArr[i + 1] += getYPosition(positionArr[i + 0], positionArr[i + 2]);
 }
 groundGeometry.attributes.position.needsUpdate = true;
+groundGeometry.computeVertexNormals();
 
 const groundMaterial = new MeshStandardMaterial({
   color: '#000f00',
@@ -107,7 +106,7 @@ scene.add(ground);
  * Helper
  */
 
-const axesHelper = new AxesHelper();
+const axesHelper = new AxesHelper(20);
 scene.add(axesHelper);
 
 /**
