@@ -1,18 +1,15 @@
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import {
   AxesHelper,
-  BufferAttribute,
-  BufferGeometry,
   Color,
-  DoubleSide,
   FogExp2,
-  InstancedMesh,
+  Mesh,
   MirroredRepeatWrapping,
-  Object3D,
   PerspectiveCamera,
   Scene,
   ShaderChunk,
   ShaderMaterial,
+  SphereGeometry,
   TextureLoader,
   Timer,
   Uniform,
@@ -20,16 +17,12 @@ import {
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
-import grassFragmentShader from './shader/grass/fragment.glsl?raw';
-import grassVertexShader from './shader/grass/vertex.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
+import testFragmentShader from './shader/test/fragment.glsl?raw';
+import testVertexShader from './shader/test/vertex.glsl?raw';
 import './style.css';
 
 (ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
-
-function random(min: number, max: number) {
-  return Math.random() * (max - min) + min;
-}
 
 const el = document.querySelector('#root');
 
@@ -59,7 +52,7 @@ scene.background = background;
 scene.fog = fog;
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(0, 1, 5);
+camera.position.set(0, 1, 2);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -74,63 +67,18 @@ noiseTexture.wrapS = noiseTexture.wrapT = MirroredRepeatWrapping;
  * World
  */
 
-const positionArr = new Float32Array([
-  0, 1, 0,
-  //
-  -1, 0, 0,
-  //
-  1, 0, 0,
-]);
-const positionAttr = new BufferAttribute(positionArr, 3);
-
-const uvArr = new Float32Array([
-  0.5,
-  1.0, // v0
-  0.0,
-  0.0, // v1
-  1.0,
-  0.0, // v2
-]);
-const uvAttr = new BufferAttribute(uvArr, 2);
-
-const grassGeometry = new BufferGeometry();
-grassGeometry.setAttribute('position', positionAttr);
-grassGeometry.setAttribute('uv', uvAttr);
-
-const params = {
-  count: 5000,
-};
-
 const uniforms = {
   uTime: new Uniform(0),
-  uNoiseTexture: new Uniform(noiseTexture),
-  uColor1: new Uniform(new Color('#62D96B')),
-  uColor2: new Uniform(new Color('#29A634')),
 };
-const grassMaterial = new ShaderMaterial({
-  vertexShader: grassVertexShader,
-  fragmentShader: grassFragmentShader,
+
+const sphereGeometry = new SphereGeometry(1, 64, 64);
+const sphereMaterial = new ShaderMaterial({
+  vertexShader: testVertexShader,
+  fragmentShader: testFragmentShader,
   uniforms,
-  side: DoubleSide,
 });
-const grass = new InstancedMesh(grassGeometry, grassMaterial, params.count);
-grass.scale.setScalar(0.15);
-
-const obj = new Object3D();
-
-function updateGrass() {
-  for (let i = 0; i < params.count; i++) {
-    obj.position.set(random(-25, 25), 0, random(-25, 25));
-    obj.scale.y = random(1.0, 3.5);
-    obj.updateMatrixWorld();
-    grass.setMatrixAt(i, obj.matrix);
-  }
-  grass.instanceMatrix.needsUpdate = true;
-}
-
-updateGrass();
-
-scene.add(grass);
+const sphere = new Mesh(sphereGeometry, sphereMaterial);
+scene.add(sphere);
 
 /**
  * Helper
@@ -151,18 +99,6 @@ const fpsGraph: any = pane.addBlade({
   view: 'fpsgraph',
   label: undefined,
   rows: 4,
-});
-
-pane.addBinding(params, 'count', {
-  step: 1,
-  min: 50,
-  max: 500,
-});
-pane.addBinding(uniforms.uColor1, 'value', {
-  color: { type: 'float' },
-});
-pane.addBinding(uniforms.uColor2, 'value', {
-  color: { type: 'float' },
 });
 
 /**
