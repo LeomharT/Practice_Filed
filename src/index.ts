@@ -1,10 +1,15 @@
+import { Colors } from '@blueprintjs/colors';
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
+import { createNoise2D } from 'simplex-noise';
 import {
   AxesHelper,
   Color,
-  FogExp2,
+  Mesh,
+  MeshBasicMaterial,
+  MeshStandardMaterial,
   MirroredRepeatWrapping,
   PerspectiveCamera,
+  PlaneGeometry,
   Scene,
   ShaderChunk,
   TextureLoader,
@@ -27,9 +32,9 @@ const size = {
   pixelRatio: Math.min(2, window.devicePixelRatio),
 };
 
-const background = new Color('#1e1e1e');
+const noise2D = createNoise2D();
 
-const fog = new FogExp2(background, 0.03);
+const background = new Color(Colors.LIGHT_GRAY2);
 
 const textureLoader = new TextureLoader();
 textureLoader.setPath('/src/assets/textures/');
@@ -44,7 +49,6 @@ el?.append(renderer.domElement);
 
 const scene = new Scene();
 scene.background = background;
-scene.fog = fog;
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
 camera.position.set(0, 1, 2);
@@ -58,13 +62,46 @@ const clock = new Timer();
 const noiseTexture = textureLoader.load('noiseTexture.png');
 noiseTexture.wrapS = noiseTexture.wrapT = MirroredRepeatWrapping;
 
+const bladeAlphaTexture = textureLoader.load('blade_alpha.jpg');
+const bladeDiffuseTexture = textureLoader.load('blade_diffuse.jpg');
 /**
  * World
  */
 
+const options = { bW: 0.12, bH: 1, joints: 5 };
+
+const baseGeo = new PlaneGeometry(
+  options.bW,
+  options.bH,
+  1,
+  options.joints,
+).translate(0, options.bH / 2, 0);
+
 const uniforms = {
   uTime: new Uniform(0),
 };
+const grassGeometry = baseGeo;
+const grassMaterial = new MeshBasicMaterial({ color: 'green' });
+
+const grass = new Mesh(grassGeometry, grassMaterial);
+scene.add(grass);
+
+const geoPlane = new PlaneGeometry(100, 100, 32, 32);
+
+const groundGeometry = geoPlane.clone();
+groundGeometry.rotateX(-Math.PI / 2);
+const positionArr = groundGeometry.getAttribute('position').array;
+for (let i = 0; i < positionArr.length; i += 3) {
+  positionArr[i + 1] += getYPosition(positionArr[i + 0], positionArr[i + 2]);
+}
+groundGeometry.attributes.position.needsUpdate = true;
+
+const groundMaterial = new MeshStandardMaterial({
+  color: '#000f00',
+  wireframe: true,
+});
+const ground = new Mesh(groundGeometry, groundMaterial);
+scene.add(ground);
 
 /**
  * Helper
@@ -90,6 +127,13 @@ const fpsGraph: any = pane.addBlade({
 /**
  * Event
  */
+
+function getYPosition(x: number, z: number) {
+  let y = 2 * noise2D(x / 50, z / 50);
+  y += 4 * noise2D(x / 100, z / 100);
+  y += 0.2 * noise2D(x / 10, z / 10);
+  return y;
+}
 
 function render() {
   fpsGraph.begin();
