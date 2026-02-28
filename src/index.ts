@@ -25,10 +25,12 @@ import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
 import grassFragmentShader from './shader/grass/fragmeng.glsl?raw';
 import grassVertexShader from './shader/grass/vertex.glsl?raw';
+import simplex2DNoise from './shader/include/simplex2DNoise.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
 import './style.css';
 
 (ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
+(ShaderChunk as any)['simplex2DNoise'] = simplex2DNoise;
 
 const el = document.querySelector('#root');
 
@@ -99,6 +101,10 @@ const GRASS_BLADE_INSTANCE = 200000;
 
 function getAttributeData(instance: number, width: number) {
   const offsets: number[] = [];
+  const orientations: number[] = [];
+  const stretches: number[] = [];
+  const halfRootAngleSin: number[] = [];
+  const halfRootAngleCos: number[] = [];
 
   //The min and max angle for the growth direction (in radians)
   const min = -0.25;
@@ -110,10 +116,18 @@ function getAttributeData(instance: number, width: number) {
     const offsetZ = Math.random() * width - width / 2;
     const offsetY = getYPosition(offsetX, offsetZ);
     offsets.push(offsetX, offsetY, offsetZ);
+
+    //Define random growth directions
+    //Rotate around Y
+    let angle = Math.PI - Math.random() * (2 * Math.PI);
+    halfRootAngleSin.push(Math.sin(0.5 * angle));
+    halfRootAngleCos.push(Math.cos(0.5 * angle));
   }
 
   return {
     offsets,
+    halfRootAngleCos,
+    halfRootAngleSin,
   };
 }
 
@@ -125,7 +139,10 @@ const uniforms = {
   uBottomColor: new Uniform(new Color(0.0, 0.1, 0.0).convertSRGBToLinear()),
 };
 
-const { offsets } = getAttributeData(GRASS_BLADE_INSTANCE, 100);
+const { offsets, halfRootAngleCos, halfRootAngleSin } = getAttributeData(
+  GRASS_BLADE_INSTANCE,
+  100,
+);
 
 const baseGeo = new PlaneGeometry(
   options.bW,
@@ -142,6 +159,14 @@ grassGeometry.setAttribute('uv', baseGeo.getAttribute('uv'));
 grassGeometry.setAttribute(
   'aOffset',
   new InstancedBufferAttribute(new Float32Array(offsets), 3),
+);
+grassGeometry.setAttribute(
+  'aHalfRootAngleCos',
+  new InstancedBufferAttribute(new Float32Array(halfRootAngleCos), 1),
+);
+grassGeometry.setAttribute(
+  'aHalfRootAngleSin',
+  new InstancedBufferAttribute(new Float32Array(halfRootAngleSin), 1),
 );
 
 const grassMaterial = new ShaderMaterial({
