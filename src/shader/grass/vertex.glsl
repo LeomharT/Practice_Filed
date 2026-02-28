@@ -1,8 +1,12 @@
+#define PI 3.141592627
+
 attribute vec3 aOffset;
 attribute vec4 orientation;
 
 varying vec2 vUv;
 varying vec3 vPosition;
+
+uniform float uTime;
 
 //WEBGL-NOISE FROM https://github.com/stegu/webgl-noise
 //Description : Array and textureless GLSL 2D simplex noise function. Author : Ian McEwan, Ashima Arts. Maintainer : stegu Lastmod : 20110822 (ijm) License : Copyright (C) 2011 Ashima Arts. All rights reserved. Distributed under the MIT License. See LICENSE file. https://github.com/ashima/webgl-noise https://github.com/stegu/webgl-noise
@@ -93,8 +97,21 @@ vec4 slerp(vec4 v0, vec4 v1, float t) {
   return s0 * v0 + s1 * v1;
 }
 
+vec2 rotate2D(vec2 v, float angle) {
+  mat2 m = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+
+  return v * m;
+}
+
 void main() {
-  vec4 modelPosition = modelMatrix * vec4(position + aOffset, 1.0);
+  vec3 transformed = vec3(position);
+
+  vec3 viewDirection = normalize(cameraPosition - (transformed + aOffset));
+
+  float angle = atan(viewDirection.z, viewDirection.x);
+  transformed.xz = rotate2D(transformed.xz, angle - PI / 2.0);
+
+  vec4 modelPosition = modelMatrix * vec4(transformed + aOffset, 1.0);
   vec4 viewPosition = viewMatrix * modelPosition;
   vec4 projectionPosition = projectionMatrix * viewPosition;
 

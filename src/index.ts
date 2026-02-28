@@ -4,6 +4,7 @@ import { createNoise2D } from 'simplex-noise';
 import {
   AxesHelper,
   Color,
+  DoubleSide,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
   Mesh,
@@ -92,7 +93,7 @@ scene.add(ground);
 
 const options = { bW: 0.12, bH: 1, joints: 5 };
 
-const GRASS_BLADE_INSTANCE = 5000;
+const GRASS_BLADE_INSTANCE = 50000;
 
 function getAttributeData(instance: number, width: number) {
   const offsets: number[] = [];
@@ -141,7 +142,8 @@ const grassMaterial = new ShaderMaterial({
   vertexShader: grassVertexShader,
   fragmentShader: grassFragmentShader,
   uniforms,
-  wireframe: true,
+  wireframe: false,
+  side: DoubleSide,
 });
 
 const grass = new Mesh(grassGeometry, grassMaterial);
