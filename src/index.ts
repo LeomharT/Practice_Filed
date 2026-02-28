@@ -3,13 +3,10 @@ import {
   AxesHelper,
   Color,
   FogExp2,
-  Mesh,
   MirroredRepeatWrapping,
   PerspectiveCamera,
   Scene,
   ShaderChunk,
-  ShaderMaterial,
-  SphereGeometry,
   TextureLoader,
   Timer,
   Uniform,
@@ -18,8 +15,6 @@ import {
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
-import testFragmentShader from './shader/test/fragment.glsl?raw';
-import testVertexShader from './shader/test/vertex.glsl?raw';
 import './style.css';
 
 (ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
@@ -70,15 +65,6 @@ noiseTexture.wrapS = noiseTexture.wrapT = MirroredRepeatWrapping;
 const uniforms = {
   uTime: new Uniform(0),
 };
-
-const sphereGeometry = new SphereGeometry(1, 64, 64);
-const sphereMaterial = new ShaderMaterial({
-  vertexShader: testVertexShader,
-  fragmentShader: testFragmentShader,
-  uniforms,
-});
-const sphere = new Mesh(sphereGeometry, sphereMaterial);
-scene.add(sphere);
 
 /**
  * Helper
