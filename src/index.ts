@@ -4,21 +4,26 @@ import { createNoise2D } from 'simplex-noise';
 import {
   AxesHelper,
   Color,
+  InstancedBufferAttribute,
+  InstancedBufferGeometry,
   Mesh,
-  MeshBasicMaterial,
   MeshStandardMaterial,
   MirroredRepeatWrapping,
   PerspectiveCamera,
   PlaneGeometry,
   Scene,
   ShaderChunk,
+  ShaderMaterial,
   TextureLoader,
   Timer,
   Uniform,
+  Vector4,
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
+import grassFragmentShader from './shader/grass/fragmeng.glsl?raw';
+import grassVertexShader from './shader/grass/vertex.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
 import './style.css';
 
@@ -34,7 +39,7 @@ const size = {
 
 const noise2D = createNoise2D();
 
-const background = new Color(Colors.LIGHT_GRAY2);
+const background = new Color(Colors.LIGHT_GRAY3);
 
 const textureLoader = new TextureLoader();
 textureLoader.setPath('/src/assets/textures/');
@@ -51,7 +56,7 @@ const scene = new Scene();
 scene.background = background;
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(0, 15, 55);
+camera.position.set(0, 2, 3);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -64,27 +69,10 @@ noiseTexture.wrapS = noiseTexture.wrapT = MirroredRepeatWrapping;
 
 const bladeAlphaTexture = textureLoader.load('blade_alpha.jpg');
 const bladeDiffuseTexture = textureLoader.load('blade_diffuse.jpg');
+
 /**
  * World
  */
-
-const options = { bW: 0.12, bH: 1, joints: 5 };
-
-const baseGeo = new PlaneGeometry(
-  options.bW,
-  options.bH,
-  1,
-  options.joints,
-).translate(0, options.bH / 2, 0);
-
-const uniforms = {
-  uTime: new Uniform(0),
-};
-const grassGeometry = baseGeo;
-const grassMaterial = new MeshBasicMaterial({ color: 'green' });
-
-const grass = new Mesh(grassGeometry, grassMaterial);
-scene.add(grass);
 
 const groundGeometry = new PlaneGeometry(100, 100, 32, 32);
 groundGeometry.rotateX(-Math.PI / 2);
@@ -101,6 +89,63 @@ const groundMaterial = new MeshStandardMaterial({
 });
 const ground = new Mesh(groundGeometry, groundMaterial);
 scene.add(ground);
+
+const options = { bW: 0.12, bH: 1, joints: 5 };
+
+const GRASS_BLADE_INSTANCE = 5000;
+
+function getAttributeData(instance: number, width: number) {
+  const offsets: number[] = [];
+
+  //The min and max angle for the growth direction (in radians)
+  const min = -0.25;
+  const max = 0.25;
+
+  for (let i = 0; i < GRASS_BLADE_INSTANCE; i++) {
+    //Offset of the roots
+    const offsetX = Math.random() * width - width / 2;
+    const offsetZ = Math.random() * width - width / 2;
+    const offsetY = getYPosition(offsetX, offsetZ);
+    offsets.push(offsetX, offsetY, offsetZ);
+  }
+
+  return {
+    offsets,
+  };
+}
+
+const uniforms = {
+  uTime: new Uniform(0),
+};
+
+const { offsets } = getAttributeData(GRASS_BLADE_INSTANCE, 100);
+
+const baseGeo = new PlaneGeometry(
+  options.bW,
+  options.bH,
+  1,
+  options.joints,
+).translate(0, options.bH / 2, 0);
+
+const grassGeometry = new InstancedBufferGeometry();
+grassGeometry.index = baseGeo.index;
+grassGeometry.instanceCount = GRASS_BLADE_INSTANCE;
+grassGeometry.setAttribute('position', baseGeo.getAttribute('position'));
+grassGeometry.setAttribute('uv', baseGeo.getAttribute('uv'));
+grassGeometry.setAttribute(
+  'aOffset',
+  new InstancedBufferAttribute(new Float32Array(offsets), 3),
+);
+
+const grassMaterial = new ShaderMaterial({
+  vertexShader: grassVertexShader,
+  fragmentShader: grassFragmentShader,
+  uniforms,
+  wireframe: true,
+});
+
+const grass = new Mesh(grassGeometry, grassMaterial);
+scene.add(grass);
 
 /**
  * Helper
@@ -132,6 +177,14 @@ function getYPosition(x: number, z: number) {
   y += 4 * noise2D(x / 100, z / 100);
   y += 0.2 * noise2D(x / 10, z / 10);
   return y;
+}
+
+function multiplyQuaternions(q1: Vector4, q2: Vector4) {
+  const x = q1.x * q2.w + q1.y * q2.z - q1.z * q2.y + q1.w * q2.x;
+  const y = -q1.x * q2.z + q1.y * q2.w + q1.z * q2.x + q1.w * q2.y;
+  const z = q1.x * q2.y - q1.y * q2.x + q1.z * q2.w + q1.w * q2.z;
+  const w = -q1.x * q2.x - q1.y * q2.y - q1.z * q2.z + q1.w * q2.w;
+  return new Vector4(x, y, z, w);
 }
 
 function render() {
