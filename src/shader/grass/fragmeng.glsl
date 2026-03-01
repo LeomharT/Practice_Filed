@@ -19,6 +19,10 @@ void main() {
   color = mix(uTipColor, color, vH);
   color = mix(uBottomColor, color, vH);
 
+  float tipMix = smoothstep(0.8, 1.2, uv.y);
+
+  color = mix(color, vec3(1.0), tipMix);
+
   gl_FragColor = vec4(color, 1.0);
 
   #include <tonemapping_fragment>
