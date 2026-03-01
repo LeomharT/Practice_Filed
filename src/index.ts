@@ -117,8 +117,16 @@ function getAttributeData(instance: number, width: number) {
 
   for (let i = 0; i < instance; i++) {
     //Offset of the roots
-    const offsetX = Math.random() * width - width / 2;
-    const offsetZ = Math.random() * width - width / 2;
+    let offsetX = Math.random() * width - width / 2;
+    let offsetZ = Math.random() * width - width / 2;
+
+    const distance = offsetX * offsetX + offsetZ * offsetZ;
+
+    if (Math.pow(distance, 2.0) < 100.0) {
+      offsetX += Math.random() * 10;
+      offsetZ += Math.random() * 10;
+    }
+
     const offsetY = getYPosition(offsetX, offsetZ);
     offsets.push(offsetX, offsetY, offsetZ);
 
