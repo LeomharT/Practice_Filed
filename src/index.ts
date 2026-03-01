@@ -122,10 +122,10 @@ function getAttributeData(instance: number, width: number) {
 
     const distance = offsetX * offsetX + offsetZ * offsetZ;
 
-    if (Math.pow(distance, 2.0) < 100.0) {
-      offsetX += Math.random() * 10;
-      offsetZ += Math.random() * 10;
-    }
+    // if (Math.pow(distance, 2.0) < 100.0) {
+    //   offsetX += Math.random() * 10;
+    //   offsetZ += Math.random() * 10;
+    // }
 
     const offsetY = getYPosition(offsetX, offsetZ);
     offsets.push(offsetX, offsetY, offsetZ);
