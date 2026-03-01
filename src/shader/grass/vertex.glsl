@@ -12,6 +12,8 @@ varying float vH;
 
 uniform float uTime;
 
+#include <simplex2DNoise>
+
 //https://www.geeks3d.com/20141201/how-to-rotate-a-vertex-by-a-quaternion-in-glsl/
 vec3 rotateVectorByQuaternion(vec3 v, vec4 q) {
   return 2.0 * cross(q.xyz, v * q.w + cross(q.xyz, v)) + v;
@@ -64,6 +66,10 @@ void main() {
   vec3 transformed = vec3(position);
   vec3 viewDirection = normalize(cameraPosition - (transformed + aOffset));
 
+  //Get wind data from simplex noise
+  float noise =
+    1.0 - snoise(vec2(uTime - aOffset.x / 50.0, uTime - aOffset.z / 50.0));
+
   // Billboarding
   float angle = atan(viewDirection.z, viewDirection.x);
   //   transformed.xz = rotate2D(transformed.xz, angle - PI / 2.0);
@@ -71,8 +77,15 @@ void main() {
   float h = position.y / 1.0;
   vec4 direction = vec4(0.0, aHalfRootAngleSin, 0.0, aHalfRootAngleCos);
   direction = slerp(direction, aOrientation, h);
+
   transformed.y += transformed.y * aStretches;
   transformed = rotateVectorByQuaternion(transformed, direction);
+
+  float halfAngle = noise * 0.15;
+  transformed = rotateVectorByQuaternion(
+    transformed,
+    normalize(vec4(sin(halfAngle), 0.0, -sin(halfAngle), cos(halfAngle)))
+  );
 
   vec4 modelPosition = modelMatrix * vec4(transformed + aOffset, 1.0);
   vec4 viewPosition = viewMatrix * modelPosition;

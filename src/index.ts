@@ -295,7 +295,7 @@ function render() {
   const delta = clock.getDelta();
   const elapsed = clock.getElapsed();
 
-  uniforms.uTime.value += delta;
+  uniforms.uTime.value += delta * 0.5;
 
   // Update
   clock.update();
