@@ -1,9 +1,10 @@
 #define PI 3.141592627
 
 attribute vec3 aOffset;
-attribute vec4 orientation;
+attribute vec4 aOrientation;
 attribute float aHalfRootAngleCos;
 attribute float aHalfRootAngleSin;
+attribute float aStretches;
 
 varying vec2 vUv;
 varying vec3 vPosition;
@@ -63,12 +64,15 @@ void main() {
   vec3 transformed = vec3(position);
   vec3 viewDirection = normalize(cameraPosition - (transformed + aOffset));
 
-  vec4 direction = vec4(0.0, aHalfRootAngleSin, 0.0, aHalfRootAngleCos);
-
+  // Billboarding
   float angle = atan(viewDirection.z, viewDirection.x);
   //   transformed.xz = rotate2D(transformed.xz, angle - PI / 2.0);
 
   float h = position.y / 1.0;
+  vec4 direction = vec4(0.0, aHalfRootAngleSin, 0.0, aHalfRootAngleCos);
+  direction = slerp(direction, aOrientation, h);
+  transformed.y += transformed.y * aStretches;
+  transformed = rotateVectorByQuaternion(transformed, direction);
 
   vec4 modelPosition = modelMatrix * vec4(transformed + aOffset, 1.0);
   vec4 viewPosition = viewMatrix * modelPosition;

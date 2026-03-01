@@ -4,6 +4,7 @@ import { createNoise2D } from 'simplex-noise';
 import {
   AxesHelper,
   Color,
+  DoubleSide,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
   Mesh,
@@ -18,6 +19,7 @@ import {
   TextureLoader,
   Timer,
   Uniform,
+  Vector3,
   Vector4,
   WebGLRenderer,
 } from 'three';
@@ -97,7 +99,7 @@ scene.add(ground);
 
 const options = { bW: 0.12, bH: 1, joints: 5 };
 
-const GRASS_BLADE_INSTANCE = 200000;
+const GRASS_BLADE_INSTANCE = 100000;
 
 function getAttributeData(instance: number, width: number) {
   const offsets: number[] = [];
@@ -106,11 +108,14 @@ function getAttributeData(instance: number, width: number) {
   const halfRootAngleSin: number[] = [];
   const halfRootAngleCos: number[] = [];
 
+  let quaternion_0 = new Vector4();
+  let quaternion_1 = new Vector4();
+
   //The min and max angle for the growth direction (in radians)
   const min = -0.25;
   const max = 0.25;
 
-  for (let i = 0; i < GRASS_BLADE_INSTANCE; i++) {
+  for (let i = 0; i < instance; i++) {
     //Offset of the roots
     const offsetX = Math.random() * width - width / 2;
     const offsetZ = Math.random() * width - width / 2;
@@ -122,12 +127,59 @@ function getAttributeData(instance: number, width: number) {
     let angle = Math.PI - Math.random() * (2 * Math.PI);
     halfRootAngleSin.push(Math.sin(0.5 * angle));
     halfRootAngleCos.push(Math.cos(0.5 * angle));
+
+    let RotationAxis = new Vector3(0, 1, 0);
+    let x = RotationAxis.x * Math.sin(angle / 2.0);
+    let y = RotationAxis.y * Math.sin(angle / 2.0);
+    let z = RotationAxis.z * Math.sin(angle / 2.0);
+    let w = Math.cos(angle / 2.0);
+    quaternion_0.set(x, y, z, w).normalize();
+
+    //Rotate around X
+    angle = Math.random() * (max - min) + min;
+    RotationAxis = new Vector3(1, 0, 0);
+    x = RotationAxis.x * Math.sin(angle / 2.0);
+    y = RotationAxis.y * Math.sin(angle / 2.0);
+    z = RotationAxis.z * Math.sin(angle / 2.0);
+    w = Math.cos(angle / 2.0);
+    quaternion_1.set(x, y, z, w).normalize();
+
+    //Combine rotations to a single quaternion
+    quaternion_0 = multiplyQuaternions(quaternion_0, quaternion_1);
+
+    //Rotate around Z
+    angle = Math.random() * (max - min) + min;
+    RotationAxis = new Vector3(0, 0, 1);
+    x = RotationAxis.x * Math.sin(angle / 2.0);
+    y = RotationAxis.y * Math.sin(angle / 2.0);
+    z = RotationAxis.z * Math.sin(angle / 2.0);
+    w = Math.cos(angle / 2.0);
+    quaternion_1.set(x, y, z, w).normalize();
+
+    //Combine rotations to a single quaternion
+    quaternion_0 = multiplyQuaternions(quaternion_0, quaternion_1);
+
+    orientations.push(
+      quaternion_0.x,
+      quaternion_0.y,
+      quaternion_0.z,
+      quaternion_0.w,
+    );
+
+    // Define variety in height
+    if (i < GRASS_BLADE_INSTANCE / 3) {
+      stretches.push(Math.random() * 1.8);
+    } else {
+      stretches.push(Math.random());
+    }
   }
 
   return {
     offsets,
     halfRootAngleCos,
     halfRootAngleSin,
+    stretches,
+    orientations,
   };
 }
 
@@ -139,10 +191,8 @@ const uniforms = {
   uBottomColor: new Uniform(new Color(0.0, 0.1, 0.0).convertSRGBToLinear()),
 };
 
-const { offsets, halfRootAngleCos, halfRootAngleSin } = getAttributeData(
-  GRASS_BLADE_INSTANCE,
-  100,
-);
+const { offsets, halfRootAngleCos, halfRootAngleSin, stretches, orientations } =
+  getAttributeData(GRASS_BLADE_INSTANCE, 100);
 
 const baseGeo = new PlaneGeometry(
   options.bW,
@@ -168,12 +218,21 @@ grassGeometry.setAttribute(
   'aHalfRootAngleSin',
   new InstancedBufferAttribute(new Float32Array(halfRootAngleSin), 1),
 );
+grassGeometry.setAttribute(
+  'aOrientation',
+  new InstancedBufferAttribute(new Float32Array(orientations), 1),
+);
+grassGeometry.setAttribute(
+  'aStretches',
+  new InstancedBufferAttribute(new Float32Array(stretches), 1),
+);
 
 const grassMaterial = new ShaderMaterial({
   vertexShader: grassVertexShader,
   fragmentShader: grassFragmentShader,
   uniforms,
   wireframe: false,
+  side: DoubleSide,
 });
 
 console.log(grassGeometry);
