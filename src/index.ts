@@ -92,14 +92,14 @@ groundGeometry.computeVertexNormals();
 
 const groundMaterial = new MeshStandardMaterial({
   color: '#000f00',
-  wireframe: true,
+  wireframe: false,
 });
 const ground = new Mesh(groundGeometry, groundMaterial);
 scene.add(ground);
 
 const options = { bW: 0.12, bH: 1, joints: 5 };
 
-const GRASS_BLADE_INSTANCE = 100000;
+const GRASS_BLADE_INSTANCE = 200000;
 
 function getAttributeData(instance: number, width: number) {
   const offsets: number[] = [];
@@ -220,7 +220,7 @@ grassGeometry.setAttribute(
 );
 grassGeometry.setAttribute(
   'aOrientation',
-  new InstancedBufferAttribute(new Float32Array(orientations), 1),
+  new InstancedBufferAttribute(new Float32Array(orientations), 4),
 );
 grassGeometry.setAttribute(
   'aStretches',
