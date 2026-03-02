@@ -9,6 +9,7 @@ attribute float aStretches;
 varying vec2 vUv;
 varying vec3 vPosition;
 varying float vH;
+varying vec2 vGridUv;
 
 uniform float uTime;
 
@@ -82,10 +83,10 @@ void main() {
   transformed = rotateVectorByQuaternion(transformed, direction);
 
   float halfAngle = noise * 0.15;
-  transformed = rotateVectorByQuaternion(
-    transformed,
-    normalize(vec4(sin(halfAngle), 0.0, -sin(halfAngle), cos(halfAngle)))
-  );
+  // transformed = rotateVectorByQuaternion(
+  //   transformed,
+  //   normalize(vec4(sin(halfAngle), 0.0, -sin(halfAngle), cos(halfAngle)))
+  // );
 
   vec4 modelPosition = modelMatrix * vec4(transformed + aOffset, 1.0);
   vec4 viewPosition = viewMatrix * modelPosition;
@@ -96,4 +97,8 @@ void main() {
   vH = h;
   vUv = uv;
   vPosition = modelPosition.xyz;
+
+  vGridUv = modelPosition.xz / 50.0;
+  vGridUv.x = (vGridUv.x + 1.0) / 2.0;
+  vGridUv.y = 1.0 - (vGridUv.y + 1.0) / 2.0;
 }

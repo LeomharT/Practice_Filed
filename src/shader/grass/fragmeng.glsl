@@ -1,15 +1,18 @@
 varying vec2 vUv;
 varying vec3 vPosition;
 varying float vH;
+varying vec2 vGridUv;
 
 uniform sampler2D uAlphaTexture;
 uniform sampler2D uDiffuseTexture;
+uniform sampler2D uNoiseTexture;
 uniform vec3 uTipColor;
 uniform vec3 uBottomColor;
 
 void main() {
   vec3 color = vec3(0.0);
   vec2 uv = vUv;
+  vec2 gridUv = vGridUv;
 
   if (length(vPosition.xz) < 4.0) discard;
 
@@ -24,6 +27,10 @@ void main() {
   float tipMix = smoothstep(0.8, 1.2, uv.y);
 
   color = mix(color, vec3(1.0), tipMix);
+
+  vec4 noiseColor = texture2D(uNoiseTexture, gridUv);
+
+  color += noiseColor.rgb;
 
   gl_FragColor = vec4(color, 1.0);
 

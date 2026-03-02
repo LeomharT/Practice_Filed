@@ -72,7 +72,7 @@ controls.enableDamping = true;
 
 const clock = new Timer();
 
-const noiseTexture = textureLoader.load('noiseTexture.png');
+const noiseTexture = textureLoader.load('2k_earth_daymap.jpg');
 noiseTexture.wrapS = noiseTexture.wrapT = MirroredRepeatWrapping;
 
 const bladeAlphaTexture = textureLoader.load('blade_alpha.jpg');
@@ -204,6 +204,7 @@ const uniforms = {
   uDiffuseTexture: new Uniform(bladeDiffuseTexture),
   uTipColor: new Uniform(new Color(0.0, 0.6, 0.0).convertSRGBToLinear()),
   uBottomColor: new Uniform(new Color(0.0, 0.1, 0.0).convertSRGBToLinear()),
+  uNoiseTexture: new Uniform(noiseTexture),
 };
 
 const { offsets, halfRootAngleCos, halfRootAngleSin, stretches, orientations } =
@@ -315,6 +316,7 @@ function multiplyQuaternions(q1: Vector4, q2: Vector4) {
 function renderEnvScene() {
   if (envMap) envMap.dispose();
   envMap = pmrem.fromScene(scene, 0.0, 0.01, 100, {});
+
   sphereMaterial.envMap = envMap.texture;
 }
 
