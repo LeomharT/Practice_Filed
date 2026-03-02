@@ -12,9 +12,11 @@ import {
   MirroredRepeatWrapping,
   PerspectiveCamera,
   PlaneGeometry,
+  PMREMGenerator,
   Scene,
   ShaderChunk,
   ShaderMaterial,
+  SphereGeometry,
   SRGBColorSpace,
   TextureLoader,
   Timer,
@@ -22,6 +24,7 @@ import {
   Vector3,
   Vector4,
   WebGLRenderer,
+  WebGLRenderTarget,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
@@ -61,7 +64,7 @@ const scene = new Scene();
 scene.background = background;
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(0, 2, 3);
+camera.position.set(0, 4, 10);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -76,6 +79,10 @@ const bladeAlphaTexture = textureLoader.load('blade_alpha.jpg');
 const bladeDiffuseTexture = textureLoader.load('blade_diffuse.jpg');
 bladeDiffuseTexture.anisotropy = 8;
 bladeDiffuseTexture.colorSpace = SRGBColorSpace;
+
+const pmrem = new PMREMGenerator(renderer);
+
+let envMap: WebGLRenderTarget | undefined = undefined;
 
 /**
  * World
@@ -243,10 +250,17 @@ const grassMaterial = new ShaderMaterial({
   side: DoubleSide,
 });
 
-console.log(grassGeometry);
-
 const grass = new Mesh(grassGeometry, grassMaterial);
 scene.add(grass);
+
+const sphereGeometry = new SphereGeometry(4, 32, 32);
+const sphereMaterial = new MeshStandardMaterial({
+  metalness: 0.5,
+  roughness: 0.74,
+});
+const sphere = new Mesh(sphereGeometry, sphereMaterial);
+
+scene.add(sphere);
 
 /**
  * Helper
@@ -269,11 +283,13 @@ const fpsGraph: any = pane.addBlade({
   rows: 4,
 });
 
-pane.addBinding(uniforms.uTipColor, 'value', {
+const f_grass = pane.addFolder({ title: '🌱 Grass Blead' });
+
+f_grass.addBinding(uniforms.uTipColor, 'value', {
   label: 'uTipColor',
   color: { type: 'float' },
 });
-pane.addBinding(uniforms.uBottomColor, 'value', {
+f_grass.addBinding(uniforms.uBottomColor, 'value', {
   label: 'uBottomColor',
   color: { type: 'float' },
 });
@@ -296,6 +312,12 @@ function multiplyQuaternions(q1: Vector4, q2: Vector4) {
   return new Vector4(x, y, z, w);
 }
 
+function renderEnvScene() {
+  if (envMap) envMap.dispose();
+  envMap = pmrem.fromScene(scene, 0.0, 0.01, 100, {});
+  sphereMaterial.envMap = envMap.texture;
+}
+
 function render() {
   fpsGraph.begin();
 
@@ -310,6 +332,7 @@ function render() {
   controls.update();
 
   // Render
+  renderEnvScene();
   renderer.render(scene, camera);
   // Animation
   requestAnimationFrame(render);

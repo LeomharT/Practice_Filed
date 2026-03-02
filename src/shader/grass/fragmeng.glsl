@@ -11,7 +11,7 @@ void main() {
   vec3 color = vec3(0.0);
   vec2 uv = vUv;
 
-  if (length(vPosition.xz) < 20.0) discard;
+  if (length(vPosition.xz) < 4.0) discard;
 
   float alpha = texture2D(uAlphaTexture, uv).r;
   if (alpha <= 0.5) discard;
