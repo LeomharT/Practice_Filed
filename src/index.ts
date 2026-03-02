@@ -7,6 +7,7 @@ import {
   DoubleSide,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
+  MathUtils,
   Mesh,
   MeshStandardMaterial,
   MirroredRepeatWrapping,
@@ -26,7 +27,7 @@ import {
   WebGLRenderer,
   WebGLRenderTarget,
 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import { OrbitControls, Sky } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
 import grassFragmentShader from './shader/grass/fragmeng.glsl?raw';
 import grassVertexShader from './shader/grass/vertex.glsl?raw';
@@ -203,7 +204,7 @@ const uniforms = {
   uAlphaTexture: new Uniform(bladeAlphaTexture),
   uDiffuseTexture: new Uniform(bladeDiffuseTexture),
   uTipColor: new Uniform(new Color(0.0, 0.6, 0.0).convertSRGBToLinear()),
-  uTipColor2: new Uniform(new Color(0.0, 0.2, 0.1).convertLinearToSRGB()),
+  uTipColor2: new Uniform(new Color(0.0, 0.2, 0.1).convertSRGBToLinear()),
   uBottomColor: new Uniform(new Color(0.0, 0.1, 0.0).convertSRGBToLinear()),
   uNoiseTexture: new Uniform(noiseTexture),
 };
@@ -263,6 +264,43 @@ const sphereMaterial = new MeshStandardMaterial({
 const sphere = new Mesh(sphereGeometry, sphereMaterial);
 
 scene.add(sphere);
+
+const sky = new Sky();
+sky.scale.setScalar(10000);
+const sun = new Vector3();
+const effectController = {
+  turbidity: 10,
+  rayleigh: 3,
+  mieCoefficient: 0.005,
+  mieDirectionalG: 0.7,
+  elevation: 2,
+  azimuth: 180,
+  exposure: renderer.toneMappingExposure,
+  cloudCoverage: 0.4,
+  cloudDensity: 0.4,
+  cloudElevation: 0.5,
+};
+function guiChanged() {
+  const uniforms = sky.material.uniforms;
+  uniforms['turbidity'].value = effectController.turbidity;
+  uniforms['rayleigh'].value = effectController.rayleigh;
+  uniforms['mieCoefficient'].value = effectController.mieCoefficient;
+  uniforms['mieDirectionalG'].value = effectController.mieDirectionalG;
+  uniforms['cloudCoverage'].value = effectController.cloudCoverage;
+  uniforms['cloudDensity'].value = effectController.cloudDensity;
+  uniforms['cloudElevation'].value = effectController.cloudElevation;
+
+  const phi = MathUtils.degToRad(90 - effectController.elevation);
+  const theta = MathUtils.degToRad(effectController.azimuth);
+
+  sun.setFromSphericalCoords(1, phi, theta);
+
+  uniforms['sunPosition'].value.copy(sun);
+
+  renderer.toneMappingExposure = effectController.exposure;
+}
+guiChanged();
+scene.add(sky);
 
 /**
  * Helper
