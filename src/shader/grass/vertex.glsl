@@ -96,9 +96,9 @@ void main() {
 
   vH = h;
   vUv = uv;
-  vPosition = modelPosition.xyz;
+  vPosition = vec3(position) + aOffset;
 
-  vGridUv = modelPosition.xz / 50.0;
+  vGridUv = vPosition.xz / 50.0;
   vGridUv.x = (vGridUv.x + 1.0) / 2.0;
   vGridUv.y = 1.0 - (vGridUv.y + 1.0) / 2.0;
 }
