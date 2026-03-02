@@ -7,13 +7,14 @@ uniform sampler2D uAlphaTexture;
 uniform sampler2D uDiffuseTexture;
 uniform sampler2D uNoiseTexture;
 uniform vec3 uTipColor;
+uniform vec3 uTipColor2;
 uniform vec3 uBottomColor;
 
 void main() {
   vec3 color = vec3(0.0);
   vec2 uv = vUv;
   vec2 gridUv = vGridUv;
-  gridUv *= 0.45;
+  gridUv *= 0.35;
 
   if (length(vPosition.xz) < 4.0) discard;
 
@@ -21,7 +22,7 @@ void main() {
   if (alpha <= 0.5) discard;
 
   vec4 noiseColor = texture2D(uNoiseTexture, gridUv);
-  vec3 tipColor = mix(uTipColor, vec3(0.0, 1.0, 0.0), step(0.5, noiseColor.r));
+  vec3 tipColor = mix(uTipColor, uTipColor2, step(0.5, noiseColor.r));
 
   vec4 diffuseColor = texture2D(uDiffuseTexture, uv);
   color = diffuseColor.rgb;

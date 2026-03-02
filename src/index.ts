@@ -203,6 +203,7 @@ const uniforms = {
   uAlphaTexture: new Uniform(bladeAlphaTexture),
   uDiffuseTexture: new Uniform(bladeDiffuseTexture),
   uTipColor: new Uniform(new Color(0.0, 0.6, 0.0).convertSRGBToLinear()),
+  uTipColor2: new Uniform(new Color(0.0, 0.2, 0.1).convertLinearToSRGB()),
   uBottomColor: new Uniform(new Color(0.0, 0.1, 0.0).convertSRGBToLinear()),
   uNoiseTexture: new Uniform(noiseTexture),
 };
