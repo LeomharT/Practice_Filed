@@ -72,7 +72,7 @@ controls.enableDamping = true;
 
 const clock = new Timer();
 
-const noiseTexture = textureLoader.load('2k_earth_daymap.jpg');
+const noiseTexture = textureLoader.load('noiseTexture.png');
 noiseTexture.wrapS = noiseTexture.wrapT = MirroredRepeatWrapping;
 
 const bladeAlphaTexture = textureLoader.load('blade_alpha.jpg');

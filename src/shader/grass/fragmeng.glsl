@@ -13,24 +13,24 @@ void main() {
   vec3 color = vec3(0.0);
   vec2 uv = vUv;
   vec2 gridUv = vGridUv;
+  gridUv *= 0.45;
 
   if (length(vPosition.xz) < 4.0) discard;
 
   float alpha = texture2D(uAlphaTexture, uv).r;
   if (alpha <= 0.5) discard;
 
+  vec4 noiseColor = texture2D(uNoiseTexture, gridUv);
+  vec3 tipColor = mix(uTipColor, vec3(0.0, 1.0, 0.0), step(0.5, noiseColor.r));
+
   vec4 diffuseColor = texture2D(uDiffuseTexture, uv);
   color = diffuseColor.rgb;
-  color = mix(uTipColor, color, vH);
+  color = mix(tipColor, color, vH);
   color = mix(uBottomColor, color, vH);
 
   float tipMix = smoothstep(0.8, 1.2, uv.y);
 
   color = mix(color, vec3(1.0), tipMix);
-
-  vec4 noiseColor = texture2D(uNoiseTexture, gridUv);
-
-  color += noiseColor.rgb;
 
   gl_FragColor = vec4(color, 1.0);
 

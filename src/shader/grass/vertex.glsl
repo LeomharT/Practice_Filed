@@ -83,10 +83,10 @@ void main() {
   transformed = rotateVectorByQuaternion(transformed, direction);
 
   float halfAngle = noise * 0.15;
-  // transformed = rotateVectorByQuaternion(
-  //   transformed,
-  //   normalize(vec4(sin(halfAngle), 0.0, -sin(halfAngle), cos(halfAngle)))
-  // );
+  transformed = rotateVectorByQuaternion(
+    transformed,
+    normalize(vec4(sin(halfAngle), 0.0, -sin(halfAngle), cos(halfAngle)))
+  );
 
   vec4 modelPosition = modelMatrix * vec4(transformed + aOffset, 1.0);
   vec4 viewPosition = viewMatrix * modelPosition;
