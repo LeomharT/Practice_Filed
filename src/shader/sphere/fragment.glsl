@@ -16,10 +16,6 @@ void main() {
 
   if (noise < uProgress) discard;
 
-  if (uProgress > 0.0 && noise < uProgress + 0.05) {
-    color = edgeColor;
-  }
-
   color = mix(
     vec3(0.415, 0.883, 0.381),
     vec3(0.125, 0.731, 0.254),
@@ -43,6 +39,10 @@ void main() {
   );
 
   color *= lightColor;
+
+  if (uProgress > 0.0 && noise < uProgress + 0.05) {
+    color = edgeColor;
+  }
 
   gl_FragColor = vec4(color, 1.0);
 

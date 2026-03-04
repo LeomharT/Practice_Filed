@@ -9,11 +9,15 @@ varying float vWobble;
 uniform float uTime;
 
 float getWobble(vec3 position) {
+  vec3 wrapedPosition = position;
+  wrapedPosition += snoise(vec4(position, uTime));
+
   return snoise(
     vec4(
-      position, // XYZ
-      0.0 //W
-    )
+      wrapedPosition * 0.5, // XYZ
+      uTime //W
+    ) *
+      0.3
   );
 }
 
@@ -26,11 +30,11 @@ void main() {
   vec3 positionA = modelPosition.xyz + tangent.xyz * shift;
   vec3 positionB = modelPosition.xyz + bitTangnet * shift;
 
-  float wobble = getWobble(modelPosition.xyz + uTime);
+  float wobble = getWobble(modelPosition.xyz);
 
   modelPosition.xyz += wobble * normal;
-  positionA += getWobble(positionA + uTime) * normal;
-  positionB += getWobble(positionB + uTime) * normal;
+  positionA += getWobble(positionA) * normal;
+  positionB += getWobble(positionB) * normal;
 
   vec3 toA = normalize(positionA - modelPosition.xyz);
   vec3 toB = normalize(positionB - modelPosition.xyz);

@@ -371,6 +371,7 @@ directionalLight.shadow.camera.top = 25;
 directionalLight.shadow.camera.far = 20;
 directionalLight.shadow.camera.updateProjectionMatrix();
 directionalLight.shadow.needsUpdate = true;
+directionalLight.shadow.mapSize.set(256, 256);
 scene.add(directionalLight);
 
 /**
