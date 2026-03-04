@@ -330,17 +330,21 @@ const disslutionMaterial = new ShaderMaterial({
 const disslutionGeometry = mergeVertices(new IcosahedronGeometry(2.5, 50));
 disslutionGeometry.computeTangents();
 
-const disslution = new Mesh(disslutionGeometry, disslutionMaterial);
-disslution.position.y = 15;
-disslution.castShadow = true;
-disslution.receiveShadow = true;
-disslution.customDepthMaterial = new CustomShaderMaterial({
+const depthMaterial = new CustomShaderMaterial({
   baseMaterial: MeshDepthMaterial,
   vertexShader: sphereVertexShader,
   fragmentShader: sphereFragmentShader,
   uniforms: uniforms_,
   depthPacking: RGBADepthPacking,
 });
+depthMaterial.defines = { IS_DEPTH_MATERIAL: true };
+
+const disslution = new Mesh(disslutionGeometry, disslutionMaterial);
+disslution.position.y = 15;
+disslution.castShadow = true;
+disslution.receiveShadow = true;
+
+disslution.customDepthMaterial = depthMaterial;
 scene.add(disslution);
 
 controls.target = disslution.position.clone();

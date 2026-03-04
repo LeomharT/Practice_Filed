@@ -4,6 +4,7 @@ attribute vec4 tangent;
 
 varying vec3 vPosition;
 varying vec3 vNormal;
+varying float vWobble;
 
 uniform float uTime;
 
@@ -26,6 +27,7 @@ void main() {
   vec3 positionB = modelPosition.xyz + bitTangnet * shift;
 
   float wobble = getWobble(modelPosition.xyz + uTime);
+
   modelPosition.xyz += wobble * normal;
   positionA += getWobble(positionA + uTime) * normal;
   positionB += getWobble(positionB + uTime) * normal;
@@ -39,8 +41,13 @@ void main() {
   vec4 viewPosition = viewMatrix * modelPosition;
   vec4 projectionPosition = projectionMatrix * viewPosition;
 
+  #ifdef IS_DEPTH_MATERIAL
+  csm_Position += wobble * normal;
+  #else
   gl_Position = projectionPosition;
+  #endif
 
   vPosition = modelPosition.xyz;
   vNormal = modelNormal.xyz;
+  vWobble = wobble;
 }
