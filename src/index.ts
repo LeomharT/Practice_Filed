@@ -4,6 +4,7 @@ import { createNoise2D } from 'simplex-noise';
 import {
   AxesHelper,
   Color,
+  DirectionalLight,
   DoubleSide,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
@@ -11,6 +12,7 @@ import {
   Mesh,
   MeshStandardMaterial,
   MirroredRepeatWrapping,
+  PCFSoftShadowMap,
   PerspectiveCamera,
   PlaneGeometry,
   PMREMGenerator,
@@ -59,13 +61,16 @@ const renderer = new WebGLRenderer({
 });
 renderer.setSize(size.width, size.height);
 renderer.setPixelRatio(size.pixelRatio);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = PCFSoftShadowMap;
+// renderer.toneMapping = ACESFilmicToneMapping;
 el?.append(renderer.domElement);
 
 const scene = new Scene();
 scene.background = background;
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(0, 4, 10);
+camera.position.set(5, 20, -15);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -301,6 +306,34 @@ function guiChanged() {
 }
 guiChanged();
 scene.add(sky);
+
+const disslutionMaterial = new MeshStandardMaterial();
+const disslution = new Mesh(sphereGeometry, disslutionMaterial);
+disslution.position.y = 15;
+disslution.castShadow = true;
+scene.add(disslution);
+
+controls.target = disslution.position.clone();
+
+const shadowPlane = new Mesh(
+  new PlaneGeometry(20, 20, 16, 16),
+  new MeshStandardMaterial(),
+);
+shadowPlane.receiveShadow = true;
+shadowPlane.position.y = 15;
+shadowPlane.position.z = 5;
+shadowPlane.lookAt(disslution.position);
+scene.add(shadowPlane);
+
+/**
+ * Light
+ */
+
+const directionalLight = new DirectionalLight(0xffffff, 2);
+directionalLight.castShadow = true;
+directionalLight.position.z = -1;
+directionalLight.position.y = 0;
+scene.add(directionalLight);
 
 /**
  * Helper
