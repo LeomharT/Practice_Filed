@@ -30,6 +30,7 @@ void main() {
   lightDirection = normalize(lightDirection);
 
   float lightColor = dot(normal, lightDirection);
+  lightColor = max(0.0, lightColor);
 
   float wobble = vWobble;
 
@@ -41,7 +42,7 @@ void main() {
     wobble
   );
 
-  color = mix(color, vec3(1.0), smoothstep(0.5, 1.0, wobble));
+  color *= lightColor;
 
   gl_FragColor = vec4(color, 1.0);
 
