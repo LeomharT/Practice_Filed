@@ -7,15 +7,35 @@ varying vec3 vNormal;
 
 uniform float uTime;
 
+float getWobble(vec3 position) {
+  return snoise(
+    vec4(
+      position, // XYZ
+      0.0 //W
+    )
+  );
+}
+
 void main() {
   vec4 modelPosition = modelMatrix * vec4(position, 1.0);
-  vec4 modelNormal = modelMatrix * vec4(normal, 0.0);
 
-  float wobble = snoise((vec4(position, 0.0) + uTime) * 0.5);
+  vec3 bitTangnet = cross(normal, tangent.xyz);
+
+  float shift = 0.01;
+  vec3 positionA = modelPosition.xyz + tangent.xyz * shift;
+  vec3 positionB = modelPosition.xyz + bitTangnet * shift;
+
+  float wobble = getWobble(modelPosition.xyz + uTime);
   modelPosition.xyz += wobble * normal;
+  positionA += getWobble(positionA + uTime) * normal;
+  positionB += getWobble(positionB + uTime) * normal;
 
-  vec3 bitTangnet = cross(modelNormal.xyz, tangent.xyz);
+  vec3 toA = normalize(positionA - modelPosition.xyz);
+  vec3 toB = normalize(positionB - modelPosition.xyz);
 
+  vec3 newNormal = cross(toA, toB);
+
+  vec4 modelNormal = modelMatrix * vec4(newNormal, 0.0);
   vec4 viewPosition = viewMatrix * modelPosition;
   vec4 projectionPosition = projectionMatrix * viewPosition;
 
