@@ -10,12 +10,14 @@ import {
   InstancedBufferGeometry,
   MathUtils,
   Mesh,
+  MeshDepthMaterial,
   MeshStandardMaterial,
   MirroredRepeatWrapping,
-  PCFSoftShadowMap,
+  PCFShadowMap,
   PerspectiveCamera,
   PlaneGeometry,
   PMREMGenerator,
+  RGBADepthPacking,
   Scene,
   ShaderChunk,
   ShaderMaterial,
@@ -29,12 +31,15 @@ import {
   WebGLRenderer,
   WebGLRenderTarget,
 } from 'three';
+import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { OrbitControls, Sky } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
-import grassFragmentShader from './shader/grass/fragmeng.glsl?raw';
+import grassFragmentShader from './shader/grass/fragment.glsl?raw';
 import grassVertexShader from './shader/grass/vertex.glsl?raw';
 import simplex2DNoise from './shader/include/simplex2DNoise.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
+import sphereFragmentShader from './shader/sphere/fragment.glsl?raw';
+import sphereVertexShader from './shader/sphere/vertex.glsl?raw';
 import './style.css';
 
 (ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
@@ -62,7 +67,7 @@ const renderer = new WebGLRenderer({
 renderer.setSize(size.width, size.height);
 renderer.setPixelRatio(size.pixelRatio);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = PCFSoftShadowMap;
+renderer.shadowMap.type = PCFShadowMap;
 // renderer.toneMapping = ACESFilmicToneMapping;
 el?.append(renderer.domElement);
 
@@ -307,21 +312,40 @@ function guiChanged() {
 guiChanged();
 scene.add(sky);
 
-const disslutionMaterial = new MeshStandardMaterial();
+const uniforms_ = {
+  uProgress: new Uniform(0),
+};
+
+const disslutionMaterial = new ShaderMaterial({
+  vertexShader: sphereVertexShader,
+  fragmentShader: sphereFragmentShader,
+  uniforms: uniforms_,
+});
 const disslution = new Mesh(sphereGeometry, disslutionMaterial);
 disslution.position.y = 15;
 disslution.castShadow = true;
+disslution.receiveShadow = true;
+disslution.customDepthMaterial = new CustomShaderMaterial({
+  baseMaterial: MeshDepthMaterial,
+  vertexShader: sphereVertexShader
+    .replace('#include <begin_vertex>', '')
+    .replace('#include <project_vertex>', ''),
+  fragmentShader: sphereFragmentShader,
+  uniforms: uniforms_,
+  depthPacking: RGBADepthPacking,
+});
+
 scene.add(disslution);
 
 controls.target = disslution.position.clone();
 
 const shadowPlane = new Mesh(
   new PlaneGeometry(20, 20, 16, 16),
-  new MeshStandardMaterial(),
+  new MeshStandardMaterial({ shadowSide: DoubleSide }),
 );
 shadowPlane.receiveShadow = true;
 shadowPlane.position.y = 15;
-shadowPlane.position.z = 5;
+shadowPlane.position.z = 8;
 shadowPlane.lookAt(disslution.position);
 scene.add(shadowPlane);
 
@@ -331,8 +355,12 @@ scene.add(shadowPlane);
 
 const directionalLight = new DirectionalLight(0xffffff, 2);
 directionalLight.castShadow = true;
-directionalLight.position.z = -1;
+directionalLight.position.z = -10;
 directionalLight.position.y = 0;
+directionalLight.shadow.camera.top = 25;
+directionalLight.shadow.camera.far = 20;
+directionalLight.shadow.camera.updateProjectionMatrix();
+directionalLight.shadow.needsUpdate = true;
 scene.add(directionalLight);
 
 /**
@@ -366,6 +394,14 @@ f_grass.addBinding(uniforms.uBottomColor, 'value', {
   label: 'uBottomColor',
   color: { type: 'float' },
 });
+
+const f_sphere = pane.addFolder({ title: 'Sphere' });
+f_sphere.addBinding(uniforms_.uProgress, 'value', {
+  step: 0.01,
+  min: 0,
+  max: 1,
+});
+
 /**
  * Event
  */
