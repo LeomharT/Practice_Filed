@@ -27,6 +27,7 @@ void main() {
   vec3 lightDirection = vec3(0.0, 0.0, -1.0);
 
   float lightColor = dot(normal, lightDirection);
+  lightColor = step(0.5, lightColor);
   color = vec3(lightColor);
 
   gl_FragColor = vec4(color, 1.0);
