@@ -6,6 +6,7 @@ import {
   Color,
   DirectionalLight,
   DoubleSide,
+  IcosahedronGeometry,
   InstancedBufferAttribute,
   InstancedBufferGeometry,
   MathUtils,
@@ -33,17 +34,20 @@ import {
 } from 'three';
 import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { OrbitControls, Sky } from 'three/examples/jsm/Addons.js';
+import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { Pane } from 'tweakpane';
 import grassFragmentShader from './shader/grass/fragment.glsl?raw';
 import grassVertexShader from './shader/grass/vertex.glsl?raw';
 import simplex2DNoise from './shader/include/simplex2DNoise.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
+import simplex4DNoise from './shader/include/simplex4DNoise.glsl?raw';
 import sphereFragmentShader from './shader/sphere/fragment.glsl?raw';
 import sphereVertexShader from './shader/sphere/vertex.glsl?raw';
 import './style.css';
 
 (ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
 (ShaderChunk as any)['simplex2DNoise'] = simplex2DNoise;
+(ShaderChunk as any)['simplex4DNoise'] = simplex4DNoise;
 
 const el = document.querySelector('#root');
 
@@ -314,6 +318,7 @@ scene.add(sky);
 
 const uniforms_ = {
   uProgress: new Uniform(0),
+  uTime: uniforms['uTime'],
 };
 
 const disslutionMaterial = new ShaderMaterial({
@@ -321,20 +326,21 @@ const disslutionMaterial = new ShaderMaterial({
   fragmentShader: sphereFragmentShader,
   uniforms: uniforms_,
 });
-const disslution = new Mesh(sphereGeometry, disslutionMaterial);
+
+const disslutionGeometry = mergeVertices(new IcosahedronGeometry(2.5, 50));
+disslutionGeometry.computeTangents();
+
+const disslution = new Mesh(disslutionGeometry, disslutionMaterial);
 disslution.position.y = 15;
 disslution.castShadow = true;
 disslution.receiveShadow = true;
 disslution.customDepthMaterial = new CustomShaderMaterial({
   baseMaterial: MeshDepthMaterial,
-  vertexShader: sphereVertexShader
-    .replace('#include <begin_vertex>', '')
-    .replace('#include <project_vertex>', ''),
+  vertexShader: sphereVertexShader,
   fragmentShader: sphereFragmentShader,
   uniforms: uniforms_,
   depthPacking: RGBADepthPacking,
 });
-
 scene.add(disslution);
 
 controls.target = disslution.position.clone();

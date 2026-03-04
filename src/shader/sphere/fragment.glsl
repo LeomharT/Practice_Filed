@@ -17,6 +17,12 @@ void main() {
     color = edgeColor;
   }
 
+  color = mix(
+    vec3(0.415, 0.883, 0.381),
+    vec3(0.125, 0.731, 0.254),
+    vPosition.z
+  );
+
   gl_FragColor = vec4(color, 1.0);
 
   #include <tonemapping_fragment>
