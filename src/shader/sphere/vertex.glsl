@@ -8,9 +8,14 @@ varying float vWobble;
 
 uniform float uTime;
 
+vec2 rotate2D(vec2 v, float angle) {
+  mat2 m = mat2(cos(angle), -sin(angle), sin(angle), cos(angle));
+  return v * m;
+}
+
 float getWobble(vec3 position) {
   vec3 wrapedPosition = position;
-  wrapedPosition += snoise(vec4(position, uTime));
+  wrapedPosition += snoise(vec4(position * 0.38, uTime * 0.12)) * 1.7;
 
   return snoise(
     vec4(
@@ -41,7 +46,12 @@ void main() {
 
   vec3 newNormal = cross(toA, toB);
 
+  modelPosition.xz = rotate2D(modelPosition.xz, uTime);
+
   vec4 modelNormal = modelMatrix * vec4(newNormal, 0.0);
+
+  modelNormal.xz = rotate2D(modelNormal.xz, uTime);
+
   vec4 viewPosition = viewMatrix * modelPosition;
   vec4 projectionPosition = projectionMatrix * viewPosition;
 
@@ -53,5 +63,5 @@ void main() {
 
   vPosition = modelPosition.xyz;
   vNormal = modelNormal.xyz;
-  vWobble = wobble;
+  vWobble = wobble / 0.3;
 }

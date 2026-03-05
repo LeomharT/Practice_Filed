@@ -10,6 +10,7 @@ void main() {
   vec3 color = vec3(1.0);
   vec3 normal = normalize(vNormal);
   vec3 edgeColor = vec3(0.827, 0.239, 0.09);
+  float wobble = vWobble;
 
   float noise = snoise(vPosition * 0.5);
   noise = (noise + 1.0) / 2.0;
@@ -28,17 +29,15 @@ void main() {
   float lightColor = dot(normal, lightDirection);
   lightColor = max(0.0, lightColor);
 
-  float wobble = vWobble;
-
   color = mix(
-    vec3(0.236, 0.223, 0.187),
+    vec3(0.768, 0.113, 0.498),
     //
-    vec3(0.718, 0.296, 0.443),
+    vec3(0.325, 0.113, 0.67),
     //
     wobble
   );
 
-  color *= lightColor;
+  color = vec3(lightColor);
 
   if (uProgress > 0.0 && noise < uProgress + 0.05) {
     color = edgeColor;
