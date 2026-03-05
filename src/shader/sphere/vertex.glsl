@@ -16,9 +16,9 @@ float getWobble(vec3 position) {
     vec4(
       wrapedPosition * 0.5, // XYZ
       uTime //W
-    ) *
-      0.3
-  );
+    )
+  ) *
+  0.3;
 }
 
 void main() {
