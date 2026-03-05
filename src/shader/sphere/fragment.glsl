@@ -43,6 +43,10 @@ void main() {
     color = edgeColor * lightColor;
   }
 
+  float roughness = smoothstep(0.5, 1.0, wobble);
+
+  color += vec3(roughness);
+
   gl_FragColor = vec4(color, 1.0);
 
   #include <tonemapping_fragment>
