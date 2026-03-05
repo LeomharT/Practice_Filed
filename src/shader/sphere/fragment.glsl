@@ -37,10 +37,10 @@ void main() {
     wobble
   );
 
-  color = vec3(lightColor);
+  color *= vec3(lightColor) + 0.05;
 
   if (uProgress > 0.0 && noise < uProgress + 0.05) {
-    color = edgeColor;
+    color = edgeColor * lightColor;
   }
 
   gl_FragColor = vec4(color, 1.0);
