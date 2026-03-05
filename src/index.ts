@@ -4,6 +4,7 @@ import { createNoise2D } from 'simplex-noise';
 import {
   AxesHelper,
   Color,
+  CylinderGeometry,
   DirectionalLight,
   DoubleSide,
   IcosahedronGeometry,
@@ -36,6 +37,8 @@ import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { OrbitControls, Sky } from 'three/examples/jsm/Addons.js';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { Pane } from 'tweakpane';
+import cylinderFragmentShader from './shader/cylinder/fragment.glsl?raw';
+import cylinderVertexShader from './shader/cylinder/vertex.glsl?raw';
 import grassFragmentShader from './shader/grass/fragment.glsl?raw';
 import grassVertexShader from './shader/grass/vertex.glsl?raw';
 import simplex2DNoise from './shader/include/simplex2DNoise.glsl?raw';
@@ -358,6 +361,19 @@ shadowPlane.position.y = 15;
 shadowPlane.position.z = 8;
 shadowPlane.lookAt(disslution.position);
 scene.add(shadowPlane);
+
+const pillarGeometry = new CylinderGeometry(0.2, 0.2, 10, 4, 4);
+const pillarMaterial = new ShaderMaterial({
+  vertexShader: cylinderVertexShader,
+  fragmentShader: cylinderFragmentShader,
+  uniforms: {
+    uTime: uniforms.uTime,
+  },
+});
+const pillar = new Mesh(pillarGeometry, pillarMaterial);
+scene.add(pillar);
+
+pillar.position.set(0, 20, -10);
 
 /**
  * Light
