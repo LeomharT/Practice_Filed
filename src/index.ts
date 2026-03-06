@@ -356,8 +356,6 @@ disslution.receiveShadow = true;
 disslution.customDepthMaterial = depthMaterial;
 scene.add(disslution);
 
-controls.target = disslution.position.clone();
-
 const shadowPlane = new Mesh(
   new PlaneGeometry(20, 20, 16, 16),
   new MeshStandardMaterial({ shadowSide: DoubleSide }),

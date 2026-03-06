@@ -22,7 +22,9 @@ void main() {
   if (alpha <= 0.5) discard;
 
   vec4 noiseColor = texture2D(uNoiseTexture, gridUv);
-  vec3 tipColor = mix(uTipColor, uTipColor2, step(0.5, noiseColor.r));
+  float gradient = step(0.5, noiseColor.r);
+
+  vec3 tipColor = mix(uTipColor, uTipColor2, gradient);
 
   vec4 diffuseColor = texture2D(uDiffuseTexture, uv);
   color = diffuseColor.rgb;
@@ -31,7 +33,7 @@ void main() {
 
   float tipMix = smoothstep(0.8, 1.2, uv.y);
 
-  if (bool(step(0.5, noiseColor.r))) {
+  if (bool(gradient)) {
     color = mix(color, vec3(1.0), tipMix);
   }
 
