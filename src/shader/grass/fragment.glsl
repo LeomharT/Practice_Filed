@@ -31,7 +31,9 @@ void main() {
 
   float tipMix = smoothstep(0.8, 1.2, uv.y);
 
-  color = mix(color, vec3(1.0), tipMix);
+  if (bool(step(0.5, noiseColor.r))) {
+    color = mix(color, vec3(1.0), tipMix);
+  }
 
   gl_FragColor = vec4(color, 1.0);
 
