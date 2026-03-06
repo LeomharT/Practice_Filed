@@ -41,10 +41,11 @@ import grassVertexShader from './shader/grass/vertex.glsl?raw';
 import simplex2DNoise from './shader/include/simplex2DNoise.glsl?raw';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
 import simplex4DNoise from './shader/include/simplex4DNoise.glsl?raw';
+import mirrowFragmentShader from './shader/mirrow/fragment.glsl?raw';
+import mirrowVertexShader from './shader/mirrow/vertex.glsl?raw';
 import sphereFragmentShader from './shader/sphere/fragment.glsl?raw';
 import sphereVertexShader from './shader/sphere/vertex.glsl?raw';
 import './style.css';
-
 (ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
 (ShaderChunk as any)['simplex2DNoise'] = simplex2DNoise;
 (ShaderChunk as any)['simplex4DNoise'] = simplex4DNoise;
@@ -98,6 +99,14 @@ bladeDiffuseTexture.colorSpace = SRGBColorSpace;
 const pmrem = new PMREMGenerator(renderer);
 
 let envMap: WebGLRenderTarget | undefined = undefined;
+
+const sceneRenderTarget = new WebGLRenderTarget(
+  size.width / 2,
+  size.height / 2,
+  {
+    generateMipmaps: true,
+  },
+);
 
 /**
  * World
@@ -359,6 +368,19 @@ shadowPlane.position.z = 8;
 shadowPlane.lookAt(disslution.position);
 scene.add(shadowPlane);
 
+const mirrowGeometry = new PlaneGeometry(3, 3, 32, 32);
+const mirrowMaterial = new ShaderMaterial({
+  wireframe: false,
+  vertexShader: mirrowVertexShader,
+  fragmentShader: mirrowFragmentShader,
+  uniforms: {
+    uDiffuseTexture: new Uniform(sceneRenderTarget.texture),
+  },
+});
+const mirrow = new Mesh(mirrowGeometry, mirrowMaterial);
+mirrow.position.set(0, 15, -5);
+scene.add(mirrow);
+
 /**
  * Light
  */
@@ -439,6 +461,14 @@ function renderEnvScene() {
   sphereMaterial.envMap = envMap.texture;
 }
 
+function renderScene() {
+  renderer.setRenderTarget(sceneRenderTarget);
+  mirrow.visible = false;
+  renderer.render(scene, camera);
+  mirrow.visible = true;
+  renderer.setRenderTarget(null);
+}
+
 function render() {
   fpsGraph.begin();
 
@@ -453,6 +483,7 @@ function render() {
   controls.update();
 
   // Render
+  renderScene();
   renderEnvScene();
   renderer.render(scene, camera);
   // Animation
