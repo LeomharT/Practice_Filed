@@ -4,8 +4,8 @@ varying vec2 vUv;
 void main() {
   vec3 pos = position;
 
-  vec4 modelViewOrigin = modelViewMatrix * vec4(vec3(0.0), 1.0);
-  modelViewOrigin.xy += pos.xy;
+  vec4 modelViewOrigin = modelViewMatrix * vec4(pos, 1.0);
+  // modelViewOrigin.xy += pos.xy;
 
   vec4 projectionPosition = projectionMatrix * modelViewOrigin;
 

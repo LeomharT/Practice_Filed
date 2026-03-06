@@ -124,6 +124,7 @@ groundGeometry.computeVertexNormals();
 const groundMaterial = new MeshStandardMaterial({
   color: '#000f00',
   wireframe: false,
+  side: DoubleSide,
 });
 const ground = new Mesh(groundGeometry, groundMaterial);
 scene.add(ground);
@@ -376,6 +377,7 @@ const mirrowMaterial = new ShaderMaterial({
   },
 });
 const mirrow = new Mesh(mirrowGeometry, mirrowMaterial);
+mirrow.rotateY(Math.PI);
 mirrow.position.set(0, 15, -5);
 scene.add(mirrow);
 
