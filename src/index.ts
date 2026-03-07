@@ -381,6 +381,13 @@ mirrow.rotateY(Math.PI);
 mirrow.position.set(0, 15, -5);
 scene.add(mirrow);
 
+const floorGeometry = new PlaneGeometry(10, 10, 32, 32);
+const floorMaterial = new ShaderMaterial();
+const floor = new Mesh(floorGeometry, floorMaterial);
+floor.position.set(2, 5, -3);
+floor.rotation.x = -Math.PI / 2;
+scene.add(floor);
+
 /**
  * Light
  */
