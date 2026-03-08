@@ -388,7 +388,10 @@ const floorGeometry = new PlaneGeometry(10, 10, 32, 32);
 const floorMaterial = new ShaderMaterial({
   vertexShader: floorVertexShader,
   fragmentShader: floorFragmentShader,
-  wireframe: true,
+  wireframe: false,
+  uniforms: {
+    uTime: uniforms.uTime,
+  },
 });
 const floor = new Mesh(floorGeometry, floorMaterial);
 floor.position.set(2, 8, -3);
