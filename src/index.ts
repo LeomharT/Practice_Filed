@@ -36,6 +36,8 @@ import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { OrbitControls, Sky } from 'three/examples/jsm/Addons.js';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { Pane } from 'tweakpane';
+import floorFragmentShader from './shader/floor/fragment.glsl?raw';
+import floorVertexShader from './shader/floor/vertex.glsl?raw';
 import grassFragmentShader from './shader/grass/fragment.glsl?raw';
 import grassVertexShader from './shader/grass/vertex.glsl?raw';
 import simplex2DNoise from './shader/include/simplex2DNoise.glsl?raw';
@@ -46,6 +48,7 @@ import mirrowVertexShader from './shader/mirrow/vertex.glsl?raw';
 import sphereFragmentShader from './shader/sphere/fragment.glsl?raw';
 import sphereVertexShader from './shader/sphere/vertex.glsl?raw';
 import './style.css';
+
 (ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
 (ShaderChunk as any)['simplex2DNoise'] = simplex2DNoise;
 (ShaderChunk as any)['simplex4DNoise'] = simplex4DNoise;
@@ -382,9 +385,13 @@ mirrow.position.set(0, 15, -5);
 scene.add(mirrow);
 
 const floorGeometry = new PlaneGeometry(10, 10, 32, 32);
-const floorMaterial = new ShaderMaterial();
+const floorMaterial = new ShaderMaterial({
+  vertexShader: floorVertexShader,
+  fragmentShader: floorFragmentShader,
+  wireframe: true,
+});
 const floor = new Mesh(floorGeometry, floorMaterial);
-floor.position.set(2, 5, -3);
+floor.position.set(2, 8, -3);
 floor.rotation.x = -Math.PI / 2;
 scene.add(floor);
 
