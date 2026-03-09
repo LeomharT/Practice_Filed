@@ -1,4 +1,5 @@
 varying vec2 vUv;
+varying vec3 vPosition;
 
 uniform sampler2D uNoiseTexture;
 
@@ -14,4 +15,5 @@ void main() {
   gl_Position = projectionPosition;
 
   vUv = uv;
+  vPosition = modelPosition.xyz;
 }

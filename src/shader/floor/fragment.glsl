@@ -1,7 +1,10 @@
 varying vec2 vUv;
+varying vec3 vPosition;
 
 uniform float uTime;
 uniform sampler2D uNoiseTexture;
+
+#include <simplex3DNoise>
 
 void main() {
   vec3 color = vec3(0.0);
@@ -14,6 +17,7 @@ void main() {
   dist = fract(dist);
 
   vec4 noiseColor = texture2D(uNoiseTexture, uv * 0.5);
+  float noise = snoise(vPosition * 0.45);
 
   float colorMix = smoothstep(0.0, 0.5, noiseColor.r);
 
@@ -23,7 +27,15 @@ void main() {
   colorMix -= uTime;
   colorMix = fract(colorMix);
 
-  color = vec3(colorMix);
+  float toShore = smoothstep(0.0, 0.7, noiseColor.r);
+  if (toShore < 0.5) discard;
+
+  float gradient = smoothstep(toShore, 1.2, 1.0 - colorMix);
+  gradient += noise;
+
+  if (gradient < 0.9) discard;
+
+  color = vec3(gradient);
 
   gl_FragColor = vec4(color, 1.0);
 }
