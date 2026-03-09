@@ -384,7 +384,7 @@ mirrow.rotateY(Math.PI);
 mirrow.position.set(0, 15, -5);
 scene.add(mirrow);
 
-const floorGeometry = new PlaneGeometry(10, 10, 32, 32);
+const floorGeometry = new PlaneGeometry(10, 10, 128, 128);
 const floorMaterial = new ShaderMaterial({
   vertexShader: floorVertexShader,
   fragmentShader: floorFragmentShader,
