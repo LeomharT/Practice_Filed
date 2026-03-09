@@ -17,20 +17,23 @@ void main() {
   dist = fract(dist);
 
   vec4 noiseColor = texture2D(uNoiseTexture, uv * 0.5);
-  float noise = snoise(vPosition * 0.45);
 
   float colorMix = smoothstep(0.0, 0.5, noiseColor.r);
 
   if (colorMix >= 1.0) discard;
 
   colorMix *= 10.0;
-  colorMix -= uTime;
+  colorMix -= uTime * 0.5;
+
+  float rippleIndex = floor(colorMix);
   colorMix = fract(colorMix);
 
-  float toShore = smoothstep(0.0, 0.7, noiseColor.r);
-  if (toShore < 0.5) discard;
+  float noise = snoise(vPosition * 0.45 + rippleIndex / 0.345);
 
-  float gradient = smoothstep(toShore, 1.2, 1.0 - colorMix);
+  float toShore = smoothstep(0.0, 0.8, noiseColor.r);
+  if (toShore < 0.4) discard;
+
+  float gradient = smoothstep(toShore, 1.0, 1.0 - colorMix);
   gradient += noise;
 
   if (gradient < 0.9) discard;
