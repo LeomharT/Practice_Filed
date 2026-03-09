@@ -43,7 +43,8 @@ void main() {
     color = edgeColor * lightColor;
   }
 
-  float roughness = smoothstep(0.5, 1.0, wobble);
+  float roughness = smoothstep(0.6, 0.7, wobble);
+  roughness = pow(roughness, 20.0);
 
   color += vec3(roughness);
 
