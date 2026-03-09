@@ -398,6 +398,7 @@ const floorMaterial = new ShaderMaterial({
 const floor = new Mesh(floorGeometry, floorMaterial);
 floor.position.set(2, 8, -3);
 floor.rotation.x = -Math.PI / 2;
+floor.visible = false;
 scene.add(floor);
 
 /**
@@ -483,7 +484,9 @@ function renderEnvScene() {
 function renderScene() {
   renderer.setRenderTarget(sceneRenderTarget);
   mirrow.visible = false;
+  floor.visible = true;
   renderer.render(scene, camera);
+  floor.visible = false;
   mirrow.visible = true;
   renderer.setRenderTarget(null);
 }
