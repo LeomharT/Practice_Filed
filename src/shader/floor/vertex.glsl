@@ -1,15 +1,13 @@
 varying vec2 vUv;
 
+uniform sampler2D uNoiseTexture;
+
 void main() {
-  vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+  vec4 noiseColor = texture2D(uNoiseTexture, uv);
+  vec3 transformed = position;
+  transformed.z -= noiseColor.r * 2.0;
 
-  vec2 center = vec2(0.5);
-  float distanceToCenter = distance(uv, center);
-  distanceToCenter = abs(distanceToCenter);
-
-  modelPosition.y += pow(2.0 * distanceToCenter, 2.0);
-  modelPosition.y -= 2.0;
-
+  vec4 modelPosition = modelMatrix * vec4(transformed, 1.0);
   vec4 viewPosition = viewMatrix * modelPosition;
   vec4 projectionPosition = projectionMatrix * viewPosition;
 

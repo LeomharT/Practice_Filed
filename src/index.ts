@@ -391,7 +391,9 @@ const floorMaterial = new ShaderMaterial({
   wireframe: false,
   uniforms: {
     uTime: uniforms.uTime,
+    uNoiseTexture: uniforms.uNoiseTexture,
   },
+  side: DoubleSide,
 });
 const floor = new Mesh(floorGeometry, floorMaterial);
 floor.position.set(2, 8, -3);
