@@ -7,16 +7,21 @@ import {
   PerspectiveCamera,
   PlaneGeometry,
   Scene,
+  ShaderChunk,
   ShaderMaterial,
   Uniform,
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import simplex4DNoise from './shader/include/simplex4DNoise.glsl?raw';
 import pillarFragmentShader from './shader/pillar/fragment.glsl?raw';
 import pillarVertexShader from './shader/pillar/vertex.glsl?raw';
 import waveFragmentShader from './shader/wave/fragment.glsl?raw';
 import waveVertexShader from './shader/wave/vertex.glsl?raw';
 import './style.css';
+
+(ShaderChunk as any)['simplex4DNoise'] = simplex4DNoise;
+
 const size = {
   width: window.innerWidth,
   height: window.innerHeight,
@@ -64,11 +69,15 @@ const plane = new Mesh(planeGeometry, plangMaterial);
 plane.rotation.x = -Math.PI / 2;
 scene.add(plane);
 
-const pillarGeometry = new CylinderGeometry(0.25, 0.25, 5);
+const pillarGeometry = new CylinderGeometry(1, 1, 5, 32, 128);
 pillarGeometry.translate(0, 2.5, 0);
+pillarGeometry.computeTangents();
+console.log(pillarGeometry);
 const pillarMaterial = new ShaderMaterial({
   vertexShader: pillarVertexShader,
   fragmentShader: pillarFragmentShader,
+  uniforms,
+  wireframe: false,
 });
 const pillar = new Mesh(pillarGeometry, pillarMaterial);
 scene.add(pillar);
