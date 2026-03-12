@@ -16,14 +16,23 @@ float getWobble(vec3 _p) {
       warpPos * 0.38,
       uTime * 0.12
     )
-  ) * 1.74;
+  ) * 0.74;
 
   return snoise(
     vec4(
       warpPos * 0.5,
       uTime * 0.4
     )
-  ) * 0.3;
+  ) * 0.12;
+}
+
+vec2 rotate2D(vec2 _p, float _angle) {
+  mat2 m = mat2(
+    cos(_angle), -sin(_angle),
+    sin(_angle), cos(_angle)
+  );
+
+  return _p * m;
 }
 
 void main() {
@@ -31,6 +40,11 @@ void main() {
   float shift     = 0.01;
 
   vec4 modelPosition = modelMatrix * vec4(position, 1.0);
+
+  modelPosition.y -= 2.5;
+  modelPosition.xy = rotate2D(modelPosition.xy, uTime);
+  modelPosition.y += 2.5;
+
   vec3 positionA     = modelPosition.xyz + tangent.xyz * shift;
   vec3 positionB     = modelPosition.xyz + biTangent * shift;
 

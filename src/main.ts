@@ -13,6 +13,7 @@ import {
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import simplex4DNoise from './shader/include/simplex4DNoise.glsl?raw';
 import pillarFragmentShader from './shader/pillar/fragment.glsl?raw';
 import pillarVertexShader from './shader/pillar/vertex.glsl?raw';
@@ -69,7 +70,9 @@ const plane = new Mesh(planeGeometry, plangMaterial);
 plane.rotation.x = -Math.PI / 2;
 scene.add(plane);
 
-const pillarGeometry = new CylinderGeometry(1, 1, 5, 32, 128);
+const pillarGeometry = mergeVertices(
+  new CylinderGeometry(0.25, 0.25, 5, 32, 128),
+);
 pillarGeometry.translate(0, 2.5, 0);
 pillarGeometry.computeTangents();
 console.log(pillarGeometry);
