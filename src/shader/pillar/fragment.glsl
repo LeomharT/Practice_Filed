@@ -17,7 +17,7 @@ void main() {
     h
   );
 
-  color += vec3(light);
+  color *= vec3(light);
 
   gl_FragColor = vec4(color, 1.0);
 

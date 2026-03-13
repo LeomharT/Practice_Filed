@@ -75,6 +75,7 @@ const pillarGeometry = mergeVertices(
 );
 pillarGeometry.translate(0, 2.5, 0);
 pillarGeometry.computeTangents();
+pillarGeometry.computeBoundingBox();
 console.log(pillarGeometry);
 const pillarMaterial = new ShaderMaterial({
   vertexShader: pillarVertexShader,
