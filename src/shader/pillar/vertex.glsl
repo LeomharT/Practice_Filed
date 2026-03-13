@@ -57,8 +57,8 @@ void main() {
   vec3 toA = normalize(positionA - modelPosition.xyz);
   vec3 toB = normalize(positionB - modelPosition.xyz);
 
-  vec3 nNormal = cross(toA, toB);
-  nNormal.xy = rotate2D(nNormal.xy, uTime);
+  vec3 nNormal    = cross(toA, toB);
+       nNormal.xy = rotate2D(nNormal.xy, uTime);
 
   vec4 modelNormal = modelMatrix * vec4(nNormal, 0.0);
   
