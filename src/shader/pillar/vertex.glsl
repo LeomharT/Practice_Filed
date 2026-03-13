@@ -45,8 +45,8 @@ void main() {
   modelPosition.xy = rotate2D(modelPosition.xy, uTime);
   modelPosition.y += 2.5;
 
-  vec3 positionA     = modelPosition.xyz + tangent.xyz * shift;
-  vec3 positionB     = modelPosition.xyz + biTangent * shift;
+  vec3 positionA = modelPosition.xyz + tangent.xyz * shift;
+  vec3 positionB = modelPosition.xyz + biTangent * shift;
 
   float wobble = getWobble(modelPosition.xyz);
 
