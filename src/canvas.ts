@@ -6,13 +6,19 @@ import {
   Mesh,
   PerspectiveCamera,
   Scene,
+  ShaderChunk,
   ShaderMaterial,
+  Uniform,
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import simplex4DNoise from './shader/include/simplex4DNoise.glsl?raw';
 import wobbleFragmentShader from './shader/wobble/fragment.glsl?raw';
 import wobbleVertexShader from './shader/wobble/vertex.glsl?raw';
 import './style.css';
+
+(ShaderChunk as any)['simplex4DNoise'] = simplex4DNoise;
 
 const size = {
   width: window.innerWidth,
@@ -42,10 +48,16 @@ camera.lookAt(scene.position);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
-const wobbleSphereGeometry = new IcosahedronGeometry(2, 50);
+const uniforms = {
+  uTime: new Uniform(0),
+};
+
+const wobbleSphereGeometry = mergeVertices(new IcosahedronGeometry(2, 50));
+wobbleSphereGeometry.computeTangents();
 const wobbleMaterial = new ShaderMaterial({
   vertexShader: wobbleVertexShader,
   fragmentShader: wobbleFragmentShader,
+  uniforms,
 });
 const wobble = new Mesh(wobbleSphereGeometry, wobbleMaterial);
 scene.add(wobble);
@@ -54,12 +66,13 @@ scene.add(wobble);
  * Helpers
  */
 
-const axesHelper = new AxesHelper(3);
+const axesHelper = new AxesHelper(5);
 scene.add(axesHelper);
 
 function render() {
   // Update
   controls.update();
+  uniforms['uTime'].value += 0.01;
 
   // Redner
   renderer.render(scene, camera);
