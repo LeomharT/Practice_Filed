@@ -3,8 +3,10 @@ precision mediump float;
 varying vec3 vNormal;
 varying vec2 vUv;
 varying vec3 vNdc;
+varying vec4 vReflectionMatrix;
 
 uniform float uTime;
+uniform mat4 uTextureMatrix;
 
 #include <simplex4DNoise>
 
@@ -20,7 +22,8 @@ void main(){
     vec3 ndc = gl_Position.xyz / gl_Position.w;
 
     // Varing
-    vNormal = modelNormal.xyz;
-    vUv     = uv;
-    vNdc    = ndc * 0.5 + 0.5;
+    vNormal           = modelNormal.xyz;
+    vUv               = uv;
+    vNdc              = ndc * 0.5 + 0.5;
+    vReflectionMatrix = uTextureMatrix * vec4(position, 1.0);
 }
