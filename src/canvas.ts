@@ -1,6 +1,7 @@
 import { Colors } from '@blueprintjs/colors';
 import {
   AxesHelper,
+  CameraHelper,
   Color,
   FrontSide,
   Matrix4,
@@ -98,6 +99,8 @@ if (reflector.material instanceof ShaderMaterial) {
     reflector.material.uniforms['tDiffuse'].value;
 }
 
+console.log(reflector.camera);
+
 const wobble = new Mesh(portalGeometry, portalMaterial);
 wobble.rotation.x = -Math.PI / 2;
 scene.add(wobble);
@@ -110,6 +113,9 @@ const tempColor = new Color(Colors.BLUE1);
 
 const axesHelper = new AxesHelper(3);
 scene.add(axesHelper);
+
+const cameraHelper = new CameraHelper(reflector.camera);
+scene.add(cameraHelper);
 
 function render() {
   // Update

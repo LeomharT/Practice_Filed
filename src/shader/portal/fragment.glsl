@@ -7,8 +7,6 @@ uniform sampler2D uReflectionTexture;
 
 void main(){
     vec3 color       = vec3(1.0);
-    vec2 uv          = vUv;
-    vec3 normal      = normalize(vNormal);
     vec4 mReflection = vReflectionMatrix;
 
     vec4 diffuseColor = texture2D(uReflectionTexture, mReflection.xy / mReflection.w);
