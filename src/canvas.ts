@@ -1,152 +1,81 @@
 import { Colors } from '@blueprintjs/colors';
+import {
+  AxesHelper,
+  Color,
+  IcosahedronGeometry,
+  Mesh,
+  PerspectiveCamera,
+  Scene,
+  ShaderMaterial,
+  WebGLRenderer,
+} from 'three';
+import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import wobbleFragmentShader from './shader/wobble/fragment.glsl?raw';
+import wobbleVertexShader from './shader/wobble/vertex.glsl?raw';
 import './style.css';
-
-type Vector2 = {
-  x: number;
-  y: number;
-};
-
-type Vector3 = Vector2 & {
-  z: number;
-};
 
 const size = {
   width: window.innerWidth,
   height: window.innerHeight,
-  aspect: window.innerWidth / window.innerHeight,
+  pixelRatio: Math.min(2.0, window.devicePixelRatio),
 };
 
 const el = document.querySelector('#root');
 
-const canvas = document.createElement('canvas');
-canvas.width = size.width;
-canvas.height = size.height;
-canvas.style.width = size.width + 'px';
-canvas.style.height = size.height + 'px';
-el?.append(canvas);
+const background = new Color(Colors.BLACK);
 
-const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+const renderer = new WebGLRenderer({
+  antialias: true,
+  alpha: true,
+});
+renderer.setSize(size.width, size.height);
+renderer.setPixelRatio(size.pixelRatio);
+el?.append(renderer.domElement);
 
-const vs = [
-  { x: 0.25, y: 0.25, z: 0.25 },
-  { x: -0.25, y: 0.25, z: 0.25 },
-  { x: -0.25, y: -0.25, z: 0.25 },
-  { x: 0.25, y: -0.25, z: 0.25 },
+const scene = new Scene();
+scene.background = background;
 
-  { x: 0.25, y: 0.25, z: -0.25 },
-  { x: -0.25, y: 0.25, z: -0.25 },
-  { x: -0.25, y: -0.25, z: -0.25 },
-  { x: 0.25, y: -0.25, z: -0.25 },
-];
+const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
+camera.position.set(3, 3, 3);
+camera.lookAt(scene.position);
 
-const fs = [
-  [0, 1, 2, 3],
-  [4, 5, 6, 7],
-  [0, 4],
-  [1, 5],
-  [2, 6],
-  [3, 7],
-];
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
 
-function clean() {
-  ctx.save();
-  ctx.fillStyle = Colors.BLACK;
-  ctx.fillRect(0, 0, size.width, size.height);
-  ctx.restore();
-}
+const wobbleSphereGeometry = new IcosahedronGeometry(2, 50);
+const wobbleMaterial = new ShaderMaterial({
+  vertexShader: wobbleVertexShader,
+  fragmentShader: wobbleFragmentShader,
+});
+const wobble = new Mesh(wobbleSphereGeometry, wobbleMaterial);
+scene.add(wobble);
 
-function point(v: Vector2) {
-  ctx.save();
+/**
+ * Helpers
+ */
 
-  const s = 20;
-  ctx.fillStyle = Colors.FOREST4;
-  ctx.fillRect(v.x - s / 2, v.y - s / 2, s, s);
+const axesHelper = new AxesHelper(3);
+scene.add(axesHelper);
 
-  ctx.restore();
-}
+function render() {
+  // Update
+  controls.update();
 
-function line(from: Vector2, to: Vector2) {
-  ctx.save();
-
-  ctx.beginPath();
-  ctx.moveTo(from.x, from.y);
-  ctx.lineTo(to.x, to.y);
-  ctx.strokeStyle = Colors.FOREST2;
-  ctx.lineWidth = 3;
-  ctx.stroke();
-
-  ctx.restore();
-}
-
-function screen(v: Vector2) {
-  const x = (v.x * 0.5 + 0.5) * size.width;
-  const y = -(v.y * 0.5 - 0.5) * size.height;
-
-  return {
-    x,
-    y,
-  };
-}
-
-function project(v: Vector3) {
-  return {
-    x: v.x / v.z,
-    y: (v.y / v.z) * size.aspect,
-  };
-}
-
-function translateZ(v: Vector3, dz: number) {
-  return {
-    ...v,
-    z: v.z + dz,
-  };
-}
-
-function rotate(v: Vector3, angle: number) {
-  const c = Math.cos(angle);
-  const s = Math.sin(angle);
-
-  const x = v.x * c - v.z * s;
-  const z = v.x * s + v.z * c;
-
-  return {
-    ...v,
-    x,
-    z,
-  };
-}
-
-let prev = 0;
-
-let dz = 1;
-let angle = 0;
-
-function render(time: number = 0) {
-  const dt = (time - prev) / 1000;
-  prev = time;
-
-  // dz += dt;
-  angle += dz * 0.01;
-
-  clean();
-
-  for (const f of fs) {
-    for (let i = 0; i < f.length; i++) {
-      const from = vs[f[i]];
-      const to = vs[f[(i + 1) % f.length]];
-
-      line(
-        screen(project(translateZ(rotate({ ...from }, angle), dz))),
-        screen(project(translateZ(rotate({ ...to }, angle), dz))),
-      );
-    }
-  }
-
-  for (const v of vs) {
-    point(screen(project(translateZ(rotate({ ...v }, angle), dz))));
-  }
-
+  // Redner
+  renderer.render(scene, camera);
+  // Animation
   requestAnimationFrame(render);
 }
 
 render();
+
+function resize() {
+  size.width = window.innerWidth;
+  size.height = window.innerHeight;
+
+  renderer.setSize(size.width, size.height);
+
+  camera.aspect = size.width / size.height;
+  camera.updateProjectionMatrix();
+}
+window.addEventListener('resize', resize);
