@@ -11,11 +11,12 @@ import {
   ShaderMaterial,
   Uniform,
   WebGLRenderer,
+  WebGLRenderTarget,
 } from 'three';
 import { GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import simplex4DNoise from './shader/include/simplex4DNoise.glsl?raw';
-import wobbleFragmentShader from './shader/wobble/fragment.glsl?raw';
-import wobbleVertexShader from './shader/wobble/vertex.glsl?raw';
+import portalFragmentShader from './shader/portal/fragment.glsl?raw';
+import portalVertexShader from './shader/portal/vertex.glsl?raw';
 import './style.css';
 
 (ShaderChunk as any)['simplex4DNoise'] = simplex4DNoise;
@@ -44,34 +45,59 @@ const scene = new Scene();
 scene.background = background;
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(3, 3, 3);
+camera.position.set(0, 3, 3);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
+const portalRenderTarget = new WebGLRenderTarget(size.width, size.height, {
+  generateMipmaps: true,
+});
+
 const uniforms = {
   uTime: new Uniform(0),
+  uDiffuseTexture: new Uniform(portalRenderTarget.texture),
 };
 
-const wobbleSphereGeometry = new PlaneGeometry(5, 5, 128, 128);
-wobbleSphereGeometry.computeTangents();
-const wobbleMaterial = new ShaderMaterial({
-  vertexShader: wobbleVertexShader,
-  fragmentShader: wobbleFragmentShader,
+const model = await gltfLoader.loadAsync('/low_poly_mccree/scene.gltf');
+const mccree = model.scene;
+mccree.position.z = -0.25;
+controls.target.y = 1.0;
+scene.add(mccree);
+
+const portalGeometry = new PlaneGeometry(2, 3, 128, 128);
+portalGeometry.computeTangents();
+portalGeometry.translate(0, 1.5, 0);
+const portalMaterial = new ShaderMaterial({
+  vertexShader: portalVertexShader,
+  fragmentShader: portalFragmentShader,
   uniforms,
   wireframe: false,
   side: DoubleSide,
 });
-const wobble = new Mesh(wobbleSphereGeometry, wobbleMaterial);
-wobble.rotation.x = -Math.PI / 2;
+const wobble = new Mesh(portalGeometry, portalMaterial);
 scene.add(wobble);
+
+const tempColor = new Color(Colors.BLUE1);
+
+function renderPortal() {
+  renderer.setRenderTarget(portalRenderTarget);
+  wobble.visible = false;
+  mccree.visible = true;
+  scene.background = tempColor;
+  renderer.render(scene, camera);
+  scene.background = background;
+  mccree.visible = false;
+  wobble.visible = true;
+  renderer.setRenderTarget(null);
+}
 
 /**
  * Helpers
  */
 
-const axesHelper = new AxesHelper(5);
+const axesHelper = new AxesHelper(3);
 scene.add(axesHelper);
 
 function render() {
@@ -80,6 +106,7 @@ function render() {
   uniforms['uTime'].value += 0.01;
 
   // Redner
+  renderPortal();
   renderer.render(scene, camera);
   // Animation
   requestAnimationFrame(render);
