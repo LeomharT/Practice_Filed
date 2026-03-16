@@ -2,17 +2,17 @@ import { Colors } from '@blueprintjs/colors';
 import {
   AxesHelper,
   Color,
-  IcosahedronGeometry,
+  DoubleSide,
   Mesh,
   PerspectiveCamera,
+  PlaneGeometry,
   Scene,
   ShaderChunk,
   ShaderMaterial,
   Uniform,
   WebGLRenderer,
 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/Addons.js';
-import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import { GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
 import simplex4DNoise from './shader/include/simplex4DNoise.glsl?raw';
 import wobbleFragmentShader from './shader/wobble/fragment.glsl?raw';
 import wobbleVertexShader from './shader/wobble/vertex.glsl?raw';
@@ -29,6 +29,8 @@ const size = {
 const el = document.querySelector('#root');
 
 const background = new Color(Colors.BLACK);
+
+const gltfLoader = new GLTFLoader();
 
 const renderer = new WebGLRenderer({
   antialias: true,
@@ -52,14 +54,17 @@ const uniforms = {
   uTime: new Uniform(0),
 };
 
-const wobbleSphereGeometry = mergeVertices(new IcosahedronGeometry(2, 50));
+const wobbleSphereGeometry = new PlaneGeometry(5, 5, 128, 128);
 wobbleSphereGeometry.computeTangents();
 const wobbleMaterial = new ShaderMaterial({
   vertexShader: wobbleVertexShader,
   fragmentShader: wobbleFragmentShader,
   uniforms,
+  wireframe: false,
+  side: DoubleSide,
 });
 const wobble = new Mesh(wobbleSphereGeometry, wobbleMaterial);
+wobble.rotation.x = -Math.PI / 2;
 scene.add(wobble);
 
 /**
