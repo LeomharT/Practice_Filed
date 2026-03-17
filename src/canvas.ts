@@ -10,7 +10,13 @@ import {
   ShaderMaterial,
   WebGLRenderer,
 } from 'three';
-import { GLTFLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
+import {
+  EffectComposer,
+  GLTFLoader,
+  OrbitControls,
+  OutputPass,
+  RenderPass,
+} from 'three/examples/jsm/Addons.js';
 import simplex4DNoise from './shader/include/simplex4DNoise.glsl?raw';
 import './style.css';
 
@@ -40,11 +46,19 @@ const scene = new Scene();
 scene.background = background;
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(0, 0, 1);
+camera.position.set(3, 3, 3);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+
+const renderScene = new RenderPass(scene, camera);
+
+const outputPass = new OutputPass();
+
+const composer = new EffectComposer(renderer);
+composer.addPass(renderScene);
+composer.addPass(outputPass);
 
 const grassBaseGeometry = new PlaneGeometry(0.12, 1, 1, 16);
 grassBaseGeometry.translate(0, 0.5, 0);
@@ -66,7 +80,7 @@ function render() {
   // Update
   controls.update();
   // Redner
-  renderer.render(scene, camera);
+  composer.render();
   // Animation
   requestAnimationFrame(render);
 }
