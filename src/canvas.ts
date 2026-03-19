@@ -1,10 +1,19 @@
 import { Colors } from '@blueprintjs/colors';
-import { MathUtils } from 'three';
 import './style.css';
+
+type Vector2 = {
+  x: number;
+  y: number;
+};
+
+type Vector3 = Vector2 & {
+  z: number;
+};
 
 const size = {
   width: window.innerWidth,
   height: window.innerHeight,
+  aspect: window.innerWidth / window.innerHeight,
 };
 
 const el = document.querySelector('#root');
@@ -18,66 +27,110 @@ el?.append(canvas);
 
 const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
-const image = new Image();
-image.src = '/arrow.png';
+const vs = [
+  { x: 0.25, y: 0.25, z: 0.25 },
+  { x: -0.25, y: 0.25, z: 0.25 },
+  { x: -0.25, y: -0.25, z: 0.25 },
+  { x: 0.25, y: -0.25, z: 0.25 },
 
-const positions = Array.from({ length: 350 }, () => ({
-  x: MathUtils.randFloat(0, size.width),
-  y: MathUtils.randFloat(0, size.height),
-  length: MathUtils.randFloat(50, 200),
-}));
+  { x: 0.25, y: 0.25, z: -0.25 },
+  { x: -0.25, y: 0.25, z: -0.25 },
+  { x: -0.25, y: -0.25, z: -0.25 },
+  { x: 0.25, y: -0.25, z: -0.25 },
+];
 
-const cursor = {
-  x: 0,
-  y: 0,
-};
+const fs = [
+  [0, 1, 2, 3],
+  [4, 5, 6, 7],
+  [0, 4],
+  [1, 5],
+  [2, 6],
+  [3, 7],
+];
 
 function clean() {
   ctx.save();
-  ctx.fillStyle = Colors.GRAY1;
+  ctx.fillStyle = Colors.BLACK;
   ctx.fillRect(0, 0, size.width, size.height);
   ctx.restore();
 }
 
-function drawArrows() {
+function point(p: Vector2) {
   ctx.save();
 
-  for (const p of positions) {
-    ctx.save();
-    ctx.translate(p.x, p.y);
-    let angle = Math.atan2(p.y - cursor.y, p.x - cursor.x);
-    angle += Math.PI;
-    ctx.rotate(angle);
-    ctx.drawImage(image, -p.length / 2, -50 / 2, p.length, 50);
-    ctx.restore();
-  }
+  const s = 20;
+  ctx.fillStyle = Colors.CERULEAN4;
+  ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s);
 
   ctx.restore();
 }
 
-function drawCursor() {
+function line(from: Vector2, to: Vector2) {
   ctx.save();
 
   ctx.beginPath();
-  ctx.fillStyle = Colors.BLUE5;
-  ctx.arc(cursor.x, cursor.y, 20, 0, Math.PI * 2);
-  ctx.fill();
+  ctx.strokeStyle = Colors.CERULEAN4;
+  ctx.lineWidth = 2.0;
+  ctx.moveTo(from.x, from.y);
+  ctx.lineTo(to.x, to.y);
+  ctx.stroke();
 
   ctx.restore();
 }
 
-function render() {
+function screen(p: Vector2) {
+  const x = ((p.x + 1.0) / 2.0) * size.width;
+  const y = -((p.y - 1.0) / 2.0) * size.height;
+
+  return {
+    x,
+    y,
+  };
+}
+
+function project(p: Vector3) {
+  return {
+    x: p.x / p.z,
+    y: (p.y / p.z) * size.aspect,
+  };
+}
+
+function translateZ(p: Vector3, dz: number) {
+  return {
+    ...p,
+    z: p.z + dz,
+  };
+}
+
+let prev = 0;
+let dz = 1.0;
+
+function render(time: number = 0) {
+  const dt = (time - prev) / 1000;
+  prev = time;
+
+  // dz += dt;
+
   // Clean
   clean();
   // Render
-  drawArrows();
-  drawCursor();
+  for (const v of vs) {
+    point(screen(project(translateZ({ ...v }, dz))));
+  }
+
+  for (const f of fs) {
+    for (let i = 0; i < f.length; i++) {
+      const form = vs[f[i]];
+      const to = vs[f[(i + 1) % f.length]];
+
+      line(
+        screen(project(translateZ({ ...form }, dz))),
+        screen(project(translateZ({ ...to }, dz))),
+      );
+    }
+  }
+
   // Animation
   requestAnimationFrame(render);
 }
 render();
-
-canvas.addEventListener('pointermove', (e) => {
-  cursor.x = e.clientX;
-  cursor.y = e.clientY;
-});
