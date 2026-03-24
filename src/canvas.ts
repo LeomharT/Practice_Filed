@@ -1,20 +1,10 @@
 import { Colors } from '@blueprintjs/colors';
-import { fs, vs } from './penger';
+import { MathUtils } from 'three';
 import './style.css';
-
-type Vector2 = {
-  x: number;
-  y: number;
-};
-
-type Vector3 = Vector2 & {
-  z: number;
-};
 
 const size = {
   width: window.innerWidth,
   height: window.innerHeight,
-  aspect: window.innerWidth / window.innerHeight,
 };
 
 const el = document.querySelector('#root');
@@ -28,126 +18,78 @@ el?.append(canvas);
 
 const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
 
-const _vs = [
-  { x: 0.25, y: 0.25, z: 0.25 },
-  { x: -0.25, y: 0.25, z: 0.25 },
-  { x: -0.25, y: -0.25, z: 0.25 },
-  { x: 0.25, y: -0.25, z: 0.25 },
-
-  { x: 0.25, y: 0.25, z: -0.25 },
-  { x: -0.25, y: 0.25, z: -0.25 },
-  { x: -0.25, y: -0.25, z: -0.25 },
-  { x: 0.25, y: -0.25, z: -0.25 },
-];
-
-const _fs = [
-  [0, 1, 2, 3],
-  [4, 5, 6, 7],
-  [0, 4],
-  [1, 5],
-  [2, 6],
-  [3, 7],
-];
+const arrow = new Image();
+arrow.src = '/arrow.png';
 
 function clean() {
   ctx.save();
-  ctx.fillStyle = Colors.BLACK;
+
+  ctx.fillStyle = Colors.GRAY2;
   ctx.fillRect(0, 0, size.width, size.height);
+
   ctx.restore();
 }
 
-function point(p: Vector2) {
+const cursor = {
+  x: 0,
+  y: 0,
+};
+
+const lines = Array.from({ length: 50 }, () => ({
+  x: MathUtils.randFloat(0, size.width),
+  y: MathUtils.randFloat(0, size.height),
+  length: MathUtils.randFloat(150, 200),
+}));
+
+function renderLines() {
   ctx.save();
 
-  const s = 10;
-  ctx.fillStyle = Colors.GRAY5;
-  ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s);
+  for (const l of lines) {
+    ctx.save();
 
-  ctx.restore();
-}
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = Colors.GRAY1;
 
-function line(from: Vector2, to: Vector2) {
-  ctx.save();
+    let angle = Math.atan2(l.y - cursor.y, l.x - cursor.x);
 
-  ctx.beginPath();
-  ctx.strokeStyle = Colors.GRAY5;
-  ctx.lineWidth = 2.0;
-  ctx.moveTo(from.x, from.y);
-  ctx.lineTo(to.x, to.y);
-  ctx.stroke();
-
-  ctx.restore();
-}
-
-function screen(p: Vector2) {
-  const x = ((p.x + 1.0) / 2.0) * size.width;
-  const y = -((p.y - 1.0) / 2.0) * size.height;
-
-  return {
-    x,
-    y,
-  };
-}
-
-function project(p: Vector3) {
-  return {
-    x: p.x / p.z,
-    y: (p.y / p.z) * size.aspect,
-  };
-}
-
-function translateZ(p: Vector3, dz: number) {
-  return {
-    ...p,
-    z: p.z + dz,
-  };
-}
-
-function rotate2D(p: Vector3, angle: number) {
-  const c = Math.cos(angle);
-  const s = Math.sin(angle);
-
-  const x = p.x * c - p.z * s;
-  const z = p.x * s + p.z * c;
-
-  return {
-    ...p,
-    x,
-    z,
-  };
-}
-
-let prev = 0;
-let dz = 1.5;
-let angle = 0;
-
-function render(time: number = 0) {
-  const dt = (time - prev) / 1000;
-  prev = time;
-
-  // dz += dt;
-  angle += dt;
-
-  // Clean
-  clean();
-  // Render
-  for (const v of vs) {
-    point(screen(project(translateZ(rotate2D({ ...v }, angle), dz))));
-  }
-
-  for (const f of fs) {
-    for (let i = 0; i < f.length; i++) {
-      const form = vs[f[i]];
-      const to = vs[f[(i + 1) % f.length]];
-
-      line(
-        screen(project(translateZ(rotate2D({ ...form }, angle), dz))),
-        screen(project(translateZ(rotate2D({ ...to }, angle), dz))),
-      );
+    if (l.y - cursor.y > 0) {
+      angle += Math.PI;
     }
+    ctx.translate(l.x, l.y);
+    ctx.rotate(angle);
+
+    ctx.drawImage(arrow, -l.length / 2, -25, l.length, 50);
+
+    ctx.restore();
   }
+
+  ctx.restore();
+}
+
+function renderCursor() {
+  ctx.save();
+
+  ctx.fillStyle = Colors.CERULEAN4;
+  ctx.beginPath();
+  ctx.arc(cursor.x, cursor.y, 30, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.restore();
+}
+
+function render() {
+  clean();
+  renderLines();
+  renderCursor();
 
   // Animation
   requestAnimationFrame(render);
 }
+
 render();
+
+canvas.addEventListener('pointermove', (e) => {
+  cursor.x = e.clientX;
+  cursor.y = e.clientY;
+});
