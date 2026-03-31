@@ -12,14 +12,19 @@ import {
   Scene,
   ShaderChunk,
   ShaderMaterial,
+  Uniform,
+  Vector3,
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import { Pane } from 'tweakpane';
+import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
 import simplex4DNoise from './shader/include/simplex4DNoise.glsl?raw';
 import testFragmentShader from './shader/test/fragment.glsl?raw';
 import testVertexShader from './shader/test/vertex.glsl?raw';
 import './style.css';
 
+(ShaderChunk as any)['simplex3DNoise'] = simplex3DNoise;
 (ShaderChunk as any)['simplex4DNoise'] = simplex4DNoise;
 
 const size = {
@@ -54,7 +59,11 @@ controls.enableDamping = true;
  * World
  */
 
-const uniforms = {};
+const uniforms = {
+  uFrequency: new Uniform(1.0),
+  uProgress: new Uniform(0.0),
+  uSunDirection: new Uniform(new Vector3()),
+};
 
 const ballGeometry = new IcosahedronGeometry(2, 50);
 const ballMaterial = new ShaderMaterial({
@@ -78,9 +87,24 @@ const directionLight = new DirectionalLight('#fff', 2);
 directionLight.position.set(3, 2, 0);
 directionLight.castShadow = true;
 scene.add(directionLight);
+uniforms.uSunDirection.value.copy(directionLight.position.normalize());
 
 const axesHelper = new AxesHelper(5);
 scene.add(axesHelper);
+
+const pane = new Pane({ title: 'debug' });
+pane.addBinding(uniforms.uFrequency, 'value', {
+  label: 'Frequency',
+  step: 0.001,
+  min: 0,
+  max: 5,
+});
+pane.addBinding(uniforms.uProgress, 'value', {
+  label: 'Progress',
+  step: 0.001,
+  min: 0,
+  max: 5,
+});
 
 function render() {
   controls.update();
