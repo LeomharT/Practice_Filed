@@ -5,10 +5,12 @@ import {
   DirectionalLight,
   IcosahedronGeometry,
   Mesh,
+  MeshDepthMaterial,
   MeshStandardMaterial,
   PCFShadowMap,
   PerspectiveCamera,
   PlaneGeometry,
+  RGBADepthPacking,
   Scene,
   ShaderChunk,
   ShaderMaterial,
@@ -16,7 +18,9 @@ import {
   Uniform,
   Vector3,
   WebGLRenderer,
+  type ShaderMaterialParameters,
 } from 'three';
+import CustomShaderMaterial from 'three-custom-shader-material/vanilla';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { Pane } from 'tweakpane';
@@ -80,6 +84,18 @@ const ballMaterial = new ShaderMaterial({
 const ball = new Mesh(ballGeometry, ballMaterial);
 ball.castShadow = true;
 scene.add(ball);
+
+const shadowMaterial = new CustomShaderMaterial({
+  baseMaterial: MeshDepthMaterial,
+  uniforms,
+  vertexShader: testVertexShader,
+  fragmentShader: testFragmentShader,
+  depthPacking: RGBADepthPacking,
+} as ShaderMaterialParameters);
+shadowMaterial.defines = {
+  IS_DEPTH_MATERIAL: true,
+};
+ball.customDepthMaterial = shadowMaterial;
 
 const planeGeometry = new PlaneGeometry(10, 10, 32, 32);
 const planeMaterial = new MeshStandardMaterial({});
