@@ -12,11 +12,13 @@ import {
   Scene,
   ShaderChunk,
   ShaderMaterial,
+  Timer,
   Uniform,
   Vector3,
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { Pane } from 'tweakpane';
 import simplex3DNoise from './shader/include/simplex3DNoise.glsl?raw';
 import simplex4DNoise from './shader/include/simplex4DNoise.glsl?raw';
@@ -55,17 +57,21 @@ camera.lookAt(scene.position);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
+const clock = new Timer();
+
 /**
  * World
  */
 
 const uniforms = {
+  uTime: new Uniform(0),
   uFrequency: new Uniform(1.0),
   uProgress: new Uniform(0.0),
   uSunDirection: new Uniform(new Vector3()),
 };
 
-const ballGeometry = new IcosahedronGeometry(2, 50);
+const ballGeometry = mergeVertices(new IcosahedronGeometry(2.5, 50));
+ballGeometry.computeTangents();
 const ballMaterial = new ShaderMaterial({
   uniforms,
   vertexShader: testVertexShader,
@@ -107,6 +113,9 @@ pane.addBinding(uniforms.uProgress, 'value', {
 });
 
 function render() {
+  uniforms.uTime.value = clock.getElapsed();
+
+  clock.update();
   controls.update();
 
   renderer.render(scene, camera);

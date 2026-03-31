@@ -13,8 +13,7 @@ void main(){
     vec3 sunDriection = uSunDirection;
 
     float light = dot(sunDriection, normal);
-          light = smoothstep(-0.25, 0.7, light);
-
+ 
     color = vec3(light);
  
     float noise = snoise(vPosition * uFrequency);
@@ -35,4 +34,7 @@ void main(){
     }
 
     gl_FragColor = vec4(color, 1.0);
+
+    #include <tonemapping_fragment>
+    #include <colorspace_fragment>
 }
