@@ -1,6 +1,7 @@
 import { Colors } from '@blueprintjs/colors';
 import { createNoise2D } from 'simplex-noise';
 import {
+  AxesHelper,
   Color,
   DirectionalLight,
   Mesh,
@@ -8,15 +9,21 @@ import {
   PerspectiveCamera,
   PlaneGeometry,
   Scene,
+  ShaderChunk,
   ShaderMaterial,
+  Uniform,
+  Vector3,
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import simplex2DNoise from './shader/include/simplex2DNoise.glsl?raw';
 import floorFragmentShader from './shader/test/fragment.glsl?raw';
 import floorVertexShader from './shader/test/vertex.glsl?raw';
 import './style.css';
 
 const noise2D = createNoise2D();
+
+(ShaderChunk as any)['simplex2DNoise'] = simplex2DNoise;
 
 const size = {
   width: window.innerWidth,
@@ -52,25 +59,34 @@ controls.enableDamping = true;
  * World
  */
 
-const floorGeometry = new PlaneGeometry(40, 40, 32, 32);
+const uniforms = {
+  uLightDirection: new Uniform(new Vector3()),
+};
+
+const floorGeometry = new PlaneGeometry(40, 40, 16, 16);
 floorGeometry.rotateX(-Math.PI / 2);
 const positionArr = floorGeometry.getAttribute('position').array;
 for (let i = 0; i < positionArr.length; i += 3) {
-  positionArr[i + 1] += getYPosition(positionArr[i + 0], positionArr[i + 2]);
+  // positionArr[i + 1] += getYPosition(positionArr[i + 0], positionArr[i + 2]);
 }
 floorGeometry.attributes.position.needsUpdate = true;
-floorGeometry.computeVertexNormals();
 const floorMaterial = new ShaderMaterial({
+  uniforms,
   vertexShader: floorVertexShader,
   fragmentShader: floorFragmentShader,
+  wireframe: false,
 });
 const lightMaterial = new MeshStandardMaterial();
-const floor = new Mesh(floorGeometry, lightMaterial);
+const floor = new Mesh(floorGeometry, floorMaterial);
 scene.add(floor);
 
 const directionalLight = new DirectionalLight(0xffffff, 1);
 directionalLight.position.set(0, 2, 4);
 scene.add(directionalLight);
+uniforms.uLightDirection.value.copy(directionalLight.position.normalize());
+
+const axesHelper = new AxesHelper(3);
+scene.add(axesHelper);
 
 /**
  * Events
