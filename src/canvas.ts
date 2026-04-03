@@ -2,12 +2,14 @@ import { Colors } from '@blueprintjs/colors';
 import {
   Color,
   IcosahedronGeometry,
+  MathUtils,
   Mesh,
   MeshBasicMaterial,
   PerspectiveCamera,
   PlaneGeometry,
   Raycaster,
   Scene,
+  Timer,
   Vector2,
   Vector3,
   WebGLRenderer,
@@ -44,6 +46,8 @@ camera.lookAt(scene.position);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
+const timer = new Timer();
+
 const raycaster = new Raycaster();
 
 const planeGeometry = new PlaneGeometry(3, 3, 16, 16);
@@ -66,9 +70,30 @@ scene.add(cursor);
 const pointer = new Vector2();
 const pos = new Vector3();
 
+let translateX = 0;
+let accelerationX = 0;
+
+let translateY = 0;
+let accelerationY = 0;
+
 function render() {
+  timer.update();
+
+  const delta = timer.getDelta();
+  const speed = 2; // 越大越快
+  const alpha = 1 - Math.exp(-speed * delta);
   // Updat cursor
-  cursor.position.copy(pos);
+  cursor.position.x = MathUtils.lerp(cursor.position.x, pos.x, alpha);
+  // const targetX = pos.x - translateX;
+  // accelerationX += targetX;
+  // translateX = accelerationX * 0.1;
+
+  // const targetY = pos.y - translateY;
+  // accelerationY += targetY;
+  // translateY = accelerationY * 0.1;
+
+  // cursor.position.x = translateX;
+  // cursor.position.y = translateY;
 
   // Update
   controls.update();
