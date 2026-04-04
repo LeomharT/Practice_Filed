@@ -2,7 +2,6 @@ import { Colors } from '@blueprintjs/colors';
 import {
   Color,
   IcosahedronGeometry,
-  MathUtils,
   Mesh,
   MeshBasicMaterial,
   PerspectiveCamera,
@@ -79,21 +78,19 @@ let accelerationY = 0;
 function render() {
   timer.update();
 
-  const delta = timer.getDelta();
-  const speed = 2; // 越大越快
-  const alpha = 1 - Math.exp(-speed * delta);
   // Updat cursor
-  cursor.position.x = MathUtils.lerp(cursor.position.x, pos.x, alpha);
-  // const targetX = pos.x - translateX;
-  // accelerationX += targetX;
-  // translateX = accelerationX * 0.1;
+  const targetX = pos.x - translateX;
+  accelerationX += targetX;
+  accelerationX *= 0.95;
+  translateX += accelerationX * 0.02;
 
-  // const targetY = pos.y - translateY;
-  // accelerationY += targetY;
-  // translateY = accelerationY * 0.1;
+  const targetY = pos.y - translateY;
+  accelerationY += targetY;
+  accelerationY *= 0.95;
+  translateY += accelerationY * 0.02;
 
-  // cursor.position.x = translateX;
-  // cursor.position.y = translateY;
+  cursor.position.x = translateX;
+  cursor.position.y = translateY;
 
   // Update
   controls.update();
