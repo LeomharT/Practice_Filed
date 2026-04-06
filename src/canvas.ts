@@ -8,12 +8,15 @@ import {
   PlaneGeometry,
   Raycaster,
   Scene,
+  ShaderMaterial,
   Timer,
   Vector2,
   Vector3,
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import testFragmentShader from './shader/test/fragment.glsl?raw';
+import testVertexShader from './shader/test/vertex.glsl?raw';
 import './style.css';
 
 const size = {
@@ -49,10 +52,10 @@ const timer = new Timer();
 
 const raycaster = new Raycaster();
 
-const planeGeometry = new PlaneGeometry(3, 3, 16, 16);
-const planeMaterial = new MeshBasicMaterial({
-  color: Colors.BLUE1,
-  wireframe: true,
+const planeGeometry = new PlaneGeometry(3, 4, 16, 16);
+const planeMaterial = new ShaderMaterial({
+  vertexShader: testVertexShader,
+  fragmentShader: testFragmentShader,
 });
 const plane = new Mesh(planeGeometry, planeMaterial);
 scene.add(plane);
@@ -60,7 +63,7 @@ scene.add(plane);
 const cursorGeometry = new IcosahedronGeometry(0.08, 3);
 const cursorMaterial = new MeshBasicMaterial({ color: Colors.GREEN4 });
 const cursor = new Mesh(cursorGeometry, cursorMaterial);
-scene.add(cursor);
+// scene.add(cursor);
 
 /**
  * Events
@@ -82,12 +85,12 @@ function render() {
   const targetX = pos.x - translateX;
   accelerationX += targetX;
   accelerationX *= 0.95;
-  translateX += accelerationX * 0.02;
+  translateX += accelerationX * 0.002;
 
   const targetY = pos.y - translateY;
   accelerationY += targetY;
   accelerationY *= 0.95;
-  translateY += accelerationY * 0.02;
+  translateY += accelerationY * 0.002;
 
   cursor.position.x = translateX;
   cursor.position.y = translateY;

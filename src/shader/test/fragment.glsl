@@ -1,18 +1,18 @@
-uniform vec3 uLightDirection;
-
-varying vec3 vNormal;
+varying float vH;
+varying vec2 vUv;
 
 void main(){
-    vec3 color     = vec3(0.0);
-    vec3 normal    = normalize(vNormal);
-    vec3 direction = uLightDirection;
+    float h      = vH;
+    float aspect = 3.0 / 4.0;
+    vec3  color  = vec3(1.0);
 
-    float light = dot(normal, direction);
+    vec2 uv    = vUv;
+         uv.y /= aspect;
 
-    color = light * vec3(0.785, 0.443, 0.126);
+    vec2 center    = vec2(0.5);
+         center.y /= aspect;
+
+    vec2 halfSize = uv - center;
 
     gl_FragColor = vec4(color, 1.0);
-
-    #include <tonemapping_fragment>
-    #include <colorspace_fragment>
 }
