@@ -1,103 +1,106 @@
 import { Colors } from '@blueprintjs/colors';
-import {
-  BoxGeometry,
-  Color,
-  MathUtils,
-  Mesh,
-  MeshBasicMaterial,
-  PerspectiveCamera,
-  Scene,
-  Timer,
-  WebGLRenderer,
-} from 'three';
-import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import { MathUtils } from 'three';
 import './style.css';
 
 const size = {
   width: window.innerWidth,
   height: window.innerHeight,
-  pixelRatio: Math.min(2, window.devicePixelRatio),
 };
 
 const el = document.querySelector('#root');
 
-const renderer = new WebGLRenderer({
-  antialias: true,
-  alpha: true,
+const canvas = document.createElement('canvas');
+canvas.width = size.width;
+canvas.height = size.height;
+canvas.style.width = size.width + 'px';
+canvas.style.height = size.height + 'px';
+el?.append(canvas);
+
+const ctx = canvas.getContext('2d') as CanvasRenderingContext2D;
+
+const posisions = Array.from({ length: 500 }, () => ({
+  x: MathUtils.randFloat(0, size.width),
+  y: MathUtils.randFloat(0, size.height),
+  length: MathUtils.randFloat(50, 200),
+  angle: 0,
+}));
+
+function clean() {
+  ctx.save();
+  ctx.fillStyle = Colors.BLACK;
+  ctx.fillRect(0, 0, size.width, size.height);
+  ctx.restore();
+}
+clean();
+
+function line() {
+  ctx.save();
+
+  for (const p of posisions) {
+    ctx.save();
+
+    const w = p.x;
+    const h = p.y;
+
+    ctx.lineWidth = 5;
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = Colors.BLUE5;
+    ctx.beginPath();
+    ctx.translate(w, h);
+    ctx.rotate(p.angle);
+    ctx.moveTo(-p.length / 2, 0);
+    ctx.lineTo(p.length / 2, 0);
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  ctx.restore();
+}
+
+line();
+
+let enabled = false;
+let targetAngle = 0;
+
+const target = {
+  x: 0,
+  y: 0,
+};
+
+const center = {
+  x: size.width / 2,
+  y: size.height / 2,
+};
+
+canvas.addEventListener('pointerdown', () => (enabled = true));
+canvas.addEventListener('pointerup', () => (enabled = false));
+canvas.addEventListener('pointermove', (e) => {
+  if (enabled) {
+    target.x = e.clientX;
+    target.y = e.clientY;
+
+    targetAngle = Math.atan2(target.y - center.y, target.x - center.x);
+
+    for (const p of posisions) {
+      p.angle = Math.atan2(target.y - p.y, target.x - p.x);
+      p.angle += Math.PI / 2;
+    }
+  }
 });
-renderer.setSize(size.width, size.height);
-renderer.setPixelRatio(size.pixelRatio);
-el?.append(renderer.domElement);
 
-const scene = new Scene();
-scene.background = new Color(Colors.BLACK);
+let prevTime = 0;
+const speed = 5;
 
-const camera = new PerspectiveCamera(70, size.width / size.height, 0.1, 1000);
-camera.position.set(0, 0, 3);
-camera.lookAt(scene.position);
-
-const controls = new OrbitControls(camera, renderer.domElement);
-controls.enableDamping = true;
-controls.maxAzimuthAngle = Math.PI / 3;
-controls.minAzimuthAngle = -Math.PI / 3;
-
-const timer = new Timer();
-
-/**
- * World
- */
-
-const planeGeometry = new BoxGeometry(2, 2, 2, 16, 16, 16);
-const planeMaterial = new MeshBasicMaterial({
-  color: Colors.GOLD4,
-  wireframe: true,
-});
-const plane = new Mesh(planeGeometry, planeMaterial);
-scene.add(plane);
-
-const maxPolarAngle = Math.PI / 2;
-const minPolarAngle = 0;
-const maxAzimuthAngle = Math.PI / 3;
-const minAzimuthAngle = -Math.PI / 3;
-
-const speed = 10;
-
-function render() {
-  timer.update();
-
-  const delta = timer.getDelta();
-
-  const polar = controls.getPolarAngle();
-  const azimuth = controls.getAzimuthalAngle();
+function render(time: number = 0) {
+  const delta = (time - prevTime) / 1000;
+  prevTime = time;
 
   const t = 1.0 - Math.exp(-speed * delta);
 
-  const maxAngle = MathUtils.lerp(polar, maxPolarAngle, t);
-  const minAngle = MathUtils.lerp(polar, minPolarAngle, t);
-
-  const maxAzimuth = MathUtils.lerp(azimuth, maxAzimuthAngle, t);
-  const minAzimuth = MathUtils.lerp(azimuth, minAzimuthAngle, t);
-
-  controls.maxPolarAngle = maxAngle;
-  controls.minPolarAngle = minAngle;
-
-  controls.maxAzimuthAngle = maxAzimuth;
-  controls.minAzimuthAngle = minAzimuth;
-
-  controls.update();
-
-  renderer.render(scene, camera);
-
+  clean();
+  line();
   requestAnimationFrame(render);
 }
+
 render();
-
-window.addEventListener('resize', () => {
-  size.width = window.innerWidth;
-  size.height = window.innerHeight;
-
-  renderer.setSize(size.width, size.height);
-
-  camera.aspect = size.width / size.height;
-  camera.updateProjectionMatrix();
-});
