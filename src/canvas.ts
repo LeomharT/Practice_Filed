@@ -2,6 +2,7 @@ import { Colors } from '@blueprintjs/colors';
 import {
   Color,
   IcosahedronGeometry,
+  MathUtils,
   Mesh,
   MeshBasicMaterial,
   PerspectiveCamera,
@@ -70,7 +71,7 @@ scene.add(plane);
 const cursorGeometry = new IcosahedronGeometry(0.08, 3);
 const cursorMaterial = new MeshBasicMaterial({ color: Colors.GREEN4 });
 const cursor = new Mesh(cursorGeometry, cursorMaterial);
-// scene.add(cursor);
+scene.add(cursor);
 
 const pane = new Pane({ title: 'Debug' });
 pane.addBinding(uniforms.uRadius, 'value', {
@@ -93,22 +94,29 @@ let accelerationX = 0;
 let translateY = 0;
 let accelerationY = 0;
 
+const speed = 5;
+
 function render() {
   timer.update();
 
+  const delta = timer.getDelta();
+
+  const t = 1.0 - Math.exp(-speed * delta);
+  cursor.position.x = MathUtils.lerp(cursor.position.x, pos.x, t);
+
   // Updat cursor
-  const targetX = pos.x - translateX;
-  accelerationX += targetX;
-  accelerationX *= 0.95;
-  translateX += accelerationX * 0.002;
+  // const targetX = pos.x - translateX;
+  // accelerationX += targetX;
+  // accelerationX *= 0.95;
+  // translateX += accelerationX * 0.002;
 
-  const targetY = pos.y - translateY;
-  accelerationY += targetY;
-  accelerationY *= 0.95;
-  translateY += accelerationY * 0.002;
+  // const targetY = pos.y - translateY;
+  // accelerationY += targetY;
+  // accelerationY *= 0.95;
+  // translateY += accelerationY * 0.002;
 
-  cursor.position.x = translateX;
-  cursor.position.y = translateY;
+  // cursor.position.x = translateX;
+  // cursor.position.y = translateY;
 
   // Update
   controls.update();
