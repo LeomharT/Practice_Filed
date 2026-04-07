@@ -1,5 +1,5 @@
 import { Colors } from '@blueprintjs/colors';
-import { MathUtils } from 'three';
+import { MathUtils, type Vector2Like } from 'three';
 import './style.css';
 
 const size = {
@@ -58,7 +58,25 @@ function line() {
   ctx.restore();
 }
 
-line();
+function point(p: Vector2Like) {
+  ctx.save();
+
+  const s = 200;
+  ctx.fillStyle = Colors.GOLD5;
+  ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s);
+
+  ctx.restore();
+}
+
+function screen(p: Vector2Like) {
+  const x = ((p.x + 1.0) / 2.0) * size.width;
+  const y = -((p.y - 1.0) / 2.0) * size.height;
+
+  return {
+    x: x,
+    y: y,
+  };
+}
 
 let enabled = false;
 let targetAngle = 0;
@@ -99,7 +117,9 @@ function render(time: number = 0) {
   const t = 1.0 - Math.exp(-speed * delta);
 
   clean();
-  line();
+
+  point(screen({ x: 0, y: 0.25 }));
+
   requestAnimationFrame(render);
 }
 
