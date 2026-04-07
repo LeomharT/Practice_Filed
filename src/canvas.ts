@@ -10,11 +10,13 @@ import {
   Scene,
   ShaderMaterial,
   Timer,
+  Uniform,
   Vector2,
   Vector3,
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import { Pane } from 'tweakpane';
 import testFragmentShader from './shader/test/fragment.glsl?raw';
 import testVertexShader from './shader/test/vertex.glsl?raw';
 import './style.css';
@@ -52,8 +54,13 @@ const timer = new Timer();
 
 const raycaster = new Raycaster();
 
+const uniforms = {
+  uRadius: new Uniform(0.1),
+};
+
 const planeGeometry = new PlaneGeometry(3, 4, 16, 16);
 const planeMaterial = new ShaderMaterial({
+  uniforms,
   vertexShader: testVertexShader,
   fragmentShader: testFragmentShader,
 });
@@ -64,6 +71,14 @@ const cursorGeometry = new IcosahedronGeometry(0.08, 3);
 const cursorMaterial = new MeshBasicMaterial({ color: Colors.GREEN4 });
 const cursor = new Mesh(cursorGeometry, cursorMaterial);
 // scene.add(cursor);
+
+const pane = new Pane({ title: 'Debug' });
+pane.addBinding(uniforms.uRadius, 'value', {
+  label: 'Radius',
+  step: 0.001,
+  min: 0.0,
+  max: 0.5,
+});
 
 /**
  * Events
