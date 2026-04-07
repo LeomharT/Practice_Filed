@@ -2,10 +2,12 @@ import { Colors } from '@blueprintjs/colors';
 import {
   BoxGeometry,
   Color,
+  MathUtils,
   Mesh,
   MeshBasicMaterial,
   PerspectiveCamera,
   Scene,
+  Timer,
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
@@ -36,7 +38,10 @@ camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.maxPolarAngle = Math.PI / 2;
+controls.maxAzimuthAngle = Math.PI / 3;
+controls.minAzimuthAngle = -Math.PI / 3;
+
+const timer = new Timer();
 
 /**
  * World
@@ -50,7 +55,35 @@ const planeMaterial = new MeshBasicMaterial({
 const plane = new Mesh(planeGeometry, planeMaterial);
 scene.add(plane);
 
+const maxPolarAngle = Math.PI / 2;
+const minPolarAngle = 0;
+const maxAzimuthAngle = Math.PI / 3;
+const minAzimuthAngle = -Math.PI / 3;
+
+const speed = 10;
+
 function render() {
+  timer.update();
+
+  const delta = timer.getDelta();
+
+  const polar = controls.getPolarAngle();
+  const azimuth = controls.getAzimuthalAngle();
+
+  const t = 1.0 - Math.exp(-speed * delta);
+
+  const maxAngle = MathUtils.lerp(polar, maxPolarAngle, t);
+  const minAngle = MathUtils.lerp(polar, minPolarAngle, t);
+
+  const maxAzimuth = MathUtils.lerp(azimuth, maxAzimuthAngle, t);
+  const minAzimuth = MathUtils.lerp(azimuth, minAzimuthAngle, t);
+
+  controls.maxPolarAngle = maxAngle;
+  controls.minPolarAngle = minAngle;
+
+  controls.maxAzimuthAngle = maxAzimuth;
+  controls.minAzimuthAngle = minAzimuth;
+
   controls.update();
 
   renderer.render(scene, camera);
