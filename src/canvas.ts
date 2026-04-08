@@ -6,6 +6,7 @@ import {
   PlaneGeometry,
   Scene,
   ShaderMaterial,
+  Uniform,
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
@@ -45,8 +46,13 @@ controls.minAzimuthAngle = -Math.PI / 3;
  * World
  */
 
+const uniforms = {
+  uTime: new Uniform(0),
+};
+
 const planeGeometry = new PlaneGeometry(4, 4, 16, 16);
 const planeMaterial = new ShaderMaterial({
+  uniforms,
   vertexShader,
   fragmentShader,
 });
@@ -54,6 +60,8 @@ const plane = new Mesh(planeGeometry, planeMaterial);
 scene.add(plane);
 
 function render() {
+  uniforms.uTime.value += 0.016;
+
   controls.update();
 
   renderer.render(scene, camera);
