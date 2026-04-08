@@ -61,7 +61,7 @@ function line() {
 function point(p: Vector2Like) {
   ctx.save();
 
-  const s = 200;
+  const s = 50;
   ctx.fillStyle = Colors.GOLD5;
   ctx.fillRect(p.x - s / 2, p.y - s / 2, s, s);
 
@@ -79,32 +79,21 @@ function screen(p: Vector2Like) {
 }
 
 let enabled = false;
-let targetAngle = 0;
 
+const curr = {
+  x: 0,
+  y: 0,
+};
 const target = {
   x: 0,
   y: 0,
 };
 
-const center = {
-  x: size.width / 2,
-  y: size.height / 2,
-};
-
 canvas.addEventListener('pointerdown', () => (enabled = true));
 canvas.addEventListener('pointerup', () => (enabled = false));
 canvas.addEventListener('pointermove', (e) => {
-  if (enabled) {
-    target.x = e.clientX;
-    target.y = e.clientY;
-
-    targetAngle = Math.atan2(target.y - center.y, target.x - center.x);
-
-    for (const p of posisions) {
-      p.angle = Math.atan2(target.y - p.y, target.x - p.x);
-      p.angle += Math.PI / 2;
-    }
-  }
+  target.x = e.clientX;
+  target.y = e.clientY;
 });
 
 let prevTime = 0;
@@ -116,9 +105,12 @@ function render(time: number = 0) {
 
   const t = 1.0 - Math.exp(-speed * delta);
 
+  curr.x = MathUtils.lerp(curr.x, target.x, t);
+  curr.y = MathUtils.lerp(curr.y, target.y, t);
+
   clean();
 
-  point(screen({ x: 0, y: 0.25 }));
+  point({ x: curr.x, y: curr.y });
 
   requestAnimationFrame(render);
 }
