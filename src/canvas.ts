@@ -1,20 +1,25 @@
 import { Colors } from '@blueprintjs/colors';
 import {
+  AxesHelper,
   Color,
   DoubleSide,
   Mesh,
   PerspectiveCamera,
   PlaneGeometry,
   Scene,
+  ShaderChunk,
   ShaderMaterial,
   Uniform,
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
+import simplex2DNoise from './shader/include/simplex2DNoise.glsl?raw';
 import fragmentShader from './shader/test/fragment.glsl?raw';
 import vertexShader from './shader/test/vertex.glsl?raw';
 import './style.css';
+
+(ShaderChunk as any)['simplex2DNoise'] = simplex2DNoise;
 
 const size = {
   width: window.innerWidth,
@@ -36,7 +41,7 @@ const scene = new Scene();
 scene.background = new Color(Colors.BLACK);
 
 const camera = new PerspectiveCamera(70, size.width / size.height, 0.1, 1000);
-camera.position.set(0, 0, 3);
+camera.position.set(0, 8, 8);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -52,7 +57,7 @@ const uniforms = {
   uWidth: new Uniform(16.0),
 };
 
-const planeGeometry = new PlaneGeometry(16, 2, 16, 16);
+const planeGeometry = new PlaneGeometry(16, 16, 64, 64);
 const planeMaterial = new ShaderMaterial({
   uniforms,
   vertexShader,
@@ -60,21 +65,11 @@ const planeMaterial = new ShaderMaterial({
   side: DoubleSide,
 });
 const plane = new Mesh(planeGeometry, planeMaterial);
+plane.rotation.x = -Math.PI / 2;
 scene.add(plane);
 
-const plane2Geometry = new PlaneGeometry(8, 2, 16, 16);
-const plane2Material = new ShaderMaterial({
-  uniforms: {
-    uTime: new Uniform(0),
-    uWidth: new Uniform(8.0),
-  },
-  vertexShader,
-  fragmentShader,
-  side: DoubleSide,
-});
-const plane2 = new Mesh(plane2Geometry, plane2Material);
-plane2.position.z += 1;
-scene.add(plane2);
+const axesHelper = new AxesHelper(3);
+scene.add(axesHelper);
 
 const pane = new Pane({ title: 'Debug Pane' });
 pane
