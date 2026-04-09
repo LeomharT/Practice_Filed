@@ -1,6 +1,7 @@
 import { Colors } from '@blueprintjs/colors';
 import {
   Color,
+  DoubleSide,
   Mesh,
   PerspectiveCamera,
   PlaneGeometry,
@@ -10,6 +11,7 @@ import {
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import { Pane } from 'tweakpane';
 import fragmentShader from './shader/test/fragment.glsl?raw';
 import vertexShader from './shader/test/vertex.glsl?raw';
 import './style.css';
@@ -39,8 +41,6 @@ camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.maxAzimuthAngle = Math.PI / 3;
-controls.minAzimuthAngle = -Math.PI / 3;
 
 /**
  * World
@@ -48,20 +48,44 @@ controls.minAzimuthAngle = -Math.PI / 3;
 
 const uniforms = {
   uTime: new Uniform(0),
+  uColor: new Uniform(new Color(Colors.BLUE4)),
+  uWidth: new Uniform(16.0),
 };
 
-const planeGeometry = new PlaneGeometry(4, 4, 16, 16);
+const planeGeometry = new PlaneGeometry(16, 2, 16, 16);
 const planeMaterial = new ShaderMaterial({
   uniforms,
   vertexShader,
   fragmentShader,
+  side: DoubleSide,
 });
 const plane = new Mesh(planeGeometry, planeMaterial);
 scene.add(plane);
 
-function render() {
-  uniforms.uTime.value += 0.016;
+const plane2Geometry = new PlaneGeometry(8, 2, 16, 16);
+const plane2Material = new ShaderMaterial({
+  uniforms: {
+    uTime: new Uniform(0),
+    uWidth: new Uniform(8.0),
+  },
+  vertexShader,
+  fragmentShader,
+  side: DoubleSide,
+});
+const plane2 = new Mesh(plane2Geometry, plane2Material);
+plane2.position.z += 1;
+scene.add(plane2);
 
+const pane = new Pane({ title: 'Debug Pane' });
+pane
+  .addBinding(uniforms.uColor, 'value', {
+    color: { type: 'float' },
+  })
+  .on('change', (val) => {
+    uniforms.uColor.value = new Color(val.value).convertSRGBToLinear();
+  });
+
+function render() {
   controls.update();
 
   renderer.render(scene, camera);
