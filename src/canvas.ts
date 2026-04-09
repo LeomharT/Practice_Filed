@@ -52,8 +52,8 @@ controls.enableDamping = true;
  */
 
 const uniforms = {
-  uTime: new Uniform(0),
-  uColor: new Uniform(new Color(Colors.BLUE4)),
+  uTime: new Uniform(1),
+  uColor: new Uniform(new Color(Colors.BLUE4).convertSRGBToLinear()),
   uWidth: new Uniform(16.0),
 };
 
@@ -81,6 +81,8 @@ pane
   });
 
 function render() {
+  uniforms.uTime.value += 0.0016;
+
   controls.update();
 
   renderer.render(scene, camera);

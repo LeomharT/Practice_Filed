@@ -2,8 +2,10 @@
 
 varying vec3 vNormal;
 
+uniform float uTime;
+
 float getPositionY(vec2 v) {
-  float y = snoise(vec2(v.x / 50.0, v.y / 50.0));
+  float y = snoise(vec2(v.x / 50.0, uTime));
   y *= 0.4 * snoise(vec2(v.x / 28.0, v.y / 16.0));
   y *= 14.0 * snoise(vec2(v.x / 10.0, v.y / 10.0));
   return y;
