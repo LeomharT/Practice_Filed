@@ -2,20 +2,27 @@ import { Colors } from '@blueprintjs/colors';
 import {
   AxesHelper,
   Color,
-  IcosahedronGeometry,
-  MathUtils,
+  DoubleSide,
   Mesh,
-  MeshBasicMaterial,
   PerspectiveCamera,
   PlaneGeometry,
   Raycaster,
   Scene,
+  ShaderChunk,
+  ShaderMaterial,
   Timer,
+  Uniform,
   Vector2,
   Vector3,
   WebGLRenderer,
 } from 'three';
+import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import simplex2DNoise from './shader/include/simplex2DNoise.glsl?raw';
+import fragmentShader from './shader/test/fragment.glsl?raw';
+import vertexShader from './shader/test/vertex.glsl?raw';
 import './style.css';
+
+(ShaderChunk as any)['simplex2DNoise'] = simplex2DNoise;
 
 const size = {
   width: window.innerWidth,
@@ -36,9 +43,12 @@ el?.append(renderer.domElement);
 const scene = new Scene();
 scene.background = new Color(Colors.BLACK);
 
-const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(0, 0, 3);
+const camera = new PerspectiveCamera(50, size.width / size.height, 0.1, 1000);
+camera.position.set(3, 3, 3);
 camera.lookAt(scene.position);
+
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
 
 const raycaster = new Raycaster();
 
@@ -51,18 +61,21 @@ const timer = new Timer();
 const cursor = new Vector2();
 const pointer = new Vector3();
 
-const planeGeometry = new PlaneGeometry(5, 5, 16, 16);
-const planeMaterial = new MeshBasicMaterial({
-  color: 'lightBlue',
-  wireframe: true,
+console.log(vertexShader);
+
+const planeGeometry = new PlaneGeometry(5, 5, 128, 128);
+const planeMaterial = new ShaderMaterial({
+  vertexShader,
+  fragmentShader,
+  uniforms: {
+    uColor: new Uniform(new Color(Colors.GOLD3)),
+    uDirection: new Uniform(new Vector3(3, 1, 3).normalize()),
+  },
+  side: DoubleSide,
 });
 const plane = new Mesh(planeGeometry, planeMaterial);
+plane.rotation.x = -Math.PI / 2;
 scene.add(plane);
-
-const ballGeometry = new IcosahedronGeometry(0.1, 3);
-const ballMaterial = new MeshBasicMaterial();
-const ball = new Mesh(ballGeometry, ballMaterial);
-scene.add(ball);
 
 const axesHelper = new AxesHelper();
 scene.add(axesHelper);
@@ -76,11 +89,7 @@ const speed = 10;
 function render() {
   // Update
   timer.update();
-  const delta = timer.getDelta();
-  const t = 1.0 - Math.exp(speed * -delta);
-
-  ball.position.x = MathUtils.lerp(ball.position.x, pointer.x, t);
-  ball.position.y = MathUtils.lerp(ball.position.y, pointer.y, t);
+  controls.update(timer.getDelta());
 
   // Render
   renderer.render(scene, camera);
