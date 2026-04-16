@@ -3,13 +3,16 @@ import {
   AxesHelper,
   Color,
   DoubleSide,
+  IcosahedronGeometry,
   Mesh,
+  MeshBasicMaterial,
   PerspectiveCamera,
   PlaneGeometry,
   Raycaster,
   Scene,
   ShaderChunk,
   ShaderMaterial,
+  Spherical,
   Timer,
   Uniform,
   Vector2,
@@ -17,6 +20,7 @@ import {
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import { Pane } from 'tweakpane';
 import simplex2DNoise from './shader/include/simplex2DNoise.glsl?raw';
 import fragmentShader from './shader/test/fragment.glsl?raw';
 import vertexShader from './shader/test/vertex.glsl?raw';
@@ -61,24 +65,61 @@ const timer = new Timer();
 const cursor = new Vector2();
 const pointer = new Vector3();
 
-console.log(vertexShader);
+const uniforms = {
+  uColor: new Uniform(new Color(Colors.GOLD3)),
+  uDirection: new Uniform(new Vector3()),
+};
 
 const planeGeometry = new PlaneGeometry(5, 5, 128, 128);
+planeGeometry.rotateX(-Math.PI / 2);
 const planeMaterial = new ShaderMaterial({
   vertexShader,
   fragmentShader,
-  uniforms: {
-    uColor: new Uniform(new Color(Colors.GOLD3)),
-    uDirection: new Uniform(new Vector3(3, 1, 3).normalize()),
-  },
+  uniforms,
   side: DoubleSide,
 });
 const plane = new Mesh(planeGeometry, planeMaterial);
-plane.rotation.x = -Math.PI / 2;
 scene.add(plane);
+
+const ballSpherical = new Spherical(1.0, Math.PI / 2, 0.5);
+const ballPosition = new Vector3();
+
+const ballGeometry = new IcosahedronGeometry(0.1, 3);
+const ballMaterial = new MeshBasicMaterial({ color: 'yellow' });
+const ball = new Mesh(ballGeometry, ballMaterial);
+scene.add(ball);
+
+function updateBall() {
+  // Position
+  ballPosition.setFromSpherical(ballSpherical);
+
+  // Uniforms
+  uniforms.uDirection.value.copy(ballPosition);
+
+  //Ball
+  ball.position.copy(ballPosition.clone().multiplyScalar(5.0));
+}
+
+updateBall();
 
 const axesHelper = new AxesHelper();
 scene.add(axesHelper);
+
+const pane = new Pane({ title: 'Debug' });
+pane
+  .addBinding(ballSpherical, 'theta', {
+    step: 0.01,
+    min: -Math.PI,
+    max: Math.PI,
+  })
+  .on('change', updateBall);
+pane
+  .addBinding(ballSpherical, 'phi', {
+    step: 0.01,
+    min: 0,
+    max: Math.PI,
+  })
+  .on('change', updateBall);
 
 /**
  * Events
