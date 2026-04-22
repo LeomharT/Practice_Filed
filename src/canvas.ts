@@ -1,11 +1,11 @@
 import { Colors } from '@blueprintjs/colors';
 import {
-  AxesHelper,
   Color,
   IcosahedronGeometry,
   Mesh,
   MeshBasicMaterial,
   PerspectiveCamera,
+  PlaneGeometry,
   Scene,
   ShaderChunk,
   ShaderMaterial,
@@ -16,7 +16,6 @@ import {
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
-import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { Pane } from 'tweakpane';
 import simplex4DNoise from './shader/include/simplex4DNoise.glsl?raw';
 import fragmentShader from './shader/test/fragment.glsl?raw';
@@ -49,7 +48,7 @@ const scene = new Scene();
 scene.background = new Color(Colors.BLACK);
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(3, 3, 3);
+camera.position.set(0, 0, 1.2);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -83,18 +82,18 @@ function updateSun() {
 }
 updateSun();
 
-const ballGeometry = mergeVertices(new IcosahedronGeometry(2, 50));
-ballGeometry.computeTangents();
-const ballMaterial = new ShaderMaterial({
+const GOLDENRATIO = 1.61803398875;
+
+const planeGeometry = new PlaneGeometry(1, GOLDENRATIO, 16, 16);
+planeGeometry.computeTangents();
+const planeMaterial = new ShaderMaterial({
   uniforms,
   vertexShader,
   fragmentShader,
+  transparent: true,
 });
-const ball = new Mesh(ballGeometry, ballMaterial);
-scene.add(ball);
-
-const axesHelper = new AxesHelper(3);
-scene.add(axesHelper);
+const plane = new Mesh(planeGeometry, planeMaterial);
+scene.add(plane);
 
 /**
  * Debug
