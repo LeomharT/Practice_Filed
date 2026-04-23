@@ -1,6 +1,5 @@
 import { Colors } from '@blueprintjs/colors';
 import {
-  Color,
   IcosahedronGeometry,
   Mesh,
   MeshBasicMaterial,
@@ -45,7 +44,6 @@ renderer.setPixelRatio(size.pixelRatio);
 el?.append(renderer.domElement);
 
 const scene = new Scene();
-scene.background = new Color(Colors.BLACK);
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
 camera.position.set(0, 0, 1.2);
