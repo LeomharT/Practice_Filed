@@ -1,13 +1,19 @@
 import {
+  Mesh,
   PerspectiveCamera,
+  PlaneGeometry,
   Scene,
   ShaderChunk,
+  ShaderMaterial,
   Timer,
+  Uniform,
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import { Pane } from 'tweakpane';
 import simplex4DNoise from './shader/include/simplex4DNoise.glsl?raw';
+import fragmentShader from './shader/test/fragment.glsl?raw';
+import vertexShader from './shader/test/vertex.glsl?raw';
 import './style.css';
 
 (ShaderChunk as any)['simplex4DNoise'] = simplex4DNoise;
@@ -47,11 +53,34 @@ const timer = new Timer();
  * World
  */
 
+const GOLDENRATIO = 1.61803398875;
+
+const uniforms = {
+  uRadius: new Uniform(0.1),
+  uRatio: new Uniform(1 / GOLDENRATIO),
+};
+
+const planeGeometry = new PlaneGeometry(1, GOLDENRATIO, 2, 2);
+const planeMaterial = new ShaderMaterial({
+  uniforms,
+  fragmentShader,
+  vertexShader,
+});
+const plane = new Mesh(planeGeometry, planeMaterial);
+
+scene.add(plane);
+
 /**
  * Debug
  */
 
 const pane = new Pane({ title: 'Debug' });
+pane.addBinding(uniforms.uRadius, 'value', {
+  label: 'radius',
+  step: 0.001,
+  max: 0.5,
+  min: 0,
+});
 
 /**
  * Events
