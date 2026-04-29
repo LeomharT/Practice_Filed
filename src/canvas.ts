@@ -1,4 +1,6 @@
+import { Colors } from '@blueprintjs/colors';
 import {
+  Color,
   Mesh,
   PerspectiveCamera,
   PlaneGeometry,
@@ -39,9 +41,10 @@ renderer.setPixelRatio(size.pixelRatio);
 el?.append(renderer.domElement);
 
 const scene = new Scene();
+scene.background = new Color(Colors.BLACK);
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(0, 0, 1.2);
+camera.position.set(1, 1, 1.2);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -53,21 +56,21 @@ const timer = new Timer();
  * World
  */
 
-const GOLDENRATIO = 1.61803398875;
-
 const uniforms = {
-  uRadius: new Uniform(0.1),
-  uRatio: new Uniform(1 / GOLDENRATIO),
+  uColor: new Uniform(new Color(Colors.BLUE4).convertLinearToSRGB()),
 };
 
-const planeGeometry = new PlaneGeometry(1, GOLDENRATIO, 2, 2);
+const GOLDENRATIO = 1.61803398875;
+
+const planeGeometry = new PlaneGeometry(GOLDENRATIO, GOLDENRATIO, 16, 16);
+planeGeometry.computeTangents();
 const planeMaterial = new ShaderMaterial({
   uniforms,
   fragmentShader,
   vertexShader,
 });
 const plane = new Mesh(planeGeometry, planeMaterial);
-
+plane.rotation.x = -Math.PI / 2;
 scene.add(plane);
 
 /**
@@ -75,12 +78,11 @@ scene.add(plane);
  */
 
 const pane = new Pane({ title: 'Debug' });
-pane.addBinding(uniforms.uRadius, 'value', {
-  label: 'radius',
-  step: 0.001,
-  max: 0.5,
-  min: 0,
-});
+pane
+  .addBinding(uniforms.uColor, 'value', {
+    color: { type: 'float' },
+  })
+  .on('change', (val) => (uniforms.uColor.value = new Color(val.value).convertSRGBToLinear()));
 
 /**
  * Events
