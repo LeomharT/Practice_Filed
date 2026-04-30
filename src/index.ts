@@ -155,8 +155,6 @@ function getAttributeData(instance: number, width: number) {
     let offsetX = Math.random() * width - width / 2;
     let offsetZ = Math.random() * width - width / 2;
 
-    const distance = offsetX * offsetX + offsetZ * offsetZ;
-
     // if (Math.pow(distance, 2.0) < 100.0) {
     //   offsetX += Math.random() * 10;
     //   offsetZ += Math.random() * 10;
@@ -496,7 +494,6 @@ function render() {
 
   // Time
   const delta = clock.getDelta();
-  const elapsed = clock.getElapsed();
 
   uniforms.uTime.value += delta * 0.5;
 

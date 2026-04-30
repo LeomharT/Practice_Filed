@@ -43,7 +43,7 @@ renderer.setPixelRatio(size.pixelRatio);
 el?.append(renderer.domElement);
 
 const scene = new Scene();
-scene.background = new Color(Colors.BLACK);
+scene.background = new Color(Colors.WHITE);
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
 camera.position.set(0, 0, 1.5);
@@ -58,15 +58,21 @@ const timer = new Timer();
  * World
  */
 
-const uniforms = {
-  uRadius: new Uniform(0.1),
-};
-
 const GOLDENRATIO = 1.61803398875;
 
+const uniforms = {
+  uRadius: new Uniform(0.1),
+  uBorder: new Uniform(0.1),
+  uRatio: new Uniform(1 / GOLDENRATIO),
+};
+
 const planeGeometry = new PlaneGeometry(1, GOLDENRATIO, 32, 32);
-planeGeometry.computeTangents();
 const planeMaterial = new ShaderMaterial({
+  extensions: {
+    derivatives: true,
+  } as any,
+  transparent: true,
+  uniforms,
   fragmentShader,
   vertexShader,
 });
@@ -79,7 +85,8 @@ scene.add(plane);
  */
 
 const pane = new Pane({ title: 'Debug' });
-pane.addBinding(uniforms.uRadius, 'value', {});
+pane.addBinding(uniforms.uRadius, 'value', { min: 0, max: 0.5, step: 0.001 });
+pane.addBinding(uniforms.uBorder, 'value', { min: 0, max: 0.2, step: 0.001 });
 
 /**
  * Events
