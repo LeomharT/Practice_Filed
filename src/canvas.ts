@@ -1,28 +1,21 @@
 import { Colors } from '@blueprintjs/colors';
 import {
+  AxesHelper,
   Color,
   IcosahedronGeometry,
-  MathUtils,
   Mesh,
   MeshBasicMaterial,
   PerspectiveCamera,
-  PlaneGeometry,
   Raycaster,
   Scene,
   ShaderChunk,
-  ShaderMaterial,
   Timer,
-  Uniform,
-  Vector2,
   Vector3,
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
-import { Pane } from 'tweakpane';
 import simplex2DNoise from './shader/include/simplex2DNoise.glsl?raw';
 import simplex4DNoise from './shader/include/simplex4DNoise.glsl?raw';
-import fragmentShader from './shader/test/fragment.glsl?raw';
-import vertexShader from './shader/test/vertex.glsl?raw';
 import './style.css';
 
 (ShaderChunk as any)['simplex4DNoise'] = simplex4DNoise;
@@ -52,7 +45,7 @@ const scene = new Scene();
 scene.background = new Color(Colors.WHITE);
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(0, 0, 1.5);
+camera.position.set(0, 0, 3);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -61,64 +54,59 @@ controls.enableDamping = true;
 const timer = new Timer();
 
 const raycaster = new Raycaster();
+const position = new Vector3(1, 1, 1);
+
+/**
+ * DOM
+ */
+
+const tip = document.createElement('div');
+tip.classList.add('tip');
+document.body.append(tip);
 
 /**
  * World
  */
 
-const GOLDENRATIO = 1.61803398875;
+const ballGeometry = new IcosahedronGeometry(1, 20);
+const ballMaterial = new MeshBasicMaterial({ color: Colors.CERULEAN4 });
+const ball = new Mesh(ballGeometry, ballMaterial);
+scene.add(ball);
 
-const uniforms = {
-  uRadius: new Uniform(0.1),
-  uBorder: new Uniform(0.1),
-  uRatio: new Uniform(1 / GOLDENRATIO),
-};
+const axesHelper = new AxesHelper(3);
+scene.add(axesHelper);
 
-const planeGeometry = new PlaneGeometry(1, GOLDENRATIO, 32, 32);
-const planeMaterial = new ShaderMaterial({
-  extensions: {
-    derivatives: true,
-  } as any,
-  transparent: true,
-  uniforms,
-  fragmentShader,
-  vertexShader,
-});
-const plane = new Mesh(planeGeometry, planeMaterial);
-plane.receiveShadow = true;
-scene.add(plane);
+function updateTip() {
+  const screenPosition = position.clone().project(camera);
 
-const b = new Mesh(new IcosahedronGeometry(0.1, 3), new MeshBasicMaterial({ color: Colors.GOLD1 }));
-scene.add(b);
+  let x = (screenPosition.x + 1.0) / 2.0;
+  x *= size.width;
+
+  let y = -(screenPosition.y - 1.0) / 2.0;
+  y *= size.height;
+
+  console.log(screenPosition.x);
+
+  tip.style.transform = `translateX(${x}px) translateY(${y}px)`;
+}
+updateTip();
+
+controls.addEventListener('change', updateTip);
 
 /**
  * Debug
  */
 
-const pane = new Pane({ title: 'Debug' });
-pane.addBinding(uniforms.uRadius, 'value', { min: 0, max: 0.5, step: 0.001 });
-pane.addBinding(uniforms.uBorder, 'value', { min: 0, max: 0.2, step: 0.001 });
-
 /**
  * Events
  */
 
-const cursor = new Vector2();
-const pointer = new Vector3();
-
-const speed = 5;
-
 function render() {
   // Update
   timer.update();
-
   const delta = timer.getDelta();
-  const t = 1.0 - Math.exp(speed * -delta);
 
   controls.update(delta);
-
-  b.position.x = MathUtils.lerp(b.position.x, pointer.x, t);
-  b.position.y = MathUtils.lerp(b.position.y, pointer.y, t);
 
   // Render
   renderer.render(scene, camera);
@@ -135,17 +123,4 @@ window.addEventListener('resize', () => {
 
   camera.aspect = size.width / size.height;
   camera.updateProjectionMatrix();
-});
-
-renderer.domElement.addEventListener('pointermove', (e) => {
-  cursor.x = (e.clientX / window.innerWidth) * 2.0 - 1.0;
-  cursor.y = -(e.clientY / window.innerHeight) * 2.0 + 1.0;
-
-  raycaster.setFromCamera(cursor, camera);
-
-  const intersect = raycaster.intersectObject(plane, true);
-
-  if (intersect.length) {
-    pointer.copy(intersect[0].point);
-  }
 });
