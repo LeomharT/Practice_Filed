@@ -1,14 +1,20 @@
 import { Colors } from '@blueprintjs/colors';
 import {
   Color,
+  IcosahedronGeometry,
+  MathUtils,
   Mesh,
+  MeshBasicMaterial,
   PerspectiveCamera,
   PlaneGeometry,
+  Raycaster,
   Scene,
   ShaderChunk,
   ShaderMaterial,
   Timer,
   Uniform,
+  Vector2,
+  Vector3,
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
@@ -54,6 +60,8 @@ controls.enableDamping = true;
 
 const timer = new Timer();
 
+const raycaster = new Raycaster();
+
 /**
  * World
  */
@@ -80,6 +88,9 @@ const plane = new Mesh(planeGeometry, planeMaterial);
 plane.receiveShadow = true;
 scene.add(plane);
 
+const b = new Mesh(new IcosahedronGeometry(0.1, 3), new MeshBasicMaterial({ color: Colors.GOLD1 }));
+scene.add(b);
+
 /**
  * Debug
  */
@@ -92,10 +103,23 @@ pane.addBinding(uniforms.uBorder, 'value', { min: 0, max: 0.2, step: 0.001 });
  * Events
  */
 
+const cursor = new Vector2();
+const pointer = new Vector3();
+
+const speed = 5;
+
 function render() {
   // Update
   timer.update();
-  controls.update(timer.getDelta());
+
+  const delta = timer.getDelta();
+  const t = 1.0 - Math.exp(speed * -delta);
+
+  controls.update(delta);
+
+  b.position.x = MathUtils.lerp(b.position.x, pointer.x, t);
+  b.position.y = MathUtils.lerp(b.position.y, pointer.y, t);
+
   // Render
   renderer.render(scene, camera);
   // Loop
@@ -111,4 +135,17 @@ window.addEventListener('resize', () => {
 
   camera.aspect = size.width / size.height;
   camera.updateProjectionMatrix();
+});
+
+renderer.domElement.addEventListener('pointermove', (e) => {
+  cursor.x = (e.clientX / window.innerWidth) * 2.0 - 1.0;
+  cursor.y = -(e.clientY / window.innerHeight) * 2.0 + 1.0;
+
+  raycaster.setFromCamera(cursor, camera);
+
+  const intersect = raycaster.intersectObject(plane, true);
+
+  if (intersect.length) {
+    pointer.copy(intersect[0].point);
+  }
 });
