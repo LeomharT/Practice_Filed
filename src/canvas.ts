@@ -10,6 +10,7 @@ import {
   Scene,
   ShaderChunk,
   Timer,
+  Vector2,
   Vector3,
   WebGLRenderer,
 } from 'three';
@@ -54,7 +55,7 @@ controls.enableDamping = true;
 const timer = new Timer();
 
 const raycaster = new Raycaster();
-const position = new Vector3(1, 1, 1);
+const position = new Vector3(0.75, 0.75, 0.75);
 
 /**
  * DOM
@@ -62,6 +63,12 @@ const position = new Vector3(1, 1, 1);
 
 const tip = document.createElement('div');
 tip.classList.add('tip');
+
+const label = document.createElement('div');
+
+label.classList.add('label');
+tip.append(label);
+
 document.body.append(tip);
 
 /**
@@ -76,18 +83,38 @@ scene.add(ball);
 const axesHelper = new AxesHelper(3);
 scene.add(axesHelper);
 
+const screenPosition = new Vector3();
+const screenPositionV2 = new Vector2();
+
 function updateTip() {
-  const screenPosition = position.clone().project(camera);
+  screenPosition.copy(position.clone().project(camera));
+  screenPositionV2.x = screenPosition.x;
+  screenPositionV2.y = screenPosition.y;
 
-  let x = (screenPosition.x + 1.0) / 2.0;
-  x *= size.width;
+  const x = (screenPosition.x + 1.0) / 2.0;
 
-  let y = -(screenPosition.y - 1.0) / 2.0;
-  y *= size.height;
+  const y = -(screenPosition.y - 1.0) / 2.0;
 
-  console.log(screenPosition.x);
+  raycaster.setFromCamera(screenPositionV2, camera);
 
-  tip.style.transform = `translateX(${x}px) translateY(${y}px)`;
+  const intersect = raycaster.intersectObjects([ball]);
+
+  // Vsiable
+  if (intersect.length === 0) {
+    label.classList.add('visiable');
+    // Hiddent
+  } else {
+    const distanceToMesh = intersect[0].distance;
+    const distanceToCamera = position.distanceTo(camera.position);
+
+    if (distanceToMesh > distanceToCamera) {
+      label.classList.add('visiable');
+    } else {
+      label.classList.remove('visiable');
+    }
+  }
+
+  tip.style.transform = `translateX(${x * size.width}px) translateY(${y * size.height}px)`;
 }
 updateTip();
 
