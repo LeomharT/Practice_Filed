@@ -101,16 +101,16 @@ function updateTip() {
 
   // Vsiable
   if (intersect.length === 0) {
-    label.classList.add('visiable');
+    label.classList.add('visible');
     // Hiddent
   } else {
     const distanceToMesh = intersect[0].distance;
     const distanceToCamera = position.distanceTo(camera.position);
 
     if (distanceToMesh > distanceToCamera) {
-      label.classList.add('visiable');
+      label.classList.add('visible');
     } else {
-      label.classList.remove('visiable');
+      label.classList.remove('visible');
     }
   }
 

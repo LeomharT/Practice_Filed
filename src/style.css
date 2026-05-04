@@ -28,6 +28,6 @@ body {
   transform: scale(0, 0);
 }
 
-.visiable {
+.visible {
   transform: scale(1, 1);
 }
