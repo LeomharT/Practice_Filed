@@ -1,7 +1,9 @@
 import { Colors } from '@blueprintjs/colors';
 import {
   Color,
+  IcosahedronGeometry,
   Mesh,
+  MeshBasicMaterial,
   PerspectiveCamera,
   PlaneGeometry,
   Scene,
@@ -68,7 +70,11 @@ const planeMaterial = new ShaderMaterial({
   fragmentShader,
 });
 const plane = new Mesh(planeGeometry, planeMaterial);
+plane.position.set(2, 2, 2);
 scene.add(plane);
+
+const ball = new Mesh(new IcosahedronGeometry(1, 3), new MeshBasicMaterial());
+scene.add(ball);
 
 /**
  * Debug
