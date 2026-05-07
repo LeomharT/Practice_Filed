@@ -1,22 +1,21 @@
 import { Colors } from '@blueprintjs/colors';
 import {
-  AxesHelper,
   Color,
-  IcosahedronGeometry,
   Mesh,
-  MeshBasicMaterial,
   PerspectiveCamera,
-  Raycaster,
+  PlaneGeometry,
   Scene,
   ShaderChunk,
+  ShaderMaterial,
   Timer,
-  Vector2,
-  Vector3,
+  Uniform,
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import simplex2DNoise from './shader/include/simplex2DNoise.glsl?raw';
 import simplex4DNoise from './shader/include/simplex4DNoise.glsl?raw';
+import fragmentShader from './shader/test/fragment.glsl?raw';
+import vertexShader from './shader/test/vertex.glsl?raw';
 import './style.css';
 
 (ShaderChunk as any)['simplex4DNoise'] = simplex4DNoise;
@@ -43,7 +42,7 @@ renderer.setPixelRatio(size.pixelRatio);
 el?.append(renderer.domElement);
 
 const scene = new Scene();
-scene.background = new Color(Colors.WHITE);
+scene.background = new Color(Colors.BLACK);
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
 camera.position.set(0, 0, 3);
@@ -54,71 +53,22 @@ controls.enableDamping = true;
 
 const timer = new Timer();
 
-const raycaster = new Raycaster();
-const position = new Vector3(0.75, 0.75, 0.75);
-
-/**
- * DOM
- */
-
-const tip = document.createElement('div');
-tip.classList.add('tip');
-
-const label = document.createElement('div');
-
-label.classList.add('label');
-tip.append(label);
-
-document.body.append(tip);
-
 /**
  * World
  */
 
-const ballGeometry = new IcosahedronGeometry(1, 20);
-const ballMaterial = new MeshBasicMaterial({ color: Colors.CERULEAN4 });
-const ball = new Mesh(ballGeometry, ballMaterial);
-scene.add(ball);
+const uniforms = {
+  uTime: new Uniform(0),
+};
 
-const axesHelper = new AxesHelper(3);
-scene.add(axesHelper);
-
-const screenPosition = new Vector3();
-const screenPositionV2 = new Vector2();
-
-function updateTip() {
-  screenPosition.copy(position.clone().project(camera));
-  screenPositionV2.x = screenPosition.x;
-  screenPositionV2.y = screenPosition.y;
-
-  const x = (screenPosition.x + 1.0) / 2.0;
-
-  const y = -(screenPosition.y - 1.0) / 2.0;
-
-  raycaster.setFromCamera(screenPositionV2, camera);
-
-  const intersect = raycaster.intersectObjects([ball]);
-
-  // Vsiable
-  if (intersect.length === 0) {
-    label.classList.add('visible');
-    // Hiddent
-  } else {
-    const distanceToMesh = intersect[0].distance;
-    const distanceToCamera = position.distanceTo(camera.position);
-
-    if (distanceToMesh > distanceToCamera) {
-      label.classList.add('visible');
-    } else {
-      label.classList.remove('visible');
-    }
-  }
-
-  tip.style.transform = `translateX(${x * size.width}px) translateY(${y * size.height}px)`;
-}
-updateTip();
-
-controls.addEventListener('change', updateTip);
+const planeGeometry = new PlaneGeometry(1, 1, 16, 16);
+const planeMaterial = new ShaderMaterial({
+  uniforms,
+  vertexShader,
+  fragmentShader,
+});
+const plane = new Mesh(planeGeometry, planeMaterial);
+scene.add(plane);
 
 /**
  * Debug
@@ -134,6 +84,8 @@ function render() {
   const delta = timer.getDelta();
 
   controls.update(delta);
+
+  uniforms.uTime.value += delta;
 
   // Render
   renderer.render(scene, camera);
