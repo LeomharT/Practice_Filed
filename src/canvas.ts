@@ -1,7 +1,7 @@
 import { Colors } from '@blueprintjs/colors';
 import {
+  BoxGeometry,
   Color,
-  IcosahedronGeometry,
   Mesh,
   MeshBasicMaterial,
   PerspectiveCamera,
@@ -12,6 +12,7 @@ import {
   Timer,
   Uniform,
   WebGLRenderer,
+  WebGLRenderTarget,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import simplex2DNoise from './shader/include/simplex2DNoise.glsl?raw';
@@ -55,12 +56,17 @@ controls.enableDamping = true;
 
 const timer = new Timer();
 
+const frameRender = new WebGLRenderTarget(size.width, size.height, {
+  generateMipmaps: true,
+});
+
 /**
  * World
  */
 
 const uniforms = {
   uTime: new Uniform(0),
+  uFrame: new Uniform(frameRender.texture),
 };
 
 const planeGeometry = new PlaneGeometry(1, 1, 16, 16);
@@ -70,10 +76,10 @@ const planeMaterial = new ShaderMaterial({
   fragmentShader,
 });
 const plane = new Mesh(planeGeometry, planeMaterial);
-plane.position.set(2, 2, 2);
+plane.position.set(1, 1, 1);
 scene.add(plane);
 
-const ball = new Mesh(new IcosahedronGeometry(1, 3), new MeshBasicMaterial());
+const ball = new Mesh(new BoxGeometry(1, 1, 1), new MeshBasicMaterial());
 scene.add(ball);
 
 /**
@@ -83,6 +89,14 @@ scene.add(ball);
 /**
  * Events
  */
+
+function renderFrame() {
+  renderer.setRenderTarget(frameRender);
+  plane.visible = false;
+  renderer.render(scene, camera);
+  plane.visible = true;
+  renderer.setRenderTarget(null);
+}
 
 function render() {
   // Update
@@ -94,6 +108,7 @@ function render() {
   uniforms.uTime.value += delta;
 
   // Render
+  renderFrame();
   renderer.render(scene, camera);
   // Loop
   requestAnimationFrame(render);

@@ -1,4 +1,5 @@
 varying vec2 vUv;
+varying vec3 vNDC;
 
 uniform float uTime;
 
@@ -24,6 +25,9 @@ void main(){
 
   gl_Position = projectionMatrix;
 
+  vec3 ndc = gl_Position.xyz / gl_Position.w;
+
   // Varying
-  vUv = uv;
+  vUv  = uv;
+  vNDC = ndc * 0.5 + 0.5;
 }
