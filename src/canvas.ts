@@ -14,7 +14,12 @@ import {
   WebGLRenderer,
   WebGLRenderTarget,
 } from 'three';
-import { OrbitControls } from 'three/examples/jsm/Addons.js';
+import {
+  EffectComposer,
+  OrbitControls,
+  OutputPass,
+  RenderPass,
+} from 'three/examples/jsm/Addons.js';
 import simplex2DNoise from './shader/include/simplex2DNoise.glsl?raw';
 import simplex4DNoise from './shader/include/simplex4DNoise.glsl?raw';
 import fragmentShader from './shader/test/fragment.glsl?raw';
@@ -60,6 +65,19 @@ const frameRender = new WebGLRenderTarget(size.width, size.height, {
   generateMipmaps: true,
   samples: 4,
 });
+
+const renderScene = new RenderPass(scene, camera);
+const outputPass = new OutputPass();
+
+const composer = new EffectComposer(
+  renderer,
+  new WebGLRenderTarget(size.width * size.pixelRatio, size.height * size.pixelRatio, {
+    samples: 4,
+    generateMipmaps: true,
+  }),
+);
+composer.addPass(renderScene);
+composer.addPass(outputPass);
 
 /**
  * World
@@ -110,7 +128,7 @@ function render() {
 
   // Render
   renderFrame();
-  renderer.render(scene, camera);
+  composer.render();
   // Loop
   requestAnimationFrame(render);
 }
