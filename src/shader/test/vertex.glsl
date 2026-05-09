@@ -21,9 +21,9 @@ void main(){
   p.xy            = rotateUV(p.xy, uTime);
   viewPosition.xy += p.xy;
 
-  vec4 projectionMatrix = projectionMatrix * viewPosition;
+  vec4 projectionPosition = projectionMatrix * viewPosition;
 
-  gl_Position = projectionMatrix;
+  gl_Position = projectionPosition;
 
   vec3 ndc = gl_Position.xyz / gl_Position.w;
 

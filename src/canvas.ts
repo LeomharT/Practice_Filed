@@ -58,6 +58,7 @@ const timer = new Timer();
 
 const frameRender = new WebGLRenderTarget(size.width, size.height, {
   generateMipmaps: true,
+  samples: 4,
 });
 
 /**
