@@ -2,6 +2,7 @@ import { Colors } from '@blueprintjs/colors';
 import {
   BoxGeometry,
   Color,
+  IcosahedronGeometry,
   Mesh,
   MeshBasicMaterial,
   PerspectiveCamera,
@@ -88,7 +89,8 @@ const uniforms = {
   uFrame: new Uniform(frameRender.texture),
 };
 
-const planeGeometry = new PlaneGeometry(1, 1, 16, 16);
+const planeGeometry = new PlaneGeometry(1, 1, 128, 128);
+console.log(planeGeometry);
 const planeMaterial = new ShaderMaterial({
   uniforms,
   vertexShader,
@@ -99,7 +101,13 @@ plane.position.set(1, 1, 1);
 scene.add(plane);
 
 const ball = new Mesh(new BoxGeometry(1, 1, 1), new MeshBasicMaterial());
+ball.visible = false;
 scene.add(ball);
+
+const r = 3;
+
+const sun = new Mesh(new IcosahedronGeometry(0.1, 3), new MeshBasicMaterial());
+scene.add(sun);
 
 /**
  * Debug
@@ -112,8 +120,10 @@ scene.add(ball);
 function renderFrame() {
   renderer.setRenderTarget(frameRender);
   plane.visible = false;
+  ball.visible = true;
   renderer.render(scene, camera);
   plane.visible = true;
+  ball.visible = false;
   renderer.setRenderTarget(null);
 }
 
@@ -126,9 +136,13 @@ function render() {
 
   uniforms.uTime.value += delta;
 
+  sun.position.x = r * Math.cos(uniforms.uTime.value);
+  sun.position.z = r * Math.sin(uniforms.uTime.value);
+
   // Render
   renderFrame();
   composer.render();
+
   // Loop
   requestAnimationFrame(render);
 }
