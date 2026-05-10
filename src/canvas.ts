@@ -12,6 +12,7 @@ import {
   ShaderMaterial,
   Timer,
   Uniform,
+  Vector2,
   WebGLRenderer,
   WebGLRenderTarget,
 } from 'three';
@@ -20,11 +21,16 @@ import {
   OrbitControls,
   OutputPass,
   RenderPass,
+  ShaderPass,
+  UnrealBloomPass,
 } from 'three/examples/jsm/Addons.js';
 import simplex2DNoise from './shader/include/simplex2DNoise.glsl?raw';
 import simplex4DNoise from './shader/include/simplex4DNoise.glsl?raw';
+import bloomFragmentShader from './shader/test/bloom/fragment.glsl?raw';
+import bloomVertexShader from './shader/test/bloom/vertex.glsl?raw';
 import fragmentShader from './shader/test/fragment.glsl?raw';
 import vertexShader from './shader/test/vertex.glsl?raw';
+
 import './style.css';
 
 (ShaderChunk as any)['simplex4DNoise'] = simplex4DNoise;
@@ -69,6 +75,24 @@ const frameRender = new WebGLRenderTarget(size.width, size.height, {
 
 const renderScene = new RenderPass(scene, camera);
 const outputPass = new OutputPass();
+const bloomPass = new UnrealBloomPass(new Vector2(size.width, size.height), 0.5, 0.5, 0.0);
+
+const bloomComposer = new EffectComposer(renderer);
+bloomComposer.renderToScreen = false;
+bloomComposer.addPass(renderScene);
+bloomComposer.addPass(bloomPass);
+
+const mixPass = new ShaderPass(
+  new ShaderMaterial({
+    uniforms: {
+      uDiffuse: new Uniform(null),
+      uBloomTexture: new Uniform(bloomComposer.renderTarget2.texture),
+    },
+    vertexShader: bloomVertexShader,
+    fragmentShader: bloomFragmentShader,
+  }),
+  'uDiffuse',
+);
 
 const composer = new EffectComposer(
   renderer,
@@ -78,6 +102,7 @@ const composer = new EffectComposer(
   }),
 );
 composer.addPass(renderScene);
+composer.addPass(mixPass);
 composer.addPass(outputPass);
 
 /**
@@ -141,6 +166,7 @@ function render() {
 
   // Render
   renderFrame();
+  bloomComposer.render();
   composer.render();
 
   // Loop
