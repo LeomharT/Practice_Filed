@@ -1,5 +1,6 @@
 import {
   BoxGeometry,
+  Color,
   HalfFloatType,
   IcosahedronGeometry,
   Layers,
@@ -34,6 +35,7 @@ import bloomVertexShader from './shader/test/bloom/vertex.glsl?raw';
 import fragmentShader from './shader/test/fragment.glsl?raw';
 import vertexShader from './shader/test/vertex.glsl?raw';
 
+import { Colors } from '@blueprintjs/colors';
 import './style.css';
 
 (ShaderChunk as any)['simplex4DNoise'] = simplex4DNoise;
@@ -61,6 +63,7 @@ renderer.toneMapping = NeutralToneMapping;
 el?.append(renderer.domElement);
 
 const scene = new Scene();
+const background = new Color(Colors.GRAY2);
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
 camera.position.set(0, 0, 3);
@@ -121,7 +124,14 @@ const layer = new Layers();
 layer.set(BLOOM_LAYER);
 
 const materials: Record<string, Material> = {};
+const fragments: Record<string, string> = {};
 const darkMaterial = new MeshBasicMaterial({ color: '#000000' });
+const blackFragment = `
+void main() {
+  vec3 color = vec3(0.0);
+  gl_FragColor = vec4(color, 1.0);
+}
+`;
 
 /**
  * World
@@ -142,8 +152,14 @@ const plane = new Mesh(planeGeometry, planeMaterial);
 plane.position.set(1, 1, 1);
 scene.add(plane);
 
-const ball = new Mesh(new BoxGeometry(1, 1, 1), new MeshBasicMaterial());
-ball.visible = false;
+const ball = new Mesh(
+  new BoxGeometry(1, 1, 1),
+  new MeshBasicMaterial({
+    color: new Color(Colors.CERULEAN3),
+  }),
+);
+ball.name = 'Box';
+ball.layers.enable(BLOOM_LAYER);
 scene.add(ball);
 
 const r = 3;
@@ -168,17 +184,20 @@ scene.add(sun);
 function renderFrame() {
   renderer.setRenderTarget(frameRender);
   plane.visible = false;
-  ball.visible = true;
   renderer.render(scene, camera);
   plane.visible = true;
-  ball.visible = false;
   renderer.setRenderTarget(null);
 }
 
 function darkenMaterial(obj: Object3D) {
   if (obj instanceof Mesh && obj.layers.test(layer) === false) {
-    materials[obj.uuid] = obj.material;
-    obj.material = darkMaterial;
+    if (obj.material instanceof ShaderMaterial) {
+      fragments[obj.uuid] = obj.material.fragmentShader;
+      obj.material.fragmentShader = blackFragment;
+    } else {
+      materials[obj.uuid] = obj.material;
+      obj.material = darkMaterial;
+    }
   }
 }
 
@@ -186,6 +205,10 @@ function restoreMaterial(obj: Object3D) {
   if (obj instanceof Mesh && materials[obj.uuid]) {
     obj.material = materials[obj.uuid];
     delete materials[obj.uuid];
+  }
+  if (obj instanceof Mesh && obj.material instanceof ShaderMaterial && fragments[obj.uuid]) {
+    obj.material.fragmentShader = fragments[obj.uuid];
+    delete fragments[obj.uuid];
   }
 }
 
@@ -198,13 +221,18 @@ function render() {
 
   uniforms.uTime.value += delta;
 
+  sun.position.x = r * Math.cos(uniforms.uTime.value);
+  sun.position.z = r * Math.sin(uniforms.uTime.value);
+
   // Render
 
-  // renderFrame();
-
-  scene.traverse(darkenMaterial);
+  // scene.traverse(darkenMaterial);
+  scene.background = null;
+  renderFrame();
   bloomComposer.render();
+  scene.background = background;
   scene.traverse(restoreMaterial);
+
   composer.render();
 
   // Loop
