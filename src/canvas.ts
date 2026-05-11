@@ -160,6 +160,7 @@ const ball = new Mesh(
 );
 ball.name = 'Box';
 ball.layers.enable(BLOOM_LAYER);
+ball.visible = false;
 scene.add(ball);
 
 const r = 3;
@@ -184,7 +185,9 @@ scene.add(sun);
 function renderFrame() {
   renderer.setRenderTarget(frameRender);
   plane.visible = false;
+  ball.visible = true;
   renderer.render(scene, camera);
+  ball.visible = false;
   plane.visible = true;
   renderer.setRenderTarget(null);
 }
@@ -194,6 +197,7 @@ function darkenMaterial(obj: Object3D) {
     if (obj.material instanceof ShaderMaterial) {
       fragments[obj.uuid] = obj.material.fragmentShader;
       obj.material.fragmentShader = blackFragment;
+      obj.material.needsUpdate = true;
     } else {
       materials[obj.uuid] = obj.material;
       obj.material = darkMaterial;
@@ -208,6 +212,7 @@ function restoreMaterial(obj: Object3D) {
   }
   if (obj instanceof Mesh && obj.material instanceof ShaderMaterial && fragments[obj.uuid]) {
     obj.material.fragmentShader = fragments[obj.uuid];
+    obj.material.needsUpdate = true;
     delete fragments[obj.uuid];
   }
 }
@@ -226,13 +231,13 @@ function render() {
 
   // Render
 
-  // scene.traverse(darkenMaterial);
+  scene.traverse(darkenMaterial);
   scene.background = null;
-  renderFrame();
   bloomComposer.render();
   scene.background = background;
   scene.traverse(restoreMaterial);
 
+  renderFrame();
   composer.render();
 
   // Loop
