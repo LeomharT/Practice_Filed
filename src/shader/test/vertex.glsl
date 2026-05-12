@@ -15,11 +15,11 @@ vec2 rotateUV(vec2 v,float a) {
 void main(){
   vec3 p = position;
 
-  vec4 modelPosition = modelMatrix * vec4(vec3(0.0), 1.0);  
+  vec4 modelPosition = modelMatrix * vec4(vec3(p), 1.0);  
   vec4 viewPosition  = viewMatrix * modelPosition;
 
-  p.xy            = rotateUV(p.xy, uTime);
-  viewPosition.xy += p.xy;
+  // p.xy            = rotateUV(p.xy, uTime);
+  // viewPosition.xy += p.xy;
 
   vec4 projectionPosition = projectionMatrix * viewPosition;
 

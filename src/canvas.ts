@@ -1,4 +1,5 @@
 import {
+  AxesHelper,
   BoxGeometry,
   Color,
   FloatType,
@@ -6,18 +7,21 @@ import {
   IcosahedronGeometry,
   Layers,
   Material,
+  MathUtils,
   Mesh,
   MeshBasicMaterial,
   NeutralToneMapping,
   Object3D,
   PerspectiveCamera,
   PlaneGeometry,
+  Raycaster,
   Scene,
   ShaderChunk,
   ShaderMaterial,
   Timer,
   Uniform,
   Vector2,
+  Vector3,
   WebGLRenderer,
   WebGLRenderTarget,
 } from 'three';
@@ -64,11 +68,11 @@ renderer.toneMapping = NeutralToneMapping;
 el?.append(renderer.domElement);
 
 const scene = new Scene();
-const background = new Color(Colors.GRAY2);
+const background = new Color(Colors.GRAY1);
 scene.background = background;
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
-camera.position.set(0, 0, 3);
+camera.position.set(0, 0, 5);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
@@ -138,6 +142,8 @@ void main() {
 }
 `;
 
+const raycaster = new Raycaster();
+
 /**
  * World
  */
@@ -154,7 +160,7 @@ const planeMaterial = new ShaderMaterial({
   fragmentShader,
 });
 const plane = new Mesh(planeGeometry, planeMaterial);
-plane.position.set(1, 1, 1);
+plane.position.set(0, 0, 1);
 scene.add(plane);
 
 const ball = new Mesh(
@@ -177,9 +183,21 @@ const sun = new Mesh(
 );
 scene.add(sun);
 
+const hoverPlaneGeometry = new PlaneGeometry(10, 10, 16, 16);
+const hoverPlaneMaterial = new MeshBasicMaterial({
+  wireframe: true,
+});
+const hoverPlane = new Mesh(hoverPlaneGeometry, hoverPlaneMaterial);
+hoverPlane.position.z = 1;
+hoverPlane.visible = false;
+scene.add(hoverPlane);
+
 /**
  * Debug
  */
+
+const axesHelper = new AxesHelper(3);
+scene.add(axesHelper);
 
 /**
  * Events
@@ -220,7 +238,9 @@ function restoreMaterial(obj: Object3D) {
   }
 }
 
-const speed = 5;
+const speed = 8;
+const cursor = new Vector2();
+const point = new Vector3();
 
 function render() {
   // Update
@@ -230,6 +250,9 @@ function render() {
   controls.update(delta);
 
   const t = 1 - Math.exp(-speed * delta);
+
+  plane.position.x = MathUtils.lerp(plane.position.x, point.x, t);
+  plane.position.y = MathUtils.lerp(plane.position.y, point.y, t);
 
   uniforms.uTime.value += delta;
 
@@ -260,4 +283,17 @@ window.addEventListener('resize', () => {
 
   camera.aspect = size.width / size.height;
   camera.updateProjectionMatrix();
+});
+
+window.addEventListener('pointermove', (e) => {
+  cursor.x = (e.clientX / size.width) * 2.0 - 1.0;
+  cursor.y = -(e.clientY / size.height) * 2.0 + 1.0;
+
+  raycaster.setFromCamera(cursor, camera);
+
+  const intersect = raycaster.intersectObject(hoverPlane);
+
+  if (intersect.length) {
+    point.copy(intersect[0].point);
+  }
 });
