@@ -1,6 +1,7 @@
 import {
   BoxGeometry,
   Color,
+  FloatType,
   HalfFloatType,
   IcosahedronGeometry,
   Layers,
@@ -64,6 +65,7 @@ el?.append(renderer.domElement);
 
 const scene = new Scene();
 const background = new Color(Colors.GRAY2);
+scene.background = background;
 
 const camera = new PerspectiveCamera(75, size.width / size.height, 0.1, 1000);
 camera.position.set(0, 0, 3);
@@ -79,6 +81,9 @@ const frameRender = new WebGLRenderTarget(size.width, size.height, {
   samples: 4,
 });
 
+const bloomScene = new Scene();
+const bloomRender = new RenderPass(bloomScene, camera);
+
 const renderScene = new RenderPass(scene, camera);
 const outputPass = new OutputPass();
 const bloomPass = new UnrealBloomPass(new Vector2(size.width, size.height), 1.0, 0.5, 0.0);
@@ -90,7 +95,7 @@ const bloomComposer = new EffectComposer(
   }),
 );
 bloomComposer.renderToScreen = false;
-bloomComposer.addPass(renderScene);
+bloomComposer.addPass(bloomRender);
 bloomComposer.addPass(bloomPass);
 
 const mixPass = new ShaderPass(
@@ -111,7 +116,7 @@ const composer = new EffectComposer(
   new WebGLRenderTarget(size.width * size.pixelRatio, size.height * size.pixelRatio, {
     samples: 4,
     generateMipmaps: true,
-    type: HalfFloatType,
+    type: FloatType,
   }),
 );
 composer.addPass(renderScene);
@@ -139,7 +144,7 @@ void main() {
 
 const uniforms = {
   uTime: new Uniform(0),
-  uFrame: new Uniform(frameRender.texture),
+  uFrame: new Uniform(bloomComposer.renderTarget2.texture),
 };
 
 const planeGeometry = new PlaneGeometry(1, 1, 128, 128);
@@ -160,8 +165,7 @@ const ball = new Mesh(
 );
 ball.name = 'Box';
 ball.layers.enable(BLOOM_LAYER);
-ball.visible = false;
-scene.add(ball);
+bloomScene.add(ball);
 
 const r = 3;
 
@@ -171,7 +175,6 @@ const sun = new Mesh(
     color: 'yellow',
   }),
 );
-sun.layers.enable(BLOOM_LAYER);
 scene.add(sun);
 
 /**
@@ -217,12 +220,16 @@ function restoreMaterial(obj: Object3D) {
   }
 }
 
+const speed = 5;
+
 function render() {
   // Update
   timer.update();
   const delta = timer.getDelta();
 
   controls.update(delta);
+
+  const t = 1 - Math.exp(-speed * delta);
 
   uniforms.uTime.value += delta;
 
@@ -231,13 +238,13 @@ function render() {
 
   // Render
 
-  scene.traverse(darkenMaterial);
-  scene.background = null;
+  // scene.traverse(darkenMaterial);
+  bloomScene.background = null;
   bloomComposer.render();
-  scene.background = background;
-  scene.traverse(restoreMaterial);
+  bloomScene.background = background;
+  // scene.traverse(restoreMaterial);
 
-  renderFrame();
+  // renderFrame();
   composer.render();
 
   // Loop

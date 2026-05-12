@@ -10,7 +10,7 @@ void main() {
   vec4 diffuse = texture2D(uDiffuse, uv);
   vec4 bloom   = texture2D(uBloomTexture, uv);
 
-  color = diffuse.rgb + bloom.rgb;
+  color = diffuse.rgb;
 
   gl_FragColor = vec4(color, 1.0);
 
