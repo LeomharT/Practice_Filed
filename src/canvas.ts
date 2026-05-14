@@ -40,7 +40,7 @@ clean();
 function point(v: Vector2) {
   ctx.save();
   const s = 30;
-  ctx.fillStyle = Colors.GOLD3;
+  ctx.fillStyle = Colors.FOREST5;
   ctx.fillRect(v.x - s / 2, v.y - s / 2, s, s);
   ctx.restore();
 }
@@ -71,7 +71,7 @@ function line(from: Vector2, to: Vector2) {
   ctx.beginPath();
   ctx.moveTo(from.x, from.y);
   ctx.lineTo(to.x, to.y);
-  ctx.strokeStyle = Colors.GOLD3;
+  ctx.strokeStyle = Colors.FOREST5;
   ctx.lineWidth = 3;
   ctx.stroke();
   ctx.restore();
