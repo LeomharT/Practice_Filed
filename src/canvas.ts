@@ -81,7 +81,7 @@ function updateSun() {
 
 updateSun();
 
-const planeGeometry = new PlaneGeometry(5.0, 5.0, 32, 32);
+const planeGeometry = new PlaneGeometry(12, 12, 1024, 1024);
 const planeMaterial = new ShaderMaterial({
   vertexShader,
   fragmentShader,

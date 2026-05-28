@@ -9,7 +9,7 @@ void main() {
   vec3 sunOrientation = normalize(uDirection);
 
   float light = dot(normal, sunOrientation);
-        light = max(light, 0.0);
+        light = max(light, 0.35);
 
   color *= light;
 
