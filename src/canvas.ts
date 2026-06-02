@@ -1,3 +1,4 @@
+import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import {
   AmbientLight,
   AxesHelper,
@@ -114,6 +115,7 @@ let stickerReact: Mesh | undefined;
 const params = {
   position: new Vector3(-0.03, 0.87, 0.09),
   orientation: new Vector3(-1.0, 0, 0),
+  iridescenceThicknessRange: { min: 300, max: 1500 },
 };
 
 function createDecalReact(_params: typeof params) {
@@ -161,6 +163,8 @@ const perf = new ThreePerf({
 const pane = new Pane({
   title: 'Debug',
 });
+pane.registerPlugin(EssentialsPlugin);
+
 pane.addBinding(params, 'position', { step: 0.01 }).on('change', () => {
   createDecalReact(params);
 });
@@ -171,6 +175,7 @@ pane.addBinding(params, 'orientation', { step: 0.01 }).on('change', () => {
 pane.addBinding(stickerReactMaterial, 'ior', { min: 1, max: 2.333, step: 0.001 });
 pane.addBinding(stickerReactMaterial, 'iridescence', { min: 0, max: 1, step: 0.001 });
 pane.addBinding(stickerReactMaterial, 'iridescenceIOR', { min: 1, max: 2.333, step: 0.001 });
+pane.addBinding(params, 'iridescenceThicknessRange', { min: 100, max: 2000 });
 
 function render() {
   perf.begin();
