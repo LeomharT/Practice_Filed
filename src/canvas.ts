@@ -126,7 +126,7 @@ function createDecalReact(_params: typeof params) {
     ball,
     _params.position,
     new Euler().setFromVector3(_params.orientation),
-    new Vector3(0.2, 0.2, 0.2),
+    new Vector3(0.15, 0.15, 0.15),
   );
   stickerReact = new Mesh(geometry, stickerReactMaterial);
   scene.add(stickerReact);
