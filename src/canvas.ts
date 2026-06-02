@@ -119,7 +119,7 @@ const params = {
 function createDecalReact(_params: typeof params) {
   if (stickerReact) {
     stickerReact.geometry.dispose();
-    scene.remove(stickerReact);
+    ball.remove(stickerReact);
     stickerReact = undefined;
   }
   const geometry = new DecalGeometry(
@@ -129,7 +129,7 @@ function createDecalReact(_params: typeof params) {
     new Vector3(0.15, 0.15, 0.15),
   );
   stickerReact = new Mesh(geometry, stickerReactMaterial);
-  scene.add(stickerReact);
+  ball.add(stickerReact);
 }
 
 createDecalReact(params);
@@ -181,6 +181,7 @@ function render() {
   controls2.update();
 
   const delta = timer.getDelta();
+  const elapsed = timer.getElapsed();
 
   // Render
   renderer.render(scene, camera);
