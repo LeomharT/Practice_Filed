@@ -92,14 +92,9 @@ const ball = new Mesh(ballGeometry, ballMaterial);
 ball.castShadow = true;
 ball.receiveShadow = true;
 ball.position.y = 0.5;
+ball.updateMatrixWorld(true);
 scene.add(ball);
 
-const stickerReactGeometry = new DecalGeometry(
-  ball,
-  new Vector3(0.1, 0.3, 0.2),
-  new Euler(),
-  new Vector3(0.2, 0.2, 0.2),
-);
 const stickerReactMaterial = new MeshPhysicalMaterial({
   map: reactTexture,
   transparent: true,
@@ -107,10 +102,37 @@ const stickerReactMaterial = new MeshPhysicalMaterial({
   polygonOffsetFactor: -4,
   depthTest: true,
   depthWrite: false,
+  metalness: 0.7,
+  thickness: 0,
+  ior: 1.5,
+  iridescence: 1,
+  iridescenceIOR: 1,
+  iridescenceThicknessRange: [300, 1500],
 });
-const stickerReact = new Mesh(stickerReactGeometry, stickerReactMaterial);
-stickerReact.position.copy(ball.position);
-scene.add(stickerReact);
+let stickerReact: Mesh | undefined;
+
+const params = {
+  position: new Vector3(-0.09, 0.92, 0.12),
+  orientation: new Vector3(-1.06, 0.02, 0),
+};
+
+function createDecalReact(_params: typeof params) {
+  if (stickerReact) {
+    stickerReact.geometry.dispose();
+    scene.remove(stickerReact);
+    stickerReact = undefined;
+  }
+  const geometry = new DecalGeometry(
+    ball,
+    _params.position,
+    new Euler().setFromVector3(_params.orientation),
+    new Vector3(0.2, 0.2, 0.2),
+  );
+  stickerReact = new Mesh(geometry, stickerReactMaterial);
+  scene.add(stickerReact);
+}
+
+createDecalReact(params);
 
 const axesHelper = new AxesHelper();
 scene.add(axesHelper);
@@ -119,12 +141,12 @@ scene.add(axesHelper);
 const ambientLight = new AmbientLight(0xf3f3f3, 0.05);
 scene.add(ambientLight);
 
-const directionLight = new DirectionalLight(0xf3f3f3, 3);
+const directionLight = new DirectionalLight(0xf3f3f3, 5.35);
 directionLight.position.y = 30;
-directionLight.position.z = -10;
 directionLight.castShadow = true;
 directionLight.shadow.mapSize.set(sizes.width, sizes.height);
 directionLight.shadow.needsUpdate = true;
+directionLight.shadow.blurSamples = 18;
 scene.add(directionLight);
 
 const perf = new ThreePerf({
@@ -138,6 +160,16 @@ const perf = new ThreePerf({
 const pane = new Pane({
   title: 'Debug',
 });
+pane.addBinding(params, 'position', { step: 0.01 }).on('change', () => {
+  createDecalReact(params);
+});
+pane.addBinding(params, 'orientation', { step: 0.01 }).on('change', () => {
+  createDecalReact(params);
+});
+
+pane.addBinding(stickerReactMaterial, 'ior', { min: 1, max: 2.333, step: 0.001 });
+pane.addBinding(stickerReactMaterial, 'iridescence', { min: 0, max: 1, step: 0.001 });
+pane.addBinding(stickerReactMaterial, 'iridescenceIOR', { min: 1, max: 2.333, step: 0.001 });
 
 function render() {
   perf.begin();
