@@ -1,26 +1,47 @@
+import { AxesHelper, PerspectiveCamera, Scene, WebGLRenderer } from 'three';
+import './style.css';
+
+const sizes = {
+  width: window.innerWidth,
+  height: window.innerHeight,
+  pixelRatio: Math.min(2, window.devicePixelRatio),
+};
+
 const el = document.querySelector('#root');
 
-// Video
-const video = document.createElement('video');
-el?.append(video);
+const renderer = new WebGLRenderer({
+  alpha: true,
+  antialias: true,
+});
+renderer.setSize(sizes.width, sizes.height);
+renderer.setPixelRatio(sizes.pixelRatio);
+el?.append(renderer.domElement);
 
-// Canvas
-const canvas = document.createElement('canvas');
-el?.append(canvas);
+const scene = new Scene();
 
-const ctx = canvas.getContext('bitmaprenderer');
+const camera = new PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000);
+camera.position.set(2, 2, 2);
+camera.lookAt(scene.position);
 
-async function render(video?: HTMLVideoElement) {
-  if (video) {
-    const bitmap = await createImageBitmap(video);
-    ctx?.transferFromImageBitmap(bitmap);
-  }
-  requestAnimationFrame(() => render(video));
+// World
+
+const axesHelper = new AxesHelper();
+scene.add(axesHelper);
+
+function render() {
+  // Render
+  renderer.render(scene, camera);
+  // Animation
+  requestAnimationFrame(render);
 }
+render();
 
-navigator.mediaDevices.getUserMedia({ video: true, audio: false }).then((value) => {
-  video.srcObject = value;
-  video.play().then(async function () {
-    render(video);
-  });
+window.addEventListener('resize', () => {
+  sizes.width = window.innerWidth;
+  sizes.height = window.innerHeight;
+
+  renderer.setSize(sizes.width, sizes.height);
+
+  camera.aspect = sizes.width / sizes.height;
+  camera.updateProjectionMatrix();
 });
