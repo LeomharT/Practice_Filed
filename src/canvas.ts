@@ -112,8 +112,8 @@ const stickerReactMaterial = new MeshPhysicalMaterial({
 let stickerReact: Mesh | undefined;
 
 const params = {
-  position: new Vector3(-0.09, 0.92, 0.12),
-  orientation: new Vector3(-1.06, 0.02, 0),
+  position: new Vector3(-0.03, 0.87, 0.09),
+  orientation: new Vector3(-1.0, 0, 0),
 };
 
 function createDecalReact(_params: typeof params) {
@@ -129,6 +129,7 @@ function createDecalReact(_params: typeof params) {
     new Vector3(0.15, 0.15, 0.15),
   );
   stickerReact = new Mesh(geometry, stickerReactMaterial);
+  stickerReact.position.sub(ball.position);
   ball.add(stickerReact);
 }
 
@@ -182,6 +183,11 @@ function render() {
 
   const delta = timer.getDelta();
   const elapsed = timer.getElapsed();
+
+  ball.rotation.y += delta;
+
+  ball.position.x = Math.cos(elapsed) * 3;
+  ball.position.z = Math.sin(elapsed) * 3;
 
   // Render
   renderer.render(scene, camera);
