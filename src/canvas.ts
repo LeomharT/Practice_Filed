@@ -1,3 +1,4 @@
+import { Colors } from '@blueprintjs/colors';
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import {
   AmbientLight,
@@ -8,6 +9,7 @@ import {
   DodecahedronGeometry,
   Euler,
   Mesh,
+  MeshBasicMaterial,
   MeshPhysicalMaterial,
   PCFSoftShadowMap,
   PerspectiveCamera,
@@ -91,6 +93,13 @@ const floor = new Mesh(floorGeometry, floorMaterial);
 floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
 scene.add(floor);
+
+const gridMaterial = new MeshBasicMaterial({
+  color: Colors.VIOLET3,
+});
+const grid = new Mesh(floorGeometry, gridMaterial);
+grid.rotation.x = -Math.PI / 2;
+scene.add(grid);
 
 const ballGeometry = new DodecahedronGeometry(0.5, 0);
 const ballMaterial = new MeshPhysicalMaterial({});
