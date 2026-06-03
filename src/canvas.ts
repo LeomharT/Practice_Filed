@@ -37,6 +37,11 @@ const el = document.querySelector('#root');
 
 const textureLoader = new TextureLoader();
 
+const threeTexture = textureLoader.load('/three.png');
+threeTexture.colorSpace = SRGBColorSpace;
+threeTexture.wrapS = ClampToEdgeWrapping;
+threeTexture.wrapT = ClampToEdgeWrapping;
+
 const reactTexture = textureLoader.load('/react.png');
 reactTexture.colorSpace = SRGBColorSpace;
 reactTexture.wrapS = ClampToEdgeWrapping;
@@ -99,13 +104,46 @@ const decals = [
   {
     name: 'react',
     position: new Vector3(-0.03, 0.87, 0.09),
-    orientation: new Vector3(-1.0, 0, 0),
+    orientation: new Euler(-1.0, 0, 0, 'XYZ'),
     size: new Vector3(0.15, 0.15, 0.15),
+    texture: reactTexture,
+  },
+  {
+    name: 'react',
+    position: new Vector3(0.21, 0.83, 0.12),
+    orientation: new Euler(-1.03, 0.46, -0.26, 'XYZ'),
+    size: new Vector3(0.15, 0.15, 0.15),
+    texture: threeTexture,
   },
 ];
 
+function createDecals() {
+  for (const decal of decals) {
+    const geometry = new DecalGeometry(ball, decal.position, decal.orientation, decal.size);
+    const material = new MeshPhysicalMaterial({
+      map: decal.texture,
+      transparent: true,
+      polygonOffset: true,
+      polygonOffsetFactor: -4,
+      depthTest: true,
+      depthWrite: false,
+      metalness: 0.7,
+      thickness: 0,
+      ior: 1.5,
+      iridescence: 1,
+      iridescenceIOR: 1,
+      iridescenceThicknessRange: [300, 1500],
+    });
+    const mesh = new Mesh(geometry, material);
+    mesh.position.sub(ball.position);
+    ball.add(mesh);
+  }
+}
+
+createDecals();
+
 const stickerReactMaterial = new MeshPhysicalMaterial({
-  map: reactTexture,
+  map: threeTexture,
   transparent: true,
   polygonOffset: true,
   polygonOffsetFactor: -4,
