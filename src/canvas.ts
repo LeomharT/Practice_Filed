@@ -8,10 +8,11 @@ import {
   DirectionalLight,
   DodecahedronGeometry,
   Euler,
+  MathUtils,
   Mesh,
   MeshBasicMaterial,
   MeshPhysicalMaterial,
-  PCFSoftShadowMap,
+  PCFShadowMap,
   PerspectiveCamera,
   PlaneGeometry,
   Raycaster,
@@ -56,7 +57,7 @@ const renderer = new WebGLRenderer({
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(sizes.pixelRatio);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = PCFSoftShadowMap;
+renderer.shadowMap.type = PCFShadowMap;
 el?.append(renderer.domElement);
 
 const scene = new Scene();
@@ -82,6 +83,7 @@ const timer = new Timer();
 
 const raycaster = new Raycaster();
 const mouse = new Vector2();
+const point = new Vector3();
 
 // World
 
@@ -96,6 +98,7 @@ scene.add(floor);
 
 const gridMaterial = new MeshBasicMaterial({
   color: Colors.VIOLET3,
+  wireframe: true,
 });
 const grid = new Mesh(floorGeometry, gridMaterial);
 grid.rotation.x = -Math.PI / 2;
@@ -206,6 +209,7 @@ directionLight.castShadow = true;
 directionLight.shadow.mapSize.set(4069, 4069);
 directionLight.shadow.needsUpdate = true;
 directionLight.shadow.blurSamples = 18;
+directionLight.shadow.radius = 30;
 scene.add(directionLight);
 
 const perf = new ThreePerf({
@@ -233,6 +237,8 @@ pane.addBinding(stickerReactMaterial, 'iridescence', { min: 0, max: 1, step: 0.0
 pane.addBinding(stickerReactMaterial, 'iridescenceIOR', { min: 1, max: 2.333, step: 0.001 });
 pane.addBinding(params, 'iridescenceThicknessRange', { min: 100, max: 2000 });
 
+const speed = 3;
+
 function render() {
   perf.begin();
 
@@ -244,6 +250,11 @@ function render() {
 
   const delta = timer.getDelta();
   const elapsed = timer.getElapsed();
+
+  const t = 1.0 - Math.exp(speed * -delta);
+
+  ball.position.x = MathUtils.lerp(ball.position.x, point.x, t);
+  ball.position.z = MathUtils.lerp(ball.position.z, point.z, t);
 
   // Render
   renderer.render(scene, camera);
@@ -269,10 +280,7 @@ window.addEventListener('pointerdown', (e) => {
 
   raycaster.setFromCamera(mouse, camera);
 
-  const intersect = raycaster.intersectObject(ball);
+  const intersect = raycaster.intersectObject(grid);
 
-  if (intersect.length) {
-    console.log(intersect[0].point);
-    console.log(intersect[0].face?.normal);
-  }
+  if (intersect.length) point.copy(intersect[0].point);
 });
