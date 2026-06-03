@@ -96,6 +96,15 @@ ball.position.y = 0.5;
 ball.updateMatrixWorld(true);
 scene.add(ball);
 
+const decals = [
+  {
+    name: 'react',
+    position: new Vector3(-0.03, 0.87, 0.09),
+    orientation: new Vector3(-1.0, 0, 0),
+    size: new Vector3(0.15, 0.15, 0.15),
+  },
+];
+
 const stickerReactMaterial = new MeshPhysicalMaterial({
   map: reactTexture,
   transparent: true,
