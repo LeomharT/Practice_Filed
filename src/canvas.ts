@@ -9,7 +9,7 @@ import {
   Euler,
   Mesh,
   MeshPhysicalMaterial,
-  PCFShadowMap,
+  PCFSoftShadowMap,
   PerspectiveCamera,
   PlaneGeometry,
   Raycaster,
@@ -49,7 +49,7 @@ const renderer = new WebGLRenderer({
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(sizes.pixelRatio);
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = PCFShadowMap;
+renderer.shadowMap.type = PCFSoftShadowMap;
 el?.append(renderer.domElement);
 
 const scene = new Scene();
@@ -91,7 +91,6 @@ const ballGeometry = new DodecahedronGeometry(0.5, 0);
 const ballMaterial = new MeshPhysicalMaterial({});
 const ball = new Mesh(ballGeometry, ballMaterial);
 ball.castShadow = true;
-ball.receiveShadow = true;
 ball.position.y = 0.5;
 ball.updateMatrixWorld(true);
 scene.add(ball);
@@ -155,8 +154,9 @@ scene.add(ambientLight);
 
 const directionLight = new DirectionalLight(0xf3f3f3, 5.35);
 directionLight.position.y = 30;
+directionLight.position.z = 20;
 directionLight.castShadow = true;
-directionLight.shadow.mapSize.set(sizes.width, sizes.height);
+directionLight.shadow.mapSize.set(4069, 4069);
 directionLight.shadow.needsUpdate = true;
 directionLight.shadow.blurSamples = 18;
 scene.add(directionLight);
@@ -197,11 +197,6 @@ function render() {
 
   const delta = timer.getDelta();
   const elapsed = timer.getElapsed();
-
-  ball.rotation.y += delta;
-
-  ball.position.x = Math.cos(elapsed) * 3;
-  ball.position.z = Math.sin(elapsed) * 3;
 
   // Render
   renderer.render(scene, camera);
