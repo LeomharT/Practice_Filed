@@ -98,6 +98,7 @@ const debugs = new LineSegments(
   new LineBasicMaterial({ color: 0xffffff, vertexColors: true }),
 );
 debugs.frustumCulled = false;
+debugs.visible = false;
 scene.add(debugs);
 
 const floorGeometry = new PlaneGeometry(10, 10, 32, 32);
@@ -141,8 +142,9 @@ ballRigidBody.setLinvel(
 const ballColliderDesc = ColliderDesc.convexHull(
   ballGeometry.getAttribute('position').array as Float32Array,
 )!;
-ballColliderDesc.setMass(4);
-ballColliderDesc.setFriction(2.5);
+ballColliderDesc.setMass(1);
+ballColliderDesc.setFriction(0.5);
+ballColliderDesc.setRestitution(0.875);
 world.createCollider(ballColliderDesc, ballRigidBody);
 
 const ballMaterial = new MeshPhysicalMaterial({});
@@ -333,10 +335,10 @@ window.addEventListener('pointerdown', (e) => {
     point.copy(intersect[0].point);
 
     if (meshs[intersect[0].object.uuid]) {
-      meshs[intersect[0].object.uuid].body.setAngvel(
+      meshs[intersect[0].object.uuid].body.setLinvel(
         {
-          x: -3,
-          y: 12,
+          x: 0,
+          y: 3,
           z: 0,
         },
         true,
