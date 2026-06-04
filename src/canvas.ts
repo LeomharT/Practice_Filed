@@ -327,15 +327,11 @@ window.addEventListener('pointerdown', (e) => {
   if (intersect.length) {
     point.copy(intersect[0].point);
 
-    if (meshs[intersect[0].object.uuid]) {
-      meshs[intersect[0].object.uuid].body.setLinvel(
-        {
-          x: 0,
-          y: 3,
-          z: 0,
-        },
-        true,
-      );
+    const object = meshs[intersect[0].object.uuid];
+
+    if (object) {
+      object.body.setLinvel({ x: 0, y: 3, z: 0 }, true);
+      object.body.setAngvel({ x: Math.random() > 0.5 ? 3 : -3, y: 0, z: 0 }, true);
     }
   }
 });
