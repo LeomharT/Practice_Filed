@@ -130,19 +130,12 @@ const ballGeometry = new DodecahedronGeometry(0.5, 0);
 const ballRigidBodyDesc = RigidBodyDesc.dynamic();
 ballRigidBodyDesc.setTranslation(0, 3, 0);
 const ballRigidBody = world.createRigidBody(ballRigidBodyDesc);
-ballRigidBody.setLinvel(
-  {
-    x: 3,
-    y: 0,
-    z: 0,
-  },
-  true,
-);
+ballRigidBody.addForce({ x: 0, y: 9.85, z: 0 }, true);
 
 const ballColliderDesc = ColliderDesc.convexHull(
   ballGeometry.getAttribute('position').array as Float32Array,
 )!;
-ballColliderDesc.setMass(1);
+ballColliderDesc.setMass(2);
 ballColliderDesc.setFriction(0.5);
 ballColliderDesc.setRestitution(0.875);
 world.createCollider(ballColliderDesc, ballRigidBody);
