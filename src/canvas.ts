@@ -1,14 +1,18 @@
 import { Colors } from '@blueprintjs/colors';
+import { ColliderDesc, RigidBodyDesc, World } from '@dimforge/rapier3d';
 import * as EssentialsPlugin from '@tweakpane/plugin-essentials';
 import {
   AmbientLight,
   AxesHelper,
+  BufferAttribute,
+  BufferGeometry,
   ClampToEdgeWrapping,
   Color,
   DirectionalLight,
   DodecahedronGeometry,
   Euler,
-  MathUtils,
+  LineBasicMaterial,
+  LineSegments,
   Mesh,
   MeshBasicMaterial,
   MeshPhysicalMaterial,
@@ -86,6 +90,15 @@ const mouse = new Vector2();
 const point = new Vector3();
 
 // World
+let gravity = { x: 0.0, y: -9.81, z: 0.0 };
+
+const world = new World(gravity);
+const debugs = new LineSegments(
+  new BufferGeometry(),
+  new LineBasicMaterial({ color: 0xffffff, vertexColors: true }),
+);
+debugs.frustumCulled = false;
+scene.add(debugs);
 
 const floorGeometry = new PlaneGeometry(10, 10, 32, 32);
 const floorMaterial = new ShadowMaterial({
@@ -96,6 +109,13 @@ floor.rotation.x = -Math.PI / 2;
 floor.receiveShadow = true;
 scene.add(floor);
 
+const floorRigidBodyDesc = RigidBodyDesc.fixed();
+floorRigidBodyDesc.setTranslation(0, -0.1, 0);
+const floorRigidBody = world.createRigidBody(floorRigidBodyDesc);
+
+const floorColliderDesc = ColliderDesc.cuboid(5, 0.1, 5);
+world.createCollider(floorColliderDesc, floorRigidBody);
+
 const gridMaterial = new MeshBasicMaterial({
   color: Colors.VIOLET3,
   wireframe: true,
@@ -105,6 +125,26 @@ grid.rotation.x = -Math.PI / 2;
 scene.add(grid);
 
 const ballGeometry = new DodecahedronGeometry(0.5, 0);
+
+const ballRigidBodyDesc = RigidBodyDesc.dynamic();
+ballRigidBodyDesc.setTranslation(0, 3, 0);
+const ballRigidBody = world.createRigidBody(ballRigidBodyDesc);
+ballRigidBody.setLinvel(
+  {
+    x: 3,
+    y: 0,
+    z: 0,
+  },
+  true,
+);
+
+const ballColliderDesc = ColliderDesc.convexHull(
+  ballGeometry.getAttribute('position').array as Float32Array,
+)!;
+ballColliderDesc.setMass(4);
+ballColliderDesc.setFriction(2.5);
+world.createCollider(ballColliderDesc, ballRigidBody);
+
 const ballMaterial = new MeshPhysicalMaterial({});
 const ball = new Mesh(ballGeometry, ballMaterial);
 ball.castShadow = true;
@@ -237,7 +277,7 @@ pane.addBinding(stickerReactMaterial, 'iridescence', { min: 0, max: 1, step: 0.0
 pane.addBinding(stickerReactMaterial, 'iridescenceIOR', { min: 1, max: 2.333, step: 0.001 });
 pane.addBinding(params, 'iridescenceThicknessRange', { min: 100, max: 2000 });
 
-const speed = 3;
+const speed = 5;
 
 function render() {
   perf.begin();
@@ -250,13 +290,13 @@ function render() {
 
   const delta = timer.getDelta();
   const elapsed = timer.getElapsed();
+  world.step();
 
-  const t = 1.0 - Math.exp(speed * -delta);
-
-  ball.position.x = MathUtils.lerp(ball.position.x, point.x, t);
-  ball.position.z = MathUtils.lerp(ball.position.z, point.z, t);
+  ball.position.copy(ballRigidBody.translation());
+  ball.quaternion.copy(ballRigidBody.rotation());
 
   // Render
+  renderDebug();
   renderer.render(scene, camera);
   perf.end();
   // Animation
@@ -284,3 +324,10 @@ window.addEventListener('pointerdown', (e) => {
 
   if (intersect.length) point.copy(intersect[0].point);
 });
+
+function renderDebug() {
+  const { vertices, colors } = world.debugRender();
+
+  debugs.geometry.setAttribute('position', new BufferAttribute(vertices, 3));
+  debugs.geometry.setAttribute('color', new BufferAttribute(colors, 4));
+}
