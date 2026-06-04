@@ -152,6 +152,13 @@ ball.position.y = 0.5;
 ball.updateMatrixWorld(true);
 scene.add(ball);
 
+const meshs = {
+  [ball.uuid]: {
+    mesh: ball,
+    body: ballRigidBody,
+  },
+};
+
 const decals = [
   {
     name: 'react',
@@ -320,9 +327,22 @@ window.addEventListener('pointerdown', (e) => {
 
   raycaster.setFromCamera(mouse, camera);
 
-  const intersect = raycaster.intersectObject(grid);
+  const intersect = raycaster.intersectObject(ball);
 
-  if (intersect.length) point.copy(intersect[0].point);
+  if (intersect.length) {
+    point.copy(intersect[0].point);
+
+    if (meshs[intersect[0].object.uuid]) {
+      meshs[intersect[0].object.uuid].body.setAngvel(
+        {
+          x: -3,
+          y: 12,
+          z: 0,
+        },
+        true,
+      );
+    }
+  }
 });
 
 function renderDebug() {
