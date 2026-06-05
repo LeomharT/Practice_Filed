@@ -65,7 +65,7 @@ renderer.shadowMap.type = PCFShadowMap;
 el?.append(renderer.domElement);
 
 const scene = new Scene();
-scene.background = new Color('#f3f3f3');
+scene.background = new Color('#141622');
 
 const camera = new PerspectiveCamera(75, sizes.width / sizes.height, 0.1, 1000);
 camera.position.set(2, 2, 2);
@@ -90,7 +90,7 @@ const mouse = new Vector2();
 const point = new Vector3();
 
 // World
-let gravity = { x: 0.0, y: -9.81, z: 0.0 };
+let gravity = { x: 0.0, y: 0, z: 0.0 };
 
 const world = new World(gravity);
 const debugs = new LineSegments(
@@ -101,7 +101,7 @@ debugs.frustumCulled = false;
 debugs.visible = false;
 scene.add(debugs);
 
-const floorGeometry = new PlaneGeometry(10, 10, 32, 32);
+const floorGeometry = new PlaneGeometry(10, 10, 16, 16);
 const floorMaterial = new ShadowMaterial({
   transparent: true,
 });
@@ -128,9 +128,8 @@ scene.add(grid);
 const ballGeometry = new DodecahedronGeometry(0.5, 0);
 
 const ballRigidBodyDesc = RigidBodyDesc.dynamic();
-ballRigidBodyDesc.setTranslation(0, 3, 0);
+ballRigidBodyDesc.setTranslation(0, 1, 0);
 const ballRigidBody = world.createRigidBody(ballRigidBodyDesc);
-ballRigidBody.addForce({ x: 0, y: 9.85, z: 0 }, true);
 
 const ballColliderDesc = ColliderDesc.convexHull(
   ballGeometry.getAttribute('position').array as Float32Array,
@@ -330,7 +329,7 @@ window.addEventListener('pointerdown', (e) => {
     const object = meshs[intersect[0].object.uuid];
 
     if (object) {
-      object.body.setLinvel({ x: 0, y: 3, z: 0 }, true);
+      object.body.setLinvel({ x: Math.random() > 0.5 ? 1 : -1, y: 3, z: 0 }, true);
       object.body.setAngvel({ x: Math.random() > 0.5 ? 3 : -3, y: 0, z: 0 }, true);
     }
   }
