@@ -1,5 +1,6 @@
-import { ColliderDesc, RigidBodyDesc, World } from '@dimforge/rapier3d';
+import { ColliderDesc, RigidBody, RigidBodyDesc, World } from '@dimforge/rapier3d';
 import {
+  AmbientLight,
   AxesHelper,
   BufferAttribute,
   BufferGeometry,
@@ -8,13 +9,15 @@ import {
   LineSegments,
   MathUtils,
   Mesh,
-  MeshBasicMaterial,
+  MeshStandardMaterial,
   PerspectiveCamera,
   Scene,
   SphereGeometry,
   Timer,
+  Vector3,
   WebGLRenderer,
 } from 'three';
+import { ThreePerf } from 'three-perf';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import './style.css';
 
@@ -79,20 +82,64 @@ const debug = new LineSegments(new BufferGeometry(), new LineBasicMaterial());
 debug.frustumCulled = false;
 scene.add(debug);
 
+const spheres: Record<
+  string,
+  {
+    mesh: Mesh<SphereGeometry, MeshStandardMaterial>;
+    body: RigidBody;
+    accent?: boolean;
+  }
+> = {};
 const sphereGeometry = new SphereGeometry(1, 64, 64);
-const sphereMaterial = new MeshBasicMaterial({ color: accents[0] });
-const sphere = new Mesh(sphereGeometry, sphereMaterial);
-scene.add(sphere);
 
-const ballRigidBodyDesc = RigidBodyDesc.dynamic();
-const ballRigidBody = world.createRigidBody(ballRigidBodyDesc);
+function createSphere({ accent, ...props }: ReturnType<typeof shuffle>[number]) {
+  const material = new MeshStandardMaterial({
+    ...props,
+  });
+  const mesh = new Mesh(sphereGeometry, material);
+  return mesh;
+}
 
-const ballColliderDesc = ColliderDesc.ball(1.03);
-ballColliderDesc.setRestitution(0.856);
-world.createCollider(ballColliderDesc, ballRigidBody);
+for (const i of shuffle(accent)) {
+  const sphere = createSphere(i);
+
+  const pos = new Vector3(
+    MathUtils.randFloatSpread(10),
+    MathUtils.randFloatSpread(10),
+    MathUtils.randFloatSpread(10),
+  );
+
+  const rigidBodyDesc = RigidBodyDesc.dynamic();
+  rigidBodyDesc.setTranslation(pos.x, pos.y, pos.z);
+  rigidBodyDesc.setLinearDamping(4);
+  rigidBodyDesc.setAngularDamping(1);
+  const rigidBody = world.createRigidBody(rigidBodyDesc);
+
+  const colliderDesc = ColliderDesc.ball(1);
+  colliderDesc.setFriction(0.1);
+  world.createCollider(colliderDesc, rigidBody);
+
+  spheres[sphere.uuid] = {
+    mesh: sphere,
+    body: rigidBody,
+    accent: i.accent,
+  };
+
+  scene.add(sphere);
+}
 
 const axesHelper = new AxesHelper(5);
 scene.add(axesHelper);
+
+const ambientLight = new AmbientLight(0xffffff, 1);
+scene.add(ambientLight);
+
+const perf = new ThreePerf({
+  anchorX: 'left',
+  anchorY: 'top',
+  domElement: document.body, // or other canvas rendering wrapper
+  renderer: renderer, // three js renderer instance you use for rendering
+});
 
 // Events
 
@@ -104,16 +151,26 @@ function updateDebug() {
 }
 
 const c = new Color();
+const v = new Vector3();
+const lambda = 2.5;
 
 function updateSphere(delta: number) {
-  sphere.position.copy(ballRigidBody.translation());
-  sphere.quaternion.copy(ballRigidBody.rotation());
-
   c.set(accents[accent]);
 
-  sphere.material.color.r = MathUtils.damp(sphere.material.color.r, c.r, 6, delta);
-  sphere.material.color.g = MathUtils.damp(sphere.material.color.g, c.g, 6, delta);
-  sphere.material.color.b = MathUtils.damp(sphere.material.color.b, c.b, 6, delta);
+  for (const key in spheres) {
+    const { mesh, body, accent } = spheres[key];
+
+    mesh.position.copy(body.translation());
+    mesh.quaternion.copy(body.rotation());
+
+    body.applyImpulse(v.copy(body.translation()).negate().multiplyScalar(0.2), true);
+
+    if (accent) {
+      mesh.material.color.r = MathUtils.damp(mesh.material.color.r, c.r, lambda, delta);
+      mesh.material.color.g = MathUtils.damp(mesh.material.color.g, c.g, lambda, delta);
+      mesh.material.color.b = MathUtils.damp(mesh.material.color.b, c.b, lambda, delta);
+    }
+  }
 }
 
 function click() {
@@ -121,6 +178,8 @@ function click() {
 }
 
 function render() {
+  perf.begin();
+
   // Update
   timer.update();
 
@@ -133,6 +192,9 @@ function render() {
   // Render
   updateDebug();
   renderer.render(scene, camera);
+
+  perf.end();
+
   //Animation
   requestAnimationFrame(render);
 }
