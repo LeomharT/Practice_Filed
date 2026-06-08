@@ -1,27 +1,34 @@
 import { ColliderDesc, RigidBody, RigidBodyDesc, World } from '@dimforge/rapier3d';
-import { BloomEffect, EffectComposer, EffectPass, RenderPass } from 'postprocessing';
+import { BloomEffect, EffectComposer, EffectPass, FXAAEffect, RenderPass, ToneMappingEffect } from 'postprocessing';
 import {
-  AmbientLight,
   AxesHelper,
   BufferAttribute,
   BufferGeometry,
   Color,
+  EquirectangularReflectionMapping,
   LineBasicMaterial,
   LineSegments,
   MathUtils,
   Mesh,
   MeshStandardMaterial,
+  NoToneMapping,
   PerspectiveCamera,
   Scene,
   SphereGeometry,
+  SRGBColorSpace,
   Timer,
   Vector3,
   WebGLRenderer,
 } from 'three';
 import { ThreePerf } from 'three-perf';
-import { OrbitControls } from 'three/examples/jsm/Addons.js';
-import { SSGIEffect } from './lib/realism-effects/index';
+import { HDRLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
+import { SSGIEffect, VelocityDepthNormalPass } from './lib/realism-effects/v2';
 import './style.css';
+
+const hdrLoader = new HDRLoader();
+
+const environment = await hdrLoader.loadAsync('/german_town_street_2k.hdr');
+environment.mapping = EquirectangularReflectionMapping;
 
 const sizes = {
   width: window.innerWidth,
@@ -80,25 +87,29 @@ const config = {
 
 const renderer = new WebGLRenderer({
   antialias: false,
-  alpha: true,
-  powerPreference: 'high-performance',
 });
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(sizes.pixelRatio);
 renderer.shadowMap.enabled = true;
+renderer.outputColorSpace = SRGBColorSpace;
+renderer.toneMapping = NoToneMapping;
 el?.append(renderer.domElement);
 
 const scene = new Scene();
 scene.background = new Color('#141622');
 
-const camera = new PerspectiveCamera(17.56, sizes.width / sizes.height, 0.1, 1000);
+const camera = new PerspectiveCamera(17.5, sizes.width / sizes.height, 10, 40);
 camera.position.set(0, 0, 30);
 camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
+controls.enabled = false;
 
 const timer = new Timer();
+
+scene.environment = environment;
+scene.environmentIntensity = 1;
 
 // Post processing
 const composer = new EffectComposer(renderer, {
@@ -116,11 +127,14 @@ const bloomPass = new BloomEffect({
   levels: 7,
 });
 
-const ssgiPass = new SSGIEffect(composer, scene, camera, { ...config });
+const velocityDepthNormalPass = new VelocityDepthNormalPass(scene, camera);
+const ssgiEffect = new SSGIEffect(composer, scene, camera, { ...config, velocityDepthNormalPass, envMap: environment });
 
 composer.addPass(renderPass);
-composer.addPass(new EffectPass(camera, ssgiPass));
+composer.addPass(velocityDepthNormalPass);
+composer.addPass(new EffectPass(camera, ssgiEffect));
 composer.addPass(new EffectPass(camera, bloomPass));
+composer.addPass(new EffectPass(camera, new FXAAEffect(), new ToneMappingEffect()));
 
 // World
 let accent = 0;
@@ -128,6 +142,7 @@ let accent = 0;
 const world = new World(gravity);
 const debug = new LineSegments(new BufferGeometry(), new LineBasicMaterial());
 debug.frustumCulled = false;
+debug.visible = false;
 scene.add(debug);
 
 const spheres: Record<
@@ -151,11 +166,7 @@ function createSphere({ accent, ...props }: ReturnType<typeof shuffle>[number]) 
 for (const i of shuffle(accent)) {
   const sphere = createSphere(i);
 
-  const pos = new Vector3(
-    MathUtils.randFloatSpread(10),
-    MathUtils.randFloatSpread(10),
-    MathUtils.randFloatSpread(10),
-  );
+  const pos = new Vector3(MathUtils.randFloatSpread(10), MathUtils.randFloatSpread(10), MathUtils.randFloatSpread(10));
 
   const rigidBodyDesc = RigidBodyDesc.dynamic();
   rigidBodyDesc.setTranslation(pos.x, pos.y, pos.z);
@@ -178,9 +189,6 @@ for (const i of shuffle(accent)) {
 
 const axesHelper = new AxesHelper(5);
 scene.add(axesHelper);
-
-const ambientLight = new AmbientLight(0xffffff, 1);
-scene.add(ambientLight);
 
 const perf = new ThreePerf({
   anchorX: 'left',
@@ -206,14 +214,14 @@ function updateSphere(delta: number) {
   c.set(accents[accent]);
 
   for (const key in spheres) {
-    const { mesh, body, accent } = spheres[key];
+    const { mesh, body, accent: isAccent } = spheres[key];
 
     mesh.position.copy(body.translation());
     mesh.quaternion.copy(body.rotation());
 
     body.applyImpulse(v.copy(body.translation()).negate().multiplyScalar(0.2), true);
 
-    if (accent) {
+    if (isAccent) {
       mesh.material.color.r = MathUtils.damp(mesh.material.color.r, c.r, lambda, delta);
       mesh.material.color.g = MathUtils.damp(mesh.material.color.g, c.g, lambda, delta);
       mesh.material.color.b = MathUtils.damp(mesh.material.color.b, c.b, lambda, delta);
@@ -239,7 +247,9 @@ function render() {
   updateSphere(delta);
   // Render
   updateDebug();
-  composer.render();
+
+  renderer.autoClear = true;
+  composer.render(delta);
 
   perf.end();
 

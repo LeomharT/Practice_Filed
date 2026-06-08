@@ -1,5 +1,5 @@
 import { Pass, Effect, RenderPass, Selection, NormalPass } from 'postprocessing';
-import { ShaderChunk, ShaderLib, UniformsUtils, ShaderMaterial, Uniform, Vector2, Matrix4, Vector3, NoBlending, GLSL3, Clock, Quaternion, WebGLMultipleRenderTargets, NearestFilter, FramebufferTexture, LinearFilter, WebGLRenderTarget, FloatType, DataTexture, RGBAFormat, ClampToEdgeWrapping, LinearMipMapLinearFilter, EquirectangularReflectionMapping, TextureLoader, RepeatWrapping, NoColorSpace, MeshPhysicalMaterial, Color, DepthTexture, RedFormat, Matrix3, HalfFloatType, SRGBColorSpace } from 'three';
+import { ShaderChunk, ShaderLib, UniformsUtils, ShaderMaterial, Uniform, Vector2, Matrix4, Vector3, NoBlending, GLSL3, Clock, Quaternion, NearestFilter, FramebufferTexture, LinearFilter, WebGLRenderTarget, FloatType, DataTexture, RGBAFormat, ClampToEdgeWrapping, LinearMipMapLinearFilter, EquirectangularReflectionMapping, TextureLoader, RepeatWrapping, NoColorSpace, MeshPhysicalMaterial, Color, DepthTexture, RedFormat, Matrix3, HalfFloatType, SRGBColorSpace } from 'three';
 
 // from: https://news.ycombinator.com/item?id=17876741
 
@@ -242,13 +242,13 @@ class TemporalReprojectPass extends Pass {
     options = { ...defaultTemporalReprojectPassOptions,
       ...options
     };
-    this.renderTarget = new WebGLMultipleRenderTargets(1, 1, textureCount, {
+    this.renderTarget = new WebGLRenderTarget(1, 1, textureCount, {
       minFilter: NearestFilter,
       magFilter: NearestFilter,
       type: texture.type,
       depthBuffer: false
     });
-    this.renderTarget.texture.forEach((texture, index) => texture.name = "TemporalReprojectPass.accumulatedTexture" + index);
+    this.renderTarget.textures.forEach((texture, index) => texture.name = "TemporalReprojectPass.accumulatedTexture" + index);
     this.fullscreenMaterial = new TemporalReprojectMaterial(textureCount);
     this.fullscreenMaterial.defines.textureCount = textureCount;
     if (options.dilation) this.fullscreenMaterial.defines.dilation = "";
@@ -353,7 +353,7 @@ class TemporalReprojectPass extends Pass {
 
     if (this.overrideAccumulatedTextures.length === 0) {
       this.framebufferTexture.needsUpdate = true;
-      renderer.copyFramebufferToTexture(tmpVec2, this.framebufferTexture);
+      renderer.copyFramebufferToTexture(this.framebufferTexture, tmpVec2);
     } // save last transformations
 
 
@@ -1678,7 +1678,7 @@ class VelocityDepthNormalPass extends Pass {
     } = this._scene;
     this._scene.background = backgroundColor;
     renderer.setRenderTarget(this.renderTarget);
-    renderer.copyFramebufferToTexture(zeroVec2, this.lastVelocityTexture);
+    renderer.copyFramebufferToTexture(this.lastVelocityTexture, zeroVec2);
     renderer.render(this._scene, this._camera);
     this._scene.background = background;
     this.unsetVelocityDepthNormalMaterialInScene();
@@ -1940,13 +1940,13 @@ class PoissonDenoisePass extends Pass {
       // using HalfFloatType as FloatType with bilinear filtering isn't supported on some Apple devices
       depthBuffer: false
     };
-    this.renderTargetA = new WebGLMultipleRenderTargets(1, 1, textureCount, renderTargetOptions);
-    this.renderTargetB = new WebGLMultipleRenderTargets(1, 1, textureCount, renderTargetOptions); // give the textures of renderTargetA and renderTargetB names
+    this.renderTargetA = new WebGLRenderTarget(1, 1, textureCount, renderTargetOptions);
+    this.renderTargetB = new WebGLRenderTarget(1, 1, textureCount, renderTargetOptions); // give the textures of renderTargetA and renderTargetB names
 
-    this.renderTargetB.texture[0].name = "PoissonDenoisePass." + (isTextureSpecular[0] ? "specular" : "diffuse");
+    this.renderTargetB.textures[0].name = "PoissonDenoisePass." + (isTextureSpecular[0] ? "specular" : "diffuse");
 
-    if (textureCount > 1) {
-      this.renderTargetB.texture[1].name = "PoissonDenoisePass." + (isTextureSpecular[1] ? "specular" : "diffuse");
+    if (textureCount > 2) {
+      this.renderTargetB.textures[1].name = "PoissonDenoisePass." + (isTextureSpecular[1] ? "specular" : "diffuse");
     }
 
     const {
@@ -2040,7 +2040,7 @@ class Denoiser {
       neighborhoodClampIntensity: 0.5,
       ...options
     });
-    const textures = this.temporalReprojectPass.renderTarget.texture.slice(0, textureCount);
+    const textures = this.temporalReprojectPass.renderTarget.textures.slice(0, textureCount);
 
     if (this.options.denoiseMode === "full" || this.options.denoiseMode === "denoised") {
       var _options$gBufferPass;
