@@ -1,4 +1,5 @@
 import { ColliderDesc, RigidBody, RigidBodyDesc, World } from '@dimforge/rapier3d';
+import { EffectComposer, RenderPass } from 'postprocessing';
 import {
   AmbientLight,
   AxesHelper,
@@ -54,8 +55,9 @@ const shuffle = (accent = 0) => [
 ];
 
 const renderer = new WebGLRenderer({
-  antialias: true,
+  antialias: false,
   alpha: true,
+  powerPreference: 'high-performance',
 });
 renderer.setSize(sizes.width, sizes.height);
 renderer.setPixelRatio(sizes.pixelRatio);
@@ -73,6 +75,14 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
 const timer = new Timer();
+
+// Post processing
+const composer = new EffectComposer(renderer, {
+  alpha: true,
+});
+
+const renderPass = new RenderPass(scene, camera);
+composer.addPass(renderPass);
 
 // World
 let accent = 0;
@@ -191,7 +201,7 @@ function render() {
   updateSphere(delta);
   // Render
   updateDebug();
-  renderer.render(scene, camera);
+  composer.render();
 
   perf.end();
 
