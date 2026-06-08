@@ -6,11 +6,13 @@ import {
   Color,
   LineBasicMaterial,
   LineSegments,
+  MathUtils,
   Mesh,
   MeshBasicMaterial,
   PerspectiveCamera,
   Scene,
   SphereGeometry,
+  Timer,
   WebGLRenderer,
 } from 'three';
 import { OrbitControls } from 'three/examples/jsm/Addons.js';
@@ -67,6 +69,8 @@ camera.lookAt(scene.position);
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
+const timer = new Timer();
+
 // World
 let accent = 0;
 
@@ -76,23 +80,16 @@ debug.frustumCulled = false;
 scene.add(debug);
 
 const sphereGeometry = new SphereGeometry(1, 64, 64);
-const sphereMaterial = new MeshBasicMaterial({ color: 'yellow' });
+const sphereMaterial = new MeshBasicMaterial({ color: accents[0] });
 const sphere = new Mesh(sphereGeometry, sphereMaterial);
 scene.add(sphere);
 
 const ballRigidBodyDesc = RigidBodyDesc.dynamic();
-ballRigidBodyDesc.setTranslation(0, 3, 0);
 const ballRigidBody = world.createRigidBody(ballRigidBodyDesc);
 
 const ballColliderDesc = ColliderDesc.ball(1.03);
 ballColliderDesc.setRestitution(0.856);
 world.createCollider(ballColliderDesc, ballRigidBody);
-
-const floorRigidBodyDesc = RigidBodyDesc.fixed();
-const floorRigidBody = world.createRigidBody(floorRigidBodyDesc);
-
-const floorColliderDesc = ColliderDesc.cuboid(10, 0.1, 10);
-world.createCollider(floorColliderDesc, floorRigidBody);
 
 const axesHelper = new AxesHelper(5);
 scene.add(axesHelper);
@@ -106,9 +103,17 @@ function updateDebug() {
   debug.geometry.setAttribute('color', new BufferAttribute(colors, 4));
 }
 
-function updateTarget() {
+const c = new Color();
+
+function updateSphere(delta: number) {
   sphere.position.copy(ballRigidBody.translation());
   sphere.quaternion.copy(ballRigidBody.rotation());
+
+  c.set(accents[accent]);
+
+  sphere.material.color.r = MathUtils.damp(sphere.material.color.r, c.r, 6, delta);
+  sphere.material.color.g = MathUtils.damp(sphere.material.color.g, c.g, 6, delta);
+  sphere.material.color.b = MathUtils.damp(sphere.material.color.b, c.b, 6, delta);
 }
 
 function click() {
@@ -117,9 +122,14 @@ function click() {
 
 function render() {
   // Update
+  timer.update();
+
+  const delta = timer.getDelta();
+
   world.step();
-  updateTarget();
   controls.update();
+
+  updateSphere(delta);
   // Render
   updateDebug();
   renderer.render(scene, camera);
