@@ -5,15 +5,19 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
-  EquirectangularReflectionMapping,
+  DoubleSide,
+  Group,
   LineBasicMaterial,
   LineSegments,
   MathUtils,
   Mesh,
+  MeshBasicMaterial,
   MeshStandardMaterial,
   NoToneMapping,
   PerspectiveCamera,
+  PlaneGeometry,
   PMREMGenerator,
+  RingGeometry,
   Scene,
   SphereGeometry,
   SRGBColorSpace,
@@ -28,8 +32,8 @@ import './style.css';
 
 const hdrLoader = new HDRLoader();
 
-const environment = await hdrLoader.loadAsync('/german_town_street_2k.hdr');
-environment.mapping = EquirectangularReflectionMapping;
+// const environment = await hdrLoader.loadAsync('/german_town_street_2k.hdr');
+// environment.mapping = EquirectangularReflectionMapping;
 
 const sizes = {
   width: window.innerWidth,
@@ -105,12 +109,10 @@ camera.lookAt(scene.position);
 
 const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
-controls.enabled = false;
 
 const timer = new Timer();
 
 const pmrem = new PMREMGenerator(renderer);
-scene.environment = environment;
 
 // Post processing
 const composer = new EffectComposer(renderer, {
@@ -138,6 +140,56 @@ composer.addPass(new EffectPass(camera, bloomPass));
 composer.addPass(new EffectPass(camera, new FXAAEffect(), new ToneMappingEffect()));
 
 // World
+
+const envScene = new Scene();
+const group = new Group();
+
+function createLightFormer(
+  form: 'circle' | 'ring' | 'rect' = 'rect',
+  intensity: number = 1,
+  color: string = 'white',
+  scale: number,
+  position: [number, number, number],
+  rotation: [number, number, number],
+) {
+  const geometry = {
+    circle: new RingGeometry(0, 0.5, 64),
+    ring: new RingGeometry(0.25, 0.5, 64),
+    rect: new PlaneGeometry(1, 1),
+  };
+  const material = new MeshBasicMaterial({
+    color: new Color(color).multiplyScalar(intensity),
+    toneMapped: false,
+    side: DoubleSide,
+  });
+
+  const mesh = new Mesh(geometry[form], material);
+  mesh.scale.setScalar(scale);
+  mesh.position.set(...position);
+  mesh.rotation.set(...rotation);
+
+  return mesh;
+}
+
+const _lightFormer1 = createLightFormer('circle', 100, 'white', 2, [0, 5, -9], [Math.PI / 2, 0, 0]);
+const _lightFormer2 = createLightFormer('circle', 2, 'white', 2, [-5, 1, -1], [0, Math.PI / 2, 0]);
+const _lightFormer3 = createLightFormer('circle', 2, 'white', 2, [-5, -1, -1], [0, Math.PI / 2, 0]);
+const _lightFormer4 = createLightFormer('circle', 2, 'white', 8, [10, 1, 0], [0, -Math.PI / 2, 0]);
+const _lightFormer5 = createLightFormer('ring', 80, '#4060ff', 10, [10, 10, 0], [0, 0, 0]);
+_lightFormer5.lookAt(envScene.position);
+
+group.add(_lightFormer1);
+group.add(_lightFormer2);
+group.add(_lightFormer3);
+group.add(_lightFormer4);
+group.add(_lightFormer5);
+group.rotation.set(-Math.PI / 3, 0, 1);
+
+envScene.add(group);
+
+const environment = pmrem.fromScene(envScene).texture;
+scene.environment = environment;
+
 let accent = 0;
 
 const world = new World(gravity);
@@ -191,6 +243,7 @@ for (const i of shuffle(accent)) {
 }
 
 const axesHelper = new AxesHelper(5);
+axesHelper.visible = false;
 scene.add(axesHelper);
 
 const perf = new ThreePerf({
@@ -248,8 +301,9 @@ function render() {
   controls.update();
 
   updateSphere(delta);
-  // Render
   updateDebug();
+
+  // Render
 
   renderer.autoClear = true;
   composer.render(delta);
