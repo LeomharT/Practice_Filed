@@ -19,7 +19,6 @@ import {
   NoToneMapping,
   PerspectiveCamera,
   PlaneGeometry,
-  PMREMGenerator,
   RingGeometry,
   Scene,
   SphereGeometry,
@@ -30,14 +29,9 @@ import {
   WebGLRenderer,
 } from 'three';
 import { ThreePerf } from 'three-perf';
-import { HDRLoader, OrbitControls } from 'three/examples/jsm/Addons.js';
+import { OrbitControls } from 'three/examples/jsm/Addons.js';
 import { SSGIEffect, VelocityDepthNormalPass } from './lib/realism-effects/v2';
 import './style.css';
-
-const hdrLoader = new HDRLoader();
-
-// const environment = await hdrLoader.loadAsync('/german_town_street_2k.hdr');
-// environment.mapping = EquirectangularReflectionMapping;
 
 const sizes = {
   width: window.innerWidth,
@@ -115,9 +109,6 @@ const controls = new OrbitControls(camera, renderer.domElement);
 controls.enableDamping = true;
 
 const timer = new Timer();
-
-const pmrem = new PMREMGenerator(renderer);
-pmrem.compileEquirectangularShader();
 
 const cubeRenderTarget = new WebGLCubeRenderTarget(512, {
   type: HalfFloatType,
@@ -200,7 +191,6 @@ group.rotation.set(-Math.PI / 3, 0, 1);
 
 envScene.add(group);
 
-const environment = pmrem.fromScene(envScene).texture;
 scene.environment = cubeRenderTarget.texture;
 
 let accent = 0;
