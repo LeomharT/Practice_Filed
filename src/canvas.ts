@@ -1,4 +1,4 @@
-import { ColliderDesc, RigidBody, RigidBodyDesc, World } from '@dimforge/rapier3d';
+import { ColliderDesc, RigidBody, RigidBodyDesc, RigidBodyType, World } from '@dimforge/rapier3d';
 import { BloomEffect, EffectComposer, EffectPass, FXAAEffect, RenderPass, ToneMappingEffect } from 'postprocessing';
 import {
   AxesHelper,
@@ -245,6 +245,13 @@ for (const i of shuffle(accent)) {
   scene.add(sphere);
 }
 
+const pointerRigidBodyDesc = RigidBodyDesc.dynamic();
+const pointerRigidBody = world.createRigidBody(pointerRigidBodyDesc);
+pointerRigidBody.setBodyType(RigidBodyType.KinematicPositionBased, true);
+
+const pointerColliderDesc = ColliderDesc.ball(1);
+world.createCollider(pointerColliderDesc, pointerRigidBody);
+
 const axesHelper = new AxesHelper(5);
 axesHelper.visible = false;
 scene.add(axesHelper);
@@ -329,6 +336,13 @@ window.addEventListener('resize', () => {
 
   camera.aspect = sizes.width / sizes.height;
   camera.updateProjectionMatrix();
+});
+
+window.addEventListener('pointermove', (e) => {
+  const x = (e.clientX / sizes.width) * 2.0 - 1.0;
+  const y = -(e.clientY / sizes.height) * 2.0 + 1.0;
+
+  pointerRigidBody.setNextKinematicTranslation({ x: x * 3, y: y * 3, z: 0 });
 });
 
 window.addEventListener('pointerdown', click);
