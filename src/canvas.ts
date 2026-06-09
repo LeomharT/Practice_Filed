@@ -5,8 +5,11 @@ import {
   BufferAttribute,
   BufferGeometry,
   Color,
+  CubeCamera,
   DoubleSide,
   Group,
+  HalfFloatType,
+  LinearFilter,
   LineBasicMaterial,
   LineSegments,
   MathUtils,
@@ -23,6 +26,7 @@ import {
   SRGBColorSpace,
   Timer,
   Vector3,
+  WebGLCubeRenderTarget,
   WebGLRenderer,
 } from 'three';
 import { ThreePerf } from 'three-perf';
@@ -113,6 +117,15 @@ controls.enableDamping = true;
 const timer = new Timer();
 
 const pmrem = new PMREMGenerator(renderer);
+pmrem.compileEquirectangularShader();
+
+const cubeRenderTarget = new WebGLCubeRenderTarget(512, {
+  type: HalfFloatType,
+  generateMipmaps: true,
+  minFilter: LinearFilter,
+  magFilter: LinearFilter,
+});
+const cubeCamera = new CubeCamera(0.1, 1000, cubeRenderTarget);
 
 // Post processing
 const composer = new EffectComposer(renderer, {
@@ -188,7 +201,7 @@ group.rotation.set(-Math.PI / 3, 0, 1);
 envScene.add(group);
 
 const environment = pmrem.fromScene(envScene).texture;
-scene.environment = environment;
+scene.environment = cubeRenderTarget.texture;
 
 let accent = 0;
 
@@ -304,6 +317,8 @@ function render() {
   updateDebug();
 
   // Render
+
+  cubeCamera.update(renderer, envScene);
 
   renderer.autoClear = true;
   composer.render(delta);
