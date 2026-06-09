@@ -13,6 +13,7 @@ import {
   MeshStandardMaterial,
   NoToneMapping,
   PerspectiveCamera,
+  PMREMGenerator,
   Scene,
   SphereGeometry,
   SRGBColorSpace,
@@ -108,8 +109,8 @@ controls.enabled = false;
 
 const timer = new Timer();
 
+const pmrem = new PMREMGenerator(renderer);
 scene.environment = environment;
-scene.environmentIntensity = 1;
 
 // Post processing
 const composer = new EffectComposer(renderer, {
@@ -128,7 +129,7 @@ const bloomPass = new BloomEffect({
 });
 
 const velocityDepthNormalPass = new VelocityDepthNormalPass(scene, camera);
-const ssgiEffect = new SSGIEffect(composer, scene, camera, { ...config, velocityDepthNormalPass, envMap: environment });
+const ssgiEffect = new SSGIEffect(composer, scene, camera, { ...config, velocityDepthNormalPass });
 
 composer.addPass(renderPass);
 composer.addPass(velocityDepthNormalPass);
@@ -160,6 +161,8 @@ function createSphere({ accent, ...props }: ReturnType<typeof shuffle>[number]) 
     ...props,
   });
   const mesh = new Mesh(sphereGeometry, material);
+  mesh.castShadow = true;
+  mesh.receiveShadow = true;
   return mesh;
 }
 

@@ -34,6 +34,16 @@ import {
   WebGLRenderTarget,
 } from 'three';
 
+const WebGLMultipleRenderTargets = class extends WebGLRenderTarget {
+  constructor(width = 1, height = 1, count = 1, options = {}) {
+    super(width, height, { ...options, count });
+    this.isWebGLMultipleRenderTargets = true;
+  }
+  get texture() {
+    return this.textures;
+  }
+};
+
 // from: https://news.ycombinator.com/item?id=17876741
 
 const g = 1.32471795724474602596090885447809; // Plastic number
@@ -293,14 +303,13 @@ class TemporalReprojectPass extends Pass {
     this._camera = camera;
     this.textureCount = textureCount;
     options = { ...defaultTemporalReprojectPassOptions, ...options };
-    this.renderTarget = new WebGLRenderTarget(1, 1, {
+    this.renderTarget = new WebGLMultipleRenderTargets(1, 1, textureCount, {
       minFilter: NearestFilter,
       magFilter: NearestFilter,
       type: texture.type,
       depthBuffer: false,
-      count: textureCount,
     });
-    this.renderTarget.textures.forEach(
+    this.renderTarget.texture.forEach(
       (texture, index) => (texture.name = 'TemporalReprojectPass.accumulatedTexture' + index),
     );
     this.fullscreenMaterial = new TemporalReprojectMaterial(textureCount);
@@ -1999,13 +2008,13 @@ class PoissonDenoisePass extends Pass {
       // using HalfFloatType as FloatType with bilinear filtering isn't supported on some Apple devices
       depthBuffer: false,
     };
-    this.renderTargetA = new WebGLRenderTarget(1, 1, { ...renderTargetOptions, count: textureCount });
-    this.renderTargetB = new WebGLRenderTarget(1, 1, { ...renderTargetOptions, count: textureCount }); // give the textures of renderTargetA and renderTargetB names
+    this.renderTargetA = new WebGLMultipleRenderTargets(1, 1, textureCount, renderTargetOptions);
+    this.renderTargetB = new WebGLMultipleRenderTargets(1, 1, textureCount, renderTargetOptions); // give the textures of renderTargetA and renderTargetB names
 
-    this.renderTargetB.textures[0].name = 'PoissonDenoisePass.' + (isTextureSpecular[0] ? 'specular' : 'diffuse');
+    this.renderTargetB.texture[0].name = 'PoissonDenoisePass.' + (isTextureSpecular[0] ? 'specular' : 'diffuse');
 
     if (textureCount > 1) {
-      this.renderTargetB.textures[1].name = 'PoissonDenoisePass.' + (isTextureSpecular[1] ? 'specular' : 'diffuse');
+      this.renderTargetB.texture[1].name = 'PoissonDenoisePass.' + (isTextureSpecular[1] ? 'specular' : 'diffuse');
     }
 
     const { uniforms } = this.fullscreenMaterial;
@@ -2105,7 +2114,7 @@ class Denoiser {
         ...options,
       },
     );
-    const textures = this.temporalReprojectPass.renderTarget.textures.slice(0, textureCount);
+    const textures = this.temporalReprojectPass.renderTarget.texture.slice(0, textureCount);
 
     if (this.options.denoiseMode === 'full' || this.options.denoiseMode === 'denoised') {
       var _options$gBufferPass;
