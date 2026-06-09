@@ -192,6 +192,7 @@ group.rotation.set(-Math.PI / 3, 0, 1);
 envScene.add(group);
 
 scene.environment = cubeRenderTarget.texture;
+scene.environmentIntensity = 0.15;
 
 let accent = 0;
 
